@@ -6,12 +6,16 @@ import { StatusBar } from "expo-status-bar";
 import CustomButton from "@/components/CustomButton";
 import { useRouter } from "expo-router";
 import AppGradient from "@/components/AppGradient";
+import Header from "@/components/Header";
+
 
 const App = () => {
   const router = useRouter();
   return (
     <AppGradient colors={["#fff", "#fff"]}>
-      <Text>Hello</Text>
+      <Header>
+        
+      </Header>
     </AppGradient>
   );
 };

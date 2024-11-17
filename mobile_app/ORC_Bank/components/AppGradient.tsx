@@ -13,7 +13,9 @@ const AppGradient = ({children, colors} : {children:any; colors: string[]}) => {
         className='flex-1'
     >
       <Content>{children}</Content>
-      <StatusBar style="light" />
+      <StatusBar 
+        style="light" 
+      />
 
     </LinearGradient>
   )
