@@ -11,6 +11,9 @@ module.exports = {
           fontFamily: {
               rmono: ["Roboto-Mono", "sans-serif"],
           },
+          colors: {
+            roleColorGray: '#7E848D', 
+          },
       },
   },
   presets: [require('nativewind/preset')],
