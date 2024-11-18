@@ -13,6 +13,7 @@ module.exports = {
           },
           colors: {
             roleColorGray: '#7E848D', 
+            yellowwhite: '#F6FAE3',
           },
       },
   },
