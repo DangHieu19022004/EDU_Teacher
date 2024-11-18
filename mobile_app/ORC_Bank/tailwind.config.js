@@ -14,6 +14,7 @@ module.exports = {
           colors: {
             roleColorGray: '#7E848D', 
             yellowwhite: '#F6FAE3',
+            yellowborder: '#CAC7A0',
           },
       },
   },
