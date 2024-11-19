@@ -1,5 +1,6 @@
-import { View, Text, ImageBackground, ScrollView } from "react-native";
-import React from "react";
+import { View, Text, ImageBackground, ScrollView, Button } from "react-native";
+import Modal from "react-native-modal";
+import React, { useCallback, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -13,8 +14,15 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import NotificationItem from "@/components/NotificationItem";
 
 const Homepage = () => {
+  const [isModalVisible, setModalVisible] = useState(false);
+
+  const toggleModal =() => {
+    setModalVisible(!isModalVisible);
+  }
+  
   return (
-    <AppGradient colors={["#fff", "#fff"]}>
+    <View className="flex-1 bg-white" >
+      <View className="flex-1 px-5 py-3">
       <Header />
       {/* feature */}
       <View className="flex-row justify-between pt-6 pb-4">
@@ -26,14 +34,14 @@ const Homepage = () => {
       </View>
       {/* feature wrap */}
       <View className="flex-row flex-wrap justify-between">
-        <FeatureAll />
-        <FeatureAll />
-        <FeatureAll />
-        <FeatureAll />
-        <FeatureAll />
-        <FeatureAll />
-        <FeatureAll />
-        <FeatureAll />
+        <FeatureAll onPress={toggleModal} title="Điền hóa đơn" />
+        <FeatureAll onPress={() => alert('click')} />
+        <FeatureAll onPress={() => console.log("clicked")} />
+        <FeatureAll onPress={() => console.log("clicked")} />
+        <FeatureAll onPress={() => console.log("clicked")} />
+        <FeatureAll onPress={() => console.log("clicked")} />
+        <FeatureAll onPress={() => console.log("clicked")} />
+        <FeatureAll onPress={() => console.log("clicked")} />
       </View>
       {/* show all */}
       <View className="flex-row items-center justify-center pb-4">
@@ -48,7 +56,7 @@ const Homepage = () => {
           <Text className="text-blueSky">Xem tất cả</Text>
         </View>
         {/* notification wrap */}
-        <ScrollView >
+        <ScrollView className="h-5/6">
           <NotificationItem />
           <NotificationItem />
           <NotificationItem />
@@ -75,8 +83,26 @@ const Homepage = () => {
           <NotificationItem />
         </ScrollView>
       </View>
-    </AppGradient>
-  )
-}
+      <Modal
+        isVisible={isModalVisible}
+        onBackdropPress={() => setModalVisible(false)}
+      >
+        <View
+          style={{
+            backgroundColor: "white",
+            padding: 20,
+            borderRadius: 10,
+            alignItems: "center",
+          }}
+        >
+          <Text>Hello!</Text>
 
-export default Homepage
+          <Button title="Hide modal" onPress={toggleModal} />
+        </View>
+      </Modal>
+      </View>
+    </View>
+  );
+};
+
+export default Homepage;
