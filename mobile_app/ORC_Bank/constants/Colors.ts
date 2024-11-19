@@ -1,7 +1,8 @@
 
 
 export default{
-    tabbarUnactive: "#27273A",
+    tabbarUnactive: "#8B8B94",
     tabberOnActive: "#0066FF",
+    tabbarBG: "#27273A",
   };
   
