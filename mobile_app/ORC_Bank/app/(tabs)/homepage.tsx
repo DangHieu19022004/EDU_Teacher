@@ -11,7 +11,7 @@ import EvilIcons from "@expo/vector-icons/EvilIcons";
 import FeatureAll from "@/components/FeatureAll";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import NotificationItem from "@/components/NotificationItem";
-import ModalBill from "@/components/ModalBill";
+import ModalBill from "../(modal)/ModalBill";
 
 const Homepage = () => {
   const [isModalVisible, setModalVisible] = useState(false);
