@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ORC Bank",
-    "slug": "ORC Bank",
+    "name": "orcui",
+    "slug": "orcui",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logoSplash.png",
@@ -41,8 +41,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "a6efa6ab-f605-4d5a-a458-761d6c7615b1"
+        "projectId": "83b3fffd-bda0-4d4b-a62f-dd44933e2e40"
       }
-    }
+    },
+    "owner": "danghieu19224"
   }
 }
