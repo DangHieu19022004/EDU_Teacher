@@ -1,0 +1,8 @@
+from rest_framework import serializers
+from scan_orc.models import Receipt
+
+
+class ReceiptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Receipt
+        fields = '__all__'
