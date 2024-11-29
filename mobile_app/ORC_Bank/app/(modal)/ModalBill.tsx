@@ -20,7 +20,7 @@ const ModalBill = ({
   isVisible: any;
   onClose: any;
 }) => {
-  
+
   const navigation = useNavigation<any>(); ;
 
 
@@ -32,13 +32,13 @@ const openCamera = async () => {
         Alert.alert("Quyền truy cập bị từ chối", "Vui lòng cấp quyền truy cập thư viện ảnh.");
         return;
       }
-  
+
       // Mở camera
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 1,
       });
-  
+
       if (!result.canceled) {
         const photoUri = result.assets[0].uri;
 
@@ -63,13 +63,13 @@ const openCamera = async () => {
         Alert.alert("Quyền truy cập bị từ chối", "Vui lòng cấp quyền truy cập thư viện ảnh.");
         return;
       }
-  
+
       // Mở thư viện ảnh
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 1,
       });
-  
+
       if (!result.canceled) {
         const photoUri = result.assets[0].uri;
 
