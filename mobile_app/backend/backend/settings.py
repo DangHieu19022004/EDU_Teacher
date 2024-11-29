@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'scan_orc',
+    'raw_image',
     "rest_framework",
 ]
 

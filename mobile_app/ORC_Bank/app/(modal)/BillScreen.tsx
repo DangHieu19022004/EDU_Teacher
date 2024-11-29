@@ -5,12 +5,13 @@ import { useRoute } from "@react-navigation/native";
 import * as FileSystem from 'expo-file-system';
 
 export default function BillScreen() {
-  const api = 'http://192.168.1.196:8000/orc/recieve_image/';
+  const api = 'http://192.168.1.196:8000/raw/recieve_image/';
   // Lấy tham số từ route
   const route = useRoute<any>();
   const { photoUri } = route.params;
 
   const [imageData, setImageData] = useState(null);
+  const [imageSent, setImageSent] = useState(false);
 
   const covertImageToBase64 = async (uri: string) => {
     try{
@@ -24,7 +25,7 @@ export default function BillScreen() {
   }
 
   const sendImage = async () => {
-    if(photoUri){
+    if(photoUri && !imageSent){
       const base64Data = await covertImageToBase64(photoUri);
 
       if(base64Data){
@@ -41,6 +42,7 @@ export default function BillScreen() {
           const data = await response.json();
           console.log(data);
           setImageData(data);
+          setImageSent(true);
         }catch(e){
           console.log(e);
         }
@@ -49,15 +51,15 @@ export default function BillScreen() {
   }
 
   useEffect(() => {
-    if (photoUri) {
+    if (photoUri && !imageSent) {
       sendImage();
     }
-  }, [photoUri]);
+  }, [photoUri, imageSent]);
   return (
     <View>
       <Image
         source={{ uri: photoUri }}
-        className="size-full object-contain"
+        className="size-4/5 object-contain"
       />
       {imageData && <Text>{JSON.stringify(imageData)}</Text>}
     </View>
