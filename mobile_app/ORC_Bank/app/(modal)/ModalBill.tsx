@@ -73,8 +73,8 @@ const openCamera = async () => {
       if (!result.canceled) {
         const photoUri = result.assets[0].uri;
 
-        // Lưu ảnh vào thư viện (tuỳ chọn, nếu cần)
-        await MediaLibrary.createAssetAsync(photoUri);
+        // // Lưu ảnh vào thư viện (tuỳ chọn, nếu cần)
+        // await MediaLibrary.createAssetAsync(photoUri);
 
         // Chuyển hướng sang trang hiển thị ảnh
         navigation.navigate('(modal)/BillScreen', { photoUri });

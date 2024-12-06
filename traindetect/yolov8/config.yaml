@@ -1,0 +1,12 @@
+path: E:\ORC_mobile_app\traindetect\data
+train: images/train
+val: images/val
+
+names:
+  0: Tên máy
+  1: 4 số cuối thẻ
+  2: Tên KH
+  3: Loại thẻ
+  4: Số lô / Batch
+  5: Ngày - giờ
+  6: Số tiền
