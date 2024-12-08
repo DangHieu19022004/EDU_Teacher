@@ -46,6 +46,8 @@ def process_image(img_binary):
 
         # Thử nghiệm OCR
         result = ocr.ocr(cropped_image, cls=True)  # Nhận diện văn bản
+        # result = ocr.ocr(image, cls=True)  # Nhận diện văn bản
+
         if not result or not result[0]:
             print(f"OCR không nhận diện được văn bản tại vùng ({x1}, {y1}, {x2}, {y2})")
             continue
@@ -53,7 +55,7 @@ def process_image(img_binary):
         for line in result[0]:  # Duyệt qua các kết quả OCR
             detected_text = line[1][0]  # Văn bản nhận diện được
             confidence = line[1][1]    # Độ tin cậy của kết quả
-            texts.append((detected_text, confidence))
+            texts.append(detected_text)
 
     return texts
 
