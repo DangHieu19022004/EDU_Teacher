@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -16,19 +16,43 @@ interface FormReceiptProps {
   data?: any;
 }
 
-const FormReceipt = ({data} : FormReceiptProps) => {
+const FormReceipt = ({ data }: FormReceiptProps) => {
+
+  const api = "http://192.168.1.10:8000/ocr/saveinfor/";
+
+
+  const [date, setDate] = useState(new Date());
+  const [time, setTime] = useState(new Date());
+
   const [formData, setFormData] = useState({
-    merchant_name: "",
+    merchant_name:"",
     card_last_digits: "",
     cardholder_name: "",
     card_type: "",
-    batch_number: "",
+    batch_number:"",
     transaction_date: "",
     total_amount: "",
   });
 
-  const [date, setDate] = useState(new Date());
-  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    if (data) {
+      setFormData({
+        merchant_name: data.merchant_name || "",
+        card_last_digits: data.card_last_digits || "",
+        cardholder_name: data.cardholder_name || "",
+        card_type: data.card_type || "",
+        batch_number: data.batch_number || "",
+        transaction_date: data.transaction_date || "",
+        total_amount: data.total_amount || "",
+      });
+    }
+
+    const dateTime = new Date(data.transaction_date);
+    setDate(dateTime);
+    setTime(dateTime);
+
+  }, [data]);
+
 
   const setnDate = (event: DateTimePickerEvent, selectedDate?: Date) => {
     if (selectedDate) {
@@ -54,8 +78,42 @@ const FormReceipt = ({data} : FormReceiptProps) => {
     }
   };
 
-  const handleSubmit = () => {
-    console.log("Submitted Data:", formData);
+
+  const resetInput = () => {
+    setFormData({
+      merchant_name: "",
+      card_last_digits: "",
+      cardholder_name: "",
+      card_type: "",
+      batch_number: "",
+      transaction_date: "",
+      total_amount: "",
+    })
+  }
+
+  const handleSubmit = async () => {
+    if(formData.merchant_name === "" || formData.card_last_digits === "" || formData.cardholder_name === "" || formData.card_type === "" || formData.batch_number === "" || formData.transaction_date === "" || formData.total_amount === ""){
+      alert("Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
+    try{
+      const response = await fetch(api, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(formData)
+      })
+      const data = await response.json();
+      if(response.ok){
+        alert(data.message || "Success");
+        resetInput();
+      }else{
+        alert(data.message || "Something went wrong");
+      }
+    }catch(e){
+      console.log(e);
+    }
   };
 
   return (
@@ -161,27 +219,67 @@ const FormReceipt = ({data} : FormReceiptProps) => {
         <View className="w-full mb-6">
           <Text className="text-lg font-semibold mb-2">Giờ giao dịch</Text>
 
-          <View className="border border-gray-300 rounded-lg px-4 py-3 bg-white">
-            {Platform.OS === "android" ? (
-              <TouchableOpacity
-                onPress={() =>
-                  DateTimePickerAndroid.open({
-                    value: time,
-                    onChange: setTimeHandler,
-                    mode: "time",
-                  })
-                }
-              >
-                <Text>{time.toLocaleTimeString()}</Text>
-              </TouchableOpacity>
-            ) : (
-              <RNDateTimePicker
-                value={time}
-                mode="time"
-                display="spinner"
-                onChange={setTimeHandler}
-              />
-            )}
+          <View className="flex-row items-center space-x-2">
+            {/* Type hour */}
+            <TextInput
+              className="border border-gray-300 rounded-lg px-4 py-3 bg-white w-20 text-center"
+              placeholder="Giờ"
+              keyboardType="numeric"
+              maxLength={2}
+              value={time.getHours().toString().padStart(2, "0")}
+              onChangeText={(text) => {
+                const hours = Math.min(23, Math.max(0, parseInt(text) || 0));
+                const updatedTime = new Date(time);
+                updatedTime.setHours(hours);
+                setTime(updatedTime);
+                setFormData({
+                  ...formData,
+                  transaction_date: updatedTime.toISOString(),
+                });
+              }}
+            />
+
+            <Text> : </Text>
+
+            {/* Type minute */}
+            <TextInput
+              className="border border-gray-300 rounded-lg px-4 py-3 bg-white w-20 text-center"
+              placeholder="Phút"
+              keyboardType="numeric"
+              maxLength={2}
+              value={time.getMinutes().toString().padStart(2, "0")}
+              onChangeText={(text) => {
+                const minutes = Math.min(59, Math.max(0, parseInt(text) || 0));
+                const updatedTime = new Date(time);
+                updatedTime.setMinutes(minutes);
+                setTime(updatedTime);
+                setFormData({
+                  ...formData,
+                  transaction_date: updatedTime.toISOString(),
+                });
+              }}
+            />
+
+            <Text> : </Text>
+
+            {/* Type seconds */}
+            <TextInput
+              className="border border-gray-300 rounded-lg px-4 py-3 bg-white w-20 text-center"
+              placeholder="Giây"
+              keyboardType="numeric"
+              maxLength={2}
+              value={time.getSeconds().toString().padStart(2, "0")}
+              onChangeText={(text) => {
+                const seconds = Math.min(59, Math.max(0, parseInt(text) || 0));
+                const updatedTime = new Date(time);
+                updatedTime.setSeconds(seconds);
+                setTime(updatedTime);
+                setFormData({
+                  ...formData,
+                  transaction_date: updatedTime.toISOString(),
+                });
+              }}
+            />
           </View>
         </View>
 

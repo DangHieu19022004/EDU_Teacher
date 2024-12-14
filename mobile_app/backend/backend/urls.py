@@ -12,7 +12,7 @@ router.register(r'receipts', ReceiptViewSet)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
-    path('orc/', include('scan_orc.urls')),
+    path('ocr/', include('scan_orc.urls')),
     path('raw/', include('raw_image.urls')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

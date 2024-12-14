@@ -7,7 +7,6 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from paddleocr import PaddleOCR
 from rest_framework.decorators import api_view
-from ultralytics import YOLO
 
 from .models import RawImage
 
@@ -15,49 +14,119 @@ from .models import RawImage
 
 
 def process_image(img_binary):
-    model = YOLO('models/best.onnx')
+    ocr = PaddleOCR(lang='en',  drop_score=0.1, use_angle_cls=True)
 
-    nparr = np.frombuffer(img_binary, np.uint8)
-    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    results = model.predict(image, conf=0.2, iou=0.5)
+    labels = {
+        0: "batch",
+        1: "cardnumber",
+        2: "cost",
+        3: "datetime",
+        4: "namecustomer",
+        5: "namemerchine",
+        6: "typecard"
+    }
 
-    detections = results[0].boxes.xyxy.cpu().numpy()
-    coords = [(int(x1), int(y1), int(x2), int(y2)) for x1, y1, x2, y2 in detections]
+    extracted_data = {label: None for label in labels.values()}  # Khởi tạo dictionary cho các nhãn
 
-    # ocr
-    ocr = PaddleOCR(lang='en',  drop_score=0.2, use_angle_cls=True)
+    # Nhận diện văn bản
+    result = ocr.ocr(img_binary, cls=True)
+    if not result or not result[0]:
+        print(f"OCR không nhận diện được văn bản")
+        return extracted_data
+
+    lines = sorted(result[0], key=lambda x: x[0][0][1])  # Sắp xếp theo tọa độ y
+    grouped_lines = []  # Danh sách các nhóm hàng
+    current_group = []
+    current_y = lines[0][0][0][1]  # Tọa độ y của từ đầu tiên
+    max_y_gap = 15  # Ngưỡng sai lệch dọc giữa các từ (pixel)
+
+    for line in lines:
+        box, (detected_text, confidence) = line
+        x1, y1, x2, y2 = box[0][0], box[0][1], box[2][0], box[2][1]
+        if abs(y1 - current_y) < max_y_gap:  # Cùng hàng nếu khoảng cách y nhỏ hơn ngưỡng
+            current_group.append((detected_text, confidence, x1))
+        else:
+            # Sắp xếp nhóm hiện tại theo tọa độ x
+            current_group = sorted(current_group, key=lambda x: x[2])
+            grouped_lines.append(current_group)
+            current_group = [(detected_text, confidence, x1)]
+            current_y = y1
+
+    # Thêm nhóm cuối cùng
+    if current_group:
+        grouped_lines.append(current_group)
+
+    # Gộp các từ trên cùng một hàng
     texts = []
-    for (x1, y1, x2, y2) in coords:
-        cropped_image = image[y1:y2, x1:x2]  # Cắt vùng bounding box
-        if x1 < 0 or y1 < 0 or x2 > image.shape[1] or y2 > image.shape[0]:
-            print(f"OCR không nhận diện được văn bản tại vùng ({x1}, {y1}, {x2}, {y2})")
-            continue
-         # Cắt và chuyển đổi định dạng ảnh
-        cropped_image = image[y1:y2, x1:x2]
-        if cropped_image.size == 0:
-            print(f"Vùng ảnh rỗng tại: ({x1}, {y1}, {x2}, {y2})")
-            continue
+    for group in grouped_lines:
+        full_text = " ".join([text for text, _, _ in group])
+        confidence = min([conf for _, conf, _ in group])  # Độ tin cậy thấp nhất trong nhóm
+        texts.append((full_text, confidence))
 
-        cropped_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
-        cropped_image = cv2.GaussianBlur(cropped_image, (3, 3), 0)
-        cropped_image = cv2.adaptiveThreshold(cropped_image, 255,
-                                            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                            cv2.THRESH_BINARY, 11, 2)
 
-        # Thử nghiệm OCR
-        result = ocr.ocr(cropped_image, cls=True)  # Nhận diện văn bản
-        # result = ocr.ocr(image, cls=True)  # Nhận diện văn bản
+    # Phân loại thông tin dựa trên từ khóa
+    for detected_text, confidence in texts:
+        if any(keyword in detected_text.lower() for keyword in ["batch", "SO LO 000", "SOLO 000", "solo", "so lo", "batch number"]):
+            extracted_data["batch"] = detected_text
+        elif any(keyword in detected_text.lower() for keyword in ["cardnumber", "********", "*******-****-", "****-****-****-"]):
+            extracted_data["cardnumber"] = detected_text
+        elif any(keyword in detected_text.lower() for keyword in ["total", "cost", "amount", "TONG CONG", "tong cong"]):
+            extracted_data["cost"] = detected_text
+        elif any(keyword in detected_text.lower() for keyword in ["date", "time", "ngay", "gio", "GIO"]):
+            extracted_data["datetime"] = detected_text
+        elif any(keyword in detected_text.lower() for keyword in ["ten", "name", "ONG"]):
+            extracted_data["namecustomer"] = detected_text
+        elif any(keyword in detected_text.lower() for keyword in ["TEN", "TEN DAI LY", "TEN DAI", "DIA CHI"]):
+            extracted_data["namemerchine"] = detected_text
+        elif any(keyword in detected_text.lower() for keyword in ["THE", "CARD", "LOAI THE", "the", "L.THE"]):
+            extracted_data["typecard"] = detected_text
 
-        if not result or not result[0]:
-            print(f"OCR không nhận diện được văn bản tại vùng ({x1}, {y1}, {x2}, {y2})")
-            continue
+    return extracted_data
 
-        for line in result[0]:  # Duyệt qua các kết quả OCR
-            detected_text = line[1][0]  # Văn bản nhận diện được
-            confidence = line[1][1]    # Độ tin cậy của kết quả
-            texts.append(detected_text)
+    # model = YOLO('models/best.onnx')
 
-    return texts
+    # nparr = np.frombuffer(img_binary, np.uint8)
+    # image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    # results = model.predict(image, conf=0.2, iou=0.5)
+
+    # detections = results[0].boxes.xyxy.cpu().numpy()
+    # coords = [(int(x1), int(y1), int(x2), int(y2)) for x1, y1, x2, y2 in detections]
+
+    # # ocr
+    # ocr = PaddleOCR(lang='en',  drop_score=0.2, use_angle_cls=True)
+    # texts = []
+    # for (x1, y1, x2, y2) in coords:
+    #     cropped_image = image[y1:y2, x1:x2]  # Cắt vùng bounding box
+    #     if x1 < 0 or y1 < 0 or x2 > image.shape[1] or y2 > image.shape[0]:
+    #         print(f"OCR không nhận diện được văn bản tại vùng ({x1}, {y1}, {x2}, {y2})")
+    #         continue
+    #      # Cắt và chuyển đổi định dạng ảnh
+    #     cropped_image = image[y1:y2, x1:x2]
+    #     if cropped_image.size == 0:
+    #         print(f"Vùng ảnh rỗng tại: ({x1}, {y1}, {x2}, {y2})")
+    #         continue
+
+    #     cropped_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
+    #     cropped_image = cv2.GaussianBlur(cropped_image, (3, 3), 0)
+    #     cropped_image = cv2.adaptiveThreshold(cropped_image, 255,
+    #                                         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+    #                                         cv2.THRESH_BINARY, 11, 2)
+
+    #     # Thử nghiệm OCR
+    #     result = ocr.ocr(cropped_image, cls=True)  # Nhận diện văn bản
+    #     # result = ocr.ocr(image, cls=True)  # Nhận diện văn bản
+
+    #     if not result or not result[0]:
+    #         print(f"OCR không nhận diện được văn bản tại vùng ({x1}, {y1}, {x2}, {y2})")
+    #         continue
+
+    #     for line in result[0]:  # Duyệt qua các kết quả OCR
+    #         detected_text = line[1][0]  # Văn bản nhận diện được
+    #         confidence = line[1][1]    # Độ tin cậy của kết quả
+    #         texts.append(detected_text)
+    #         texts.append("|")
+
+    # return texts
 
 @api_view(['POST', 'GET'])
 def recieve_image(request):

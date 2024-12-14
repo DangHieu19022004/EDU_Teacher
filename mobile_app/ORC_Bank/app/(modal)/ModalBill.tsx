@@ -89,7 +89,7 @@ const ModalBill = ({
   };
 
   const openFormReceipt = () => {
-    navigation.navigate("(modal)/BillScreen");
+    navigation.navigate("(modal)/ModalReceipt");
   };
 
   return (

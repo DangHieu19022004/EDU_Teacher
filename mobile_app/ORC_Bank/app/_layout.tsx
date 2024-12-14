@@ -38,6 +38,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(modal)/ModalBill" options={{ headerShown: false, presentation: 'modal' }}/>
         <Stack.Screen name="(modal)/BillScreen" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="(modal)/ModalReceipt" options={{ headerShown: false, presentation: 'modal' }} />
       </Stack>
   );
 }
