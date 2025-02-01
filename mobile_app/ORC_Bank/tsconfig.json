@@ -1,7 +1,20 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
+    "lib": [
+      "dom",
+      "esnext",
+      "ES2015"
+    ],
+    "target": "es6",
+    "jsx": "react-native",
+    "moduleResolution": "node",
+    "allowJs": true,
     "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "paths": {
       "@/*": [
         "./*"

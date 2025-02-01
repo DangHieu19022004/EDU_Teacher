@@ -5,7 +5,7 @@ import FormReceipt from '@/components/FormReceipt'
 const ModalReceipt = () => {
   return (
     <View className="flex-1">
-      <FormReceipt />
+      <FormReceipt data={{}} />
     </View>
   )
 }

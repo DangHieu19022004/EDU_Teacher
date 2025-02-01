@@ -45,11 +45,18 @@ const FormReceipt = ({ data }: FormReceiptProps) => {
         transaction_date: data.transaction_date || "",
         total_amount: data.total_amount || "",
       });
+      if (data.transaction_date) {
+        const dateTime = new Date(data.transaction_date);
+        setDate(dateTime);
+        setTime(dateTime);
+      }
+    }else{
+      resetInput();
     }
 
-    const dateTime = new Date(data.transaction_date);
-    setDate(dateTime);
-    setTime(dateTime);
+    // const dateTime = new Date(data.transaction_date);
+    // setDate(dateTime);
+    // setTime(dateTime);
 
   }, [data]);
 
