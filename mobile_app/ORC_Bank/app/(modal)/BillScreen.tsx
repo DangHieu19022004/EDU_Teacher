@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image } from "react-native";
+import { View, Text, Image, ScrollView } from "react-native";
 import * as ImagePicker from 'expo-image-picker';
 import { useRoute } from "@react-navigation/native";
 import * as FileSystem from 'expo-file-system';
 import FormReceipt from "@/components/FormReceipt";
+import { handleImage } from "@/services/api";
 
 export default function BillScreen() {
-  const api = 'http://192.168.1.10:8000/raw/recieve_image/';
+  // const api = 'http://192.168.1.10:8000/raw/recieve_image/'
   // Lấy tham số từ route
   const route = useRoute<any>();
   const { photoUri } = route.params;
@@ -33,7 +34,7 @@ export default function BillScreen() {
 
   const [imageSent, setImageSent] = useState(false);
   const [error, setError] = useState("");
-
+  const [rawData, setRawData] = useState<any>(null);
 
 
   const covertImageToBase64 = async (uri: string) => {
@@ -44,6 +45,7 @@ export default function BillScreen() {
       return base64Data;
     }catch(e){
       console.log(e);
+      return null;
     }
   }
 
@@ -53,22 +55,17 @@ export default function BillScreen() {
 
       if(base64Data){
         try{
-          const response = await fetch(api, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              imgPath: `data:image/jpeg;base64,${base64Data}`
-            })
-          })
-          const data = await response.json();
-          if(response.ok){
-            processData(data['result']);
-            console.log(data);
-          }else{
-            setError(data.message || "Something went wrong");
-          }
+          const response = await handleImage(base64Data);
+          setRawData(response);
+          console.log(response);
+          // const data = await response.json();
+          // if(response.ok){
+          //   setRawData(data);
+          //   processData(data['result']);
+          //   console.log(data);
+          // }else{
+          //   setError(data.message || "Something went wrong");
+          // }
           setImageSent(true);
         }catch(e){
           console.log(e);
@@ -118,8 +115,15 @@ export default function BillScreen() {
 
   return (
     <View className="flex-1">
-      {/* <Text>{JSON.stringify(datasend)}</Text> */}
-      <FormReceipt data={datasend} />
+      <ScrollView className="flex-1 p-4">
+
+        <Text className="text-lg font-bold mt-4">Dữ liệu OCR đầy đủ:</Text>
+        <Text>{JSON.stringify(rawData, null, 2)}</Text>
+
+        {error ? <Text className="text-red-500">Lỗi: {error}</Text> : null}
+      </ScrollView>
+      {/* <Text>{JSON.stringify(datasend)}</Text>
+      <FormReceipt data={datasend} /> */}
     </View>
   );
 }

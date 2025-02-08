@@ -30,58 +30,78 @@ def process_image(img_binary):
 
     # Nhận diện văn bản
     result = ocr.ocr(img_binary, cls=True)
+    print(result)
     if not result or not result[0]:
         print(f"OCR không nhận diện được văn bản")
         return extracted_data
 
-    lines = sorted(result[0], key=lambda x: x[0][0][1])  # Sắp xếp theo tọa độ y
-    grouped_lines = []  # Danh sách các nhóm hàng
-    current_group = []
-    current_y = lines[0][0][0][1]  # Tọa độ y của từ đầu tiên
-    max_y_gap = 15  # Ngưỡng sai lệch dọc giữa các từ (pixel)
 
-    for line in lines:
-        box, (detected_text, confidence) = line
-        x1, y1, x2, y2 = box[0][0], box[0][1], box[2][0], box[2][1]
-        if abs(y1 - current_y) < max_y_gap:  # Cùng hàng nếu khoảng cách y nhỏ hơn ngưỡng
-            current_group.append((detected_text, confidence, x1))
-        else:
-            # Sắp xếp nhóm hiện tại theo tọa độ x
-            current_group = sorted(current_group, key=lambda x: x[2])
-            grouped_lines.append(current_group)
-            current_group = [(detected_text, confidence, x1)]
-            current_y = y1
+    # Chuyển đổi kết quả OCR thành JSON hợp lệ
+    processed_result = []
+    for line in result[0]:  # Duyệt qua từng dòng OCR phát hiện
+        if len(line) < 2:
+            continue  # Bỏ qua dữ liệu lỗi
 
-    # Thêm nhóm cuối cùng
-    if current_group:
-        grouped_lines.append(current_group)
+        bounding_box, (text, confidence) = line
+        processed_result.append({
+            "text": text,
+            "confidence": float(confidence),  # Chuyển sang kiểu float
+            "bounding_box": [list(map(float, point)) for point in bounding_box]  # Chuyển đổi tọa độ
+        })
 
-    # Gộp các từ trên cùng một hàng
-    texts = []
-    for group in grouped_lines:
-        full_text = " ".join([text for text, _, _ in group])
-        confidence = min([conf for _, conf, _ in group])  # Độ tin cậy thấp nhất trong nhóm
-        texts.append((full_text, confidence))
+    return processed_result
+    # lines = sorted(result[0], key=lambda x: x[0][0][1])  # Sắp xếp theo tọa độ y
+    # grouped_lines = []  # Danh sách các nhóm hàng
+    # current_group = []
+    # current_y = lines[0][0][0][1]  # Tọa độ y của từ đầu tiên
+    # max_y_gap = 15  # Ngưỡng sai lệch dọc giữa các từ (pixel)
+
+    # for line in lines:
+    #     box, (detected_text, confidence) = line
+    #     x1, y1, x2, y2 = box[0][0], box[0][1], box[2][0], box[2][1]
+    #     if abs(y1 - current_y) < max_y_gap:  # Cùng hàng nếu khoảng cách y nhỏ hơn ngưỡng
+    #         current_group.append((detected_text, confidence, x1))
+    #     else:
+    #         # Sắp xếp nhóm hiện tại theo tọa độ x
+    #         current_group = sorted(current_group, key=lambda x: x[2])
+    #         grouped_lines.append(current_group)
+    #         current_group = [(detected_text, confidence, x1)]
+    #         current_y = y1
+
+    # # Thêm nhóm cuối cùng
+    # if current_group:
+    #     grouped_lines.append(current_group)
+
+    # # Gộp các từ trên cùng một hàng
+    # texts = []
+    # for group in grouped_lines:
+    #     full_text = " ".join([text for text, _, _ in group])
+    #     confidence = min([conf for _, conf, _ in group])  # Độ tin cậy thấp nhất trong nhóm
+    #     # texts.append((full_text, confidence))
+    #     texts.append(full_text)
 
 
     # Phân loại thông tin dựa trên từ khóa
-    for detected_text, confidence in texts:
-        if any(keyword in detected_text.lower() for keyword in ["batch", "SO LO 000", "SOLO 000", "solo", "so lo", "batch number"]):
-            extracted_data["batch"] = detected_text
-        elif any(keyword in detected_text.lower() for keyword in ["cardnumber", "********", "*******-****-", "****-****-****-"]):
-            extracted_data["cardnumber"] = detected_text
-        elif any(keyword in detected_text.lower() for keyword in ["total", "cost", "amount", "TONG CONG", "tong cong"]):
-            extracted_data["cost"] = detected_text
-        elif any(keyword in detected_text.lower() for keyword in ["date", "time", "ngay", "gio", "GIO"]):
-            extracted_data["datetime"] = detected_text
-        elif any(keyword in detected_text.lower() for keyword in ["ten", "name", "ONG"]):
-            extracted_data["namecustomer"] = detected_text
-        elif any(keyword in detected_text.lower() for keyword in ["TEN", "TEN DAI LY", "TEN DAI", "DIA CHI"]):
-            extracted_data["namemerchine"] = detected_text
-        elif any(keyword in detected_text.lower() for keyword in ["THE", "CARD", "LOAI THE", "the", "L.THE"]):
-            extracted_data["typecard"] = detected_text
+    # for detected_text, confidence in texts:
+    #     if any(keyword in detected_text.lower() for keyword in ["batch", "SO LO 000", "SOLO 000", "solo", "so lo", "batch number"]):
+    #         extracted_data["batch"] = detected_text
+    #     elif any(keyword in detected_text.lower() for keyword in ["cardnumber", "********", "*******-****-", "****-****-****-"]):
+    #         extracted_data["cardnumber"] = detected_text
+    #     elif any(keyword in detected_text.lower() for keyword in ["total", "cost", "amount", "TONG CONG", "tong cong"]):
+    #         extracted_data["cost"] = detected_text
+    #     elif any(keyword in detected_text.lower() for keyword in ["date", "time", "ngay", "gio", "GIO"]):
+    #         extracted_data["datetime"] = detected_text
+    #     elif any(keyword in detected_text.lower() for keyword in ["ten", "name", "ONG"]):
+    #         extracted_data["namecustomer"] = detected_text
+    #     elif any(keyword in detected_text.lower() for keyword in ["TEN", "TEN DAI LY", "TEN DAI", "DIA CHI"]):
+    #         extracted_data["namemerchine"] = detected_text
+    #     elif any(keyword in detected_text.lower() for keyword in ["THE", "CARD", "LOAI THE", "the", "L.THE"]):
+    #         extracted_data["typecard"] = detected_text
 
-    return extracted_data
+    # return result
+    # return texts
+    # return extracted_data
+
 
     # model = YOLO('models/best.onnx')
 
@@ -153,7 +173,7 @@ def recieve_image(request):
             process_result  = process_image(img_binary)
 
 
-            return JsonResponse({"status": "success", "message": "Image saved successfully" , "result" : process_result}, status=200)
+            return JsonResponse({"status": "success", "message": "Image saved successfully" , "result" : process_result}, status=200, safe=False)
 
             # try:
             #     result = process_image(img_binary)

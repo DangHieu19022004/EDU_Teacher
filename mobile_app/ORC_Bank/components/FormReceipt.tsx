@@ -11,6 +11,7 @@ import RNDateTimePicker, {
   DateTimePickerAndroid,
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
+import { saveReceipt } from "@/services/api";
 
 interface FormReceiptProps {
   data?: any;
@@ -18,7 +19,7 @@ interface FormReceiptProps {
 
 const FormReceipt = ({ data }: FormReceiptProps) => {
 
-  const api = "http://192.168.1.10:8000/ocr/saveinfor/";
+  // const api = "http://192.168.1.10:8000/ocr/saveinfor/";
 
 
   const [date, setDate] = useState(new Date());
@@ -45,11 +46,14 @@ const FormReceipt = ({ data }: FormReceiptProps) => {
         transaction_date: data.transaction_date || "",
         total_amount: data.total_amount || "",
       });
+      if(data.transaction_date){
+        const date = new Date(data.transaction_date);
+        setDate(date);
+        setTime(date);
+      }
     }
 
-    const dateTime = new Date(data.transaction_date);
-    setDate(dateTime);
-    setTime(dateTime);
+
 
   }, [data]);
 
@@ -97,19 +101,12 @@ const FormReceipt = ({ data }: FormReceiptProps) => {
       return;
     }
     try{
-      const response = await fetch(api, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-      })
-      const data = await response.json();
-      if(response.ok){
-        alert(data.message || "Success");
+      const response = await saveReceipt(formData);
+      if(response){
+        alert("Lưu thông tin thành công");
         resetInput();
       }else{
-        alert(data.message || "Something went wrong");
+        alert("Lưu thông tin thất bại");
       }
     }catch(e){
       console.log(e);
