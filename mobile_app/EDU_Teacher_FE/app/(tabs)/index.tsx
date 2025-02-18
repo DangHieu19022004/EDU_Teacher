@@ -1,74 +1,166 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useState } from "react";
+import { View, Text, TextInput, Button, StyleSheet, Image } from "react-native";
+import auth from "@react-native-firebase/auth";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+GoogleSignin.configure({
+  webClientId:
+    "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
+  scopes: ["profile", "email"],
+});
 
-export default function HomeScreen() {
+const AuthComponent = () => {
+  // State for login status and form type
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false); // true for signup, false for signin
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState<auth.User | null>(null);
+
+  // Handles sign-in/sign-up form submission
+  const handleFormSubmit = () => {
+    if (isSignUp) {
+      auth()
+        .createUserWithEmailAndPassword(email, password)
+        .then((val) => console.log(val))
+        .catch((err) => console.log(err));
+
+      console.log("Signing Up with:", { email, password });
+    } else {
+      auth()
+        .signInWithEmailAndPassword(email, password)
+        .then((val) => console.log(val))
+        .catch((err) => console.log(err));
+      console.log("Signing In with:", { email, password });
+    }
+    // Simulate login
+    setLoggedIn(true);
+  };
+
+  function onAuthStateChanged(user) {
+    setUser(user);
+    if (user) setLoggedIn(true);
+    else setLoggedIn(false);
+    if (initializing) setInitializing(false);
+  }
+
+  async function onGoogleButtonPress() {
+    // Check if your device supports Google Play
+    await GoogleSignin.signOut();
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    // Get the users ID token
+    const googleSignInResult = await GoogleSignin.signIn();
+
+    // Create a Google credential with the token
+    const googleCredential = auth.GoogleAuthProvider.credential(
+      googleSignInResult.data?.idToken ?? null
+    );
+
+    // Sign-in the user with the credential
+    return await auth().signInWithCredential(googleCredential);
+  }
+
+  useEffect(() => {
+    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
+    return subscriber; // unsubscribe on unmount
+  }, []);
+
+  // Handles sign-out
+  const handleSignOut = () => {
+    auth()
+      .signOut()
+      .then(() => console.log("User signed out!"));
+    setLoggedIn(false);
+    setEmail("");
+    setPassword("");
+  };
+
+  console.log("User:", user);
+
+  if (loggedIn) {
+    return (
+      <View style={styles.center}>
+        <Text>You are signed in!</Text>
+        <Text>{user?.displayName}</Text>
+        <Text>{user?.email}</Text>
+        <Image source={{ uri: user?.photoURL }} style={{ width: 100, height: 100 }} />
+        <Button title="Sign Out" onPress={handleSignOut} />
+      </View>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <Text style={styles.header}>{isSignUp ? "Sign Up" : "Sign In"}</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        autoCapitalize="none"
+      />
+
+      <Button
+        title={isSignUp ? "Sign Up" : "Sign In"}
+        onPress={handleFormSubmit}
+      />
+
+      <Button
+        title={
+          isSignUp
+            ? "Already have an account? Sign In"
+            : "Don't have an account? Sign Up"
+        }
+        onPress={() => setIsSignUp(!isSignUp)}
+      />
+      <Button
+        title="Sign In with Google"
+        color="#4285F4"
+        onPress={() =>
+          onGoogleButtonPress().then((val) =>
+            console.log(val, "Signed in with Google!")
+          )
+        }
+      />
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    padding: 20,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  header: {
+    fontSize: 24,
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
   },
 });
+
+export default AuthComponent;
