@@ -36,6 +36,7 @@ export default function RootLayout() {
         {/* Các màn hình con */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false, statusBarStyle: 'dark', statusBarBackgroundColor: '#fff' }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
         <Stack.Screen name="(modal)/ModalBill" options={{ headerShown: false, presentation: 'modal' }}/>
         <Stack.Screen name="(modal)/BillScreen" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="(modal)/ModalReceipt" options={{ headerShown: false, presentation: 'modal' }} />

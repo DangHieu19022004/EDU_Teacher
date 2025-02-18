@@ -14,5 +14,9 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('ocr/', include('scan_orc.urls')),
     path('raw/', include('raw_image.urls')),
+    # path('user/', include('User.urls')),
+
+    path("", include('User.urls')),
+    path('accounts/', include('allauth.urls')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

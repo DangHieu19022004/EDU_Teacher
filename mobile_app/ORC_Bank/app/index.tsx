@@ -13,7 +13,7 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import NotificationItem from "@/components/NotificationItem";
 
 const App = () => {
-  return <Redirect href="/(tabs)/homepage" />;
+  return <Redirect href="/Login" />;
 };
 
 export default App;

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "829388908015",
+    "project_id": "eduteacher-19063",
+    "storage_bucket": "eduteacher-19063.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:829388908015:android:4f18dfab2d4741cfab021a",
+        "android_client_info": {
+          "package_name": "com.danghieu19224.ORC_Bank"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "829388908015-qht5n1af3hn99gn18d3ibic9850qd2m4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.danghieu19224.ORC_Bank",
+            "certificate_hash": "b97451351f5de32a2bb27dfbf7532888d869e0a2"
+          }
+        },
+        {
+          "client_id": "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoWqFuFJ1ZxYUjQHIW6v_s9kDowIZoTRU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
