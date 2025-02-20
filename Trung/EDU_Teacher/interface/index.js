@@ -1,6 +1,6 @@
 import { registerRootComponent } from 'expo';
 
-import App from './setting';
+import App from './infoteacher';
 
 
 registerRootComponent(App);
