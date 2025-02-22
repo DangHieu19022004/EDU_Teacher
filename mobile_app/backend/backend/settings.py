@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     "rest_framework",
+    "User",
 ]
 
 MIDDLEWARE = [
@@ -87,7 +88,7 @@ DATABASES = {
 DATABASES = {
     'default': {
         'ENGINE': 'djongo',
-        'NAME': 'orc_bank'
+        'NAME': 'EDU_Teacher'
     }
 }
 
@@ -130,3 +131,13 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+import firebase_admin
+from firebase_admin import credentials
+import os
+
+# Đường dẫn file cấu hình Firebase
+FIREBASE_CONFIG_PATH = os.path.join(BASE_DIR, "./backend/eduteacher-19063-firebase-adminsdk-fbsvc-4a469228b4.json")
+
+if not firebase_admin._apps:
+    cred = credentials.Certificate(FIREBASE_CONFIG_PATH)
+    firebase_admin.initialize_app(cred)
