@@ -9,7 +9,7 @@ GoogleSignin.configure({
     "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
 });
-const BASE_URL = "http://192.168.1.171:8000/auth";
+const BASE_URL = "http://192.168.1.243:8000/auth";
 const AuthComponent = () => {
   // State for login status and form type
   const [loggedIn, setLoggedIn] = useState(false);

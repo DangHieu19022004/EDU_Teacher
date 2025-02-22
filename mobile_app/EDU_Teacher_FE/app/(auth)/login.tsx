@@ -4,18 +4,18 @@ import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 const LoginScreen = () => {
-  const [showPassword, setShowPassword] = useState(false);  
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <View style={styles.container}>
       {/* Logo */}
-      <Image 
-        source={{ uri: "https://drive.google.com/uc?export=view&id=1f7U7-bKcKwnEoqLY4RCCU7-1pK2s02R4" }} 
-        style={styles.logo} 
+      <Image
+        source={{ uri: "https://drive.google.com/uc?export=view&id=1f7U7-bKcKwnEoqLY4RCCU7-1pK2s02R4" }}
+        style={styles.logo}
       />
       <Text style={styles.slogan}>
         Số hóa học bạ, kết nối tri thức, nâng bước tương lai
-      </Text>     
+      </Text>
 
       {/* Form đăng nhập */}
       <Text style={styles.title}>Đăng nhập</Text>
@@ -29,10 +29,10 @@ const LoginScreen = () => {
         <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.icon} />
         <TextInput placeholder="Mật khẩu" secureTextEntry={!showPassword} style={styles.input} />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <Ionicons 
-            name={showPassword ? "eye-off-outline" : "eye-outline"} 
-            size={20} color="#888" 
-            style={styles.eyeIcon} 
+          <Ionicons
+            name={showPassword ? "eye-off-outline" : "eye-outline"}
+            size={20} color="#888"
+            style={styles.eyeIcon}
           />
         </TouchableOpacity>
       </View>
@@ -68,8 +68,8 @@ const LoginScreen = () => {
       <View style={styles.line} />
 
       {/* Đăng ký */}
-      <Text style={styles.registerText}>Hoặc <TouchableOpacity><Text style={styles.registerLink}>Đăng ký</Text></TouchableOpacity> </Text> 
-      
+      <Text style={styles.registerText}>Hoặc <TouchableOpacity><Text style={styles.registerLink}>Đăng ký</Text></TouchableOpacity> </Text>
+
     </View>
   );
 };
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 20,  
+    paddingHorizontal: 20,
   },
   logo: {
     width: "100%",
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   socialContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    width: "60%",   
+    width: "60%",
   },
   line: {
     width: "80%",
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   registerLink: {
-    
+
     marginLeft: 0,
     marginBottom: -4,
     color: "#2F80ED",
