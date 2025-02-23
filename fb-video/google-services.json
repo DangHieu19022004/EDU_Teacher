@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "471581940979",
+    "project_id": "lequang-ebf1e",
+    "storage_bucket": "lequang-ebf1e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:471581940979:android:bd3f0e1b066b92ab66ab86",
+        "android_client_info": {
+          "package_name": "com.anonymous.fbvideo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "471581940979-7n94l4bnemruakofj3s1ij7ldmr94ih5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.anonymous.fbvideo",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "471581940979-icnl7i9ed0j45u517hb6a203k6lqpers.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-qqRAkfA_39CydRJIWUBPxIFA1Zin0Nc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "471581940979-icnl7i9ed0j45u517hb6a203k6lqpers.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

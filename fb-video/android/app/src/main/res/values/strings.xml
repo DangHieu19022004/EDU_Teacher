@@ -1,0 +1,9 @@
+<resources>
+  <string name="app_name">fb-video</string>
+  <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
+  <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
+  <string name="expo_system_ui_user_interface_style" translatable="false">automatic</string>
+  <string name="facebook_app_id">642729284803729</string>
+  <string name="facebook_client_token">3cc2dfdfbbc3f5e40d0ecf81d821f509</string>
+  <string name="fb_login_protocol_scheme">fb642729284803729</string>
+</resources>
