@@ -1,77 +1,204 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { View, Text, TextInput, Alert, ActivityIndicator, TouchableOpacity, Image, StyleSheet } from "react-native";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect, useState } from "react";
+import auth from "@react-native-firebase/auth";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { router } from "expo-router";
+
+GoogleSignin.configure({
+  webClientId:
+    "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
+  scopes: ["profile", "email"],
+});
+const BASE_URL = "http://192.168.1.104:8000/auth";
 
 const LoginScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
+    const [loggedIn, setLoggedIn] = useState(false);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [initializing, setInitializing] = useState(true);
+    const [user, setUser] = useState<auth.User | null>(null);
+
+    async function onGoogleButtonPress() {
+      try{
+        // Check if your device supports Google Play
+        await GoogleSignin.signOut();
+        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+        // Get the users ID token
+        const googleSignInResult = await GoogleSignin.signIn();
+
+        // Create a Google credential with the token
+        const googleCredential = auth.GoogleAuthProvider.credential(
+          googleSignInResult.data?.idToken ?? null
+        );
+
+        const userCredential = await auth().signInWithCredential(googleCredential);
+
+
+        await userCredential.user.reload();
+        const firebaseUser = userCredential.user;
+
+        console.log("Firebase User:", firebaseUser);
+
+        if (firebaseUser) {
+            const firebaseIdToken = await firebaseUser.getIdToken();
+            console.log("Firebase Token:", firebaseIdToken);
+
+            const response = await fetch(`${BASE_URL}/googlelogin/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token: firebaseIdToken }),
+            });
+
+            const data = await response.json();
+
+            if (data.access_token && response.ok) {
+                await AsyncStorage.setItem("access_token", data.access_token);
+
+                // 🔹 Truyền thông tin user chính xác
+                router.replace({
+                    pathname: "/home",
+                    params: { user: JSON.stringify(firebaseUser) }
+                });
+            } else {
+                Alert.alert("Login Failed", data.message || "Unknown error occurred.");
+            }
+        } else {
+            Alert.alert("Login Failed", "User data not found.");
+        }
+    } catch (error) {
+        console.log("Google Sign-In Error:", error);
+        Alert.alert("Google Sign-In Failed", error.message);
+    }
+
+      //   const firebaseIdToken = await userCredential.user.getIdToken();
+      //   console.log("Firebase Token:", firebaseIdToken);
+
+      //   const response = await fetch(`${BASE_URL}/googlelogin/`, {
+      //     method: "POST",
+      //     headers: { "Content-Type": "application/json" },
+      //     body: JSON.stringify({ token: firebaseIdToken }),
+      //   });
+
+      //   const data = await response.json();
+      //   // console.log("Response from Backend:", data);
+
+      //   if (data.access_token && response.ok) {
+      //     await AsyncStorage.setItem("access_token", data.access_token); // Lưu token để duy trì đăng nhập
+
+      //     // Lấy thông tin user từ Firebase
+      //     const currentUser = auth().currentUser;
+      //     if (currentUser) {
+      //       setUser(currentUser);
+      //       setLoggedIn(true);
+
+      //       // CHUYỂN ĐẾN HOMESCREEN
+      //       router.push({ pathname: "/home", params: { user: JSON.stringify(user) } });
+      //       // return <HomeScreen user={currentUser} />
+
+      //     }
+
+      //   }else{
+      //     Alert.alert("Login Failed", data.message || "Unknown error occurred.");
+      //   }
+      // } catch (error) {
+      //   console.log("Google Sign-In Error:", error);
+      //   Alert.alert("Google Sign-In Failed", (error as Error).message);
+      // }
+      // // Sign-in the user with the credential
+      // return await auth().signInWithCredential(googleCredential);
+    }
+
+    const handleFormSubmit = () => {
+      try{
+        let userCredential;
+          userCredential = auth()
+            .signInWithEmailAndPassword(email, password)
+            .then((val) => console.log(val))
+            .catch((err) => console.log(err));
+          console.log("Signing In with:", { email, password });
+        // Simulate login
+        setLoggedIn(true);
+      } catch (error) {
+        console.log("Auth Error:", error);
+        Alert.alert("Authentication Failed", (error as Error).message);
+      }
+
+    };
 
   return (
-    <View style={styles.container}>
-      {/* Logo */}
-      <Image
-        source={{ uri: "https://drive.google.com/uc?export=view&id=1f7U7-bKcKwnEoqLY4RCCU7-1pK2s02R4" }}
-        style={styles.logo}
-      />
-      <Text style={styles.slogan}>
-        Số hóa học bạ, kết nối tri thức, nâng bước tương lai
-      </Text>
+      <View style={styles.container}>
+        {/* Logo */}
+        <Image
+          source={require("../../assets/images/logo.png")}
+          style={styles.logo}
+        />
+        <Text style={styles.slogan}>
+          Số hóa học bạ, kết nối tri thức, nâng bước tương lai
+        </Text>
 
-      {/* Form đăng nhập */}
-      <Text style={styles.title}>Đăng nhập</Text>
+        {/* Form đăng nhập */}
+        <Text style={styles.title}>Đăng nhập</Text>
 
-      <View style={styles.inputContainer}>
-        <Ionicons name="mail-outline" size={20} color="#888" style={styles.icon} />
-        <TextInput placeholder="Email / Số điện thoại" style={styles.input} />
-      </View>
+        <View style={styles.inputContainer}>
+          <Ionicons name="mail-outline" size={20} color="#888" style={styles.icon} />
+          <TextInput placeholder="Email / Số điện thoại" style={styles.input} value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none" />
+        </View>
 
-      <View style={styles.inputContainer}>
-        <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.icon} />
-        <TextInput placeholder="Mật khẩu" secureTextEntry={!showPassword} style={styles.input} />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <Ionicons
-            name={showPassword ? "eye-off-outline" : "eye-outline"}
-            size={20} color="#888"
-            style={styles.eyeIcon}
-          />
-        </TouchableOpacity>
-      </View>
+        <View style={styles.inputContainer}>
+          <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.icon} />
+          <TextInput placeholder="Mật khẩu" secureTextEntry={!showPassword} style={styles.input} value={password}
+        onChangeText={setPassword} autoCapitalize="none"/>
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={20} color="#888"
+              style={styles.eyeIcon}
+            />
+          </TouchableOpacity>
+        </View>
 
-      <TouchableOpacity>
-        <Text style={styles.forgotPassword}>Quên mật khẩu?</Text>
-      </TouchableOpacity>
-
-      {/* Button Đăng nhập */}
-      <TouchableOpacity style={styles.loginButton}>
-        <LinearGradient colors={["#2D9CDB", "#2F80ED"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} >
-          <Text style={styles.loginText}>Đăng nhập</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-
-      {/* Đăng nhập bằng mạng xã hội */}
-      <Text style={styles.orText}>Tiếp tục với
-      <View style={styles.socialContainer}>
         <TouchableOpacity>
-          <FontAwesome name="facebook" size={30} color="#1877F2" />
+          <Text style={styles.forgotPassword}>Quên mật khẩu?</Text>
         </TouchableOpacity>
-        <TouchableOpacity>
-          <FontAwesome name="google" size={30} color="#DB4437" />
+
+        {/* Button Đăng nhập */}
+        <TouchableOpacity style={styles.loginButton} onPress={handleFormSubmit}>
+          <LinearGradient colors={["#2D9CDB", "#2F80ED"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} >
+            <Text style={styles.loginText}>Đăng nhập</Text>
+          </LinearGradient>
         </TouchableOpacity>
-        <TouchableOpacity>
-          <FontAwesome name="instagram" size={30} color="#C13584" />
-        </TouchableOpacity>
+
+        {/* Đăng nhập bằng mạng xã hội */}
+        <Text style={styles.orText}>Tiếp tục với
+        <View style={styles.socialContainer}>
+          <TouchableOpacity>
+            <FontAwesome name="facebook" size={30} color="#1877F2" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onGoogleButtonPress}>
+            <FontAwesome name="google" size={30} color="#DB4437" />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <FontAwesome name="instagram" size={30} color="#C13584" />
+          </TouchableOpacity>
+        </View>
+
+        </Text>
+
+        {/* Đường kẻ ngang trên nút "Đăng ký" */}
+        <View style={styles.line} />
+
+        {/* Đăng ký */}
+        <Text style={styles.registerText}>Hoặc <TouchableOpacity onPress={() => router.push("/register")}><Text style={styles.registerLink}>Đăng ký</Text></TouchableOpacity> </Text>
+
       </View>
-
-      </Text>
-
-      {/* Đường kẻ ngang trên nút "Đăng ký" */}
-      <View style={styles.line} />
-
-      {/* Đăng ký */}
-      <Text style={styles.registerText}>Hoặc <TouchableOpacity><Text style={styles.registerLink}>Đăng ký</Text></TouchableOpacity> </Text>
-
-    </View>
-  );
+    );
 };
 
 const styles = StyleSheet.create({
