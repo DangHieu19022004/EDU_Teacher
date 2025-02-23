@@ -14,7 +14,7 @@ const Setting: React.FC = () => {
 
       {/* Logo */}
       <View className="items-center my-5">
-        <Image source={require('./assets/Edu.png')} className="w-36 h-36" resizeMode="contain" />
+        <Image source={require('../../assets/images/Edu.png')} className="w-36 h-36" resizeMode="contain" />
       </View>
 
       {/* Notification Toggle */}
