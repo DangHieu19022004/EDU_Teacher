@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Switch, Image } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
-const SettingScreen: React.FC = () => {
+const Setting: React.FC = () => {
+  const [currentTab, setCurrentTab] = useState('Setting');
+  const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
+
   return (
     <View className="flex-1 bg-white pt-10 px-5">
       {/* Header */}
@@ -19,7 +23,10 @@ const SettingScreen: React.FC = () => {
           <FontAwesome name="bell" size={20} color="#2F54EB" className="mr-3" />
           <Text className="text-base">Thông báo</Text>
         </View>
-        <Switch value={true} />
+        <Switch 
+          value={isNotificationEnabled} 
+          onValueChange={() => setIsNotificationEnabled(!isNotificationEnabled)} 
+        />
       </View>
 
       {/* General Settings */}
@@ -41,22 +48,22 @@ const SettingScreen: React.FC = () => {
       </TouchableOpacity>
 
       {/* Bottom Navigation */}
-      <View className="absolute bottom-0 left-0 right-0 h-16 flex-row bg-white border-t border-gray-300 items-center justify-around py-2">
-        <TouchableOpacity className="items-center">
-          <FontAwesome name="home" size={24} color="gray" />
-          <Text className="text-xs text-gray-500">Trang chủ</Text>
+      <View className="absolute bottom-0 left-0 right-0 h-14 flex-row bg-gray-100 border-t border-gray-300 items-center justify-around">
+        <TouchableOpacity className="items-center" onPress={() => setCurrentTab('Home')}>
+          <FontAwesome name="home" size={24} color={currentTab === 'Home' ? 'blue' : 'gray'} />
+          <Text className={`text-xs ${currentTab === 'Home' ? 'text-blue-500' : 'text-gray-500'}`}>Trang chủ</Text>
         </TouchableOpacity>
-        <TouchableOpacity className="items-center">
-          <FontAwesome name="user" size={24} color="gray" />
-          <Text className="text-xs text-gray-500">Bản thân</Text>
+        <TouchableOpacity className="items-center" onPress={() => setCurrentTab('Profile')}>
+          <FontAwesome name="user" size={24} color={currentTab === 'Profile' ? 'blue' : 'gray'} />
+          <Text className={`text-xs ${currentTab === 'Profile' ? 'text-blue-500' : 'text-gray-500'}`}>Bản thân</Text>
         </TouchableOpacity>
-        <TouchableOpacity className="items-center">
-          <FontAwesome name="cog" size={24} color="#2F54EB" />
-          <Text className="text-xs text-[#2F54EB]">Cài đặt</Text>
+        <TouchableOpacity className="items-center" onPress={() => setCurrentTab('Settings')}>
+          <FontAwesome name="cog" size={24} color={currentTab === 'Settings' ? 'blue' : 'gray'} />
+          <Text className={`text-xs ${currentTab === 'Settings' ? 'text-blue-500' : 'text-gray-500'}`}>Cài đặt</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 };
 
-export default SettingScreen;
+export default Setting;
