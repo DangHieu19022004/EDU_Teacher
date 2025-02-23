@@ -11,7 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Checkbox from "expo-checkbox";
 
 const RegisterScreen = () => {
-  
+
   const [isChecked, setChecked] = useState(false);
 
   return (
@@ -63,7 +63,7 @@ const RegisterScreen = () => {
         </TouchableOpacity>
 
         {/* Đăng ký với mạng xã hội */}
-      <Text style={styles.socialText}>Đăng ký với 
+      <Text style={styles.socialText}>Đăng ký với
       <View style={styles.socialIcons}>
         <TouchableOpacity>
           <FontAwesome name="facebook" size={30} color="#1877F2" />
@@ -76,10 +76,10 @@ const RegisterScreen = () => {
         </TouchableOpacity>
       </View>
       </Text>
-      
+
       </View>
 
-      
+
     </View>
   );
 };

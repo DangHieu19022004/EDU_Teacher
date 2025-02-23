@@ -1,19 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import LoginScreen from './login';
-import RegisterScreen from './register';
-import HomeScreen from './home';
 
-const AuthScreen = () => {
+const HomeScreen = () => {
     return (
         <View style={styles.container}>
-            <LoginScreen />
-            <RegisterScreen />
-            <HomeScreen>
+            <Text style={styles.text}>Welcome to the Home Screen!</Text>
         </View>
     );
 };
-
 
 const styles = StyleSheet.create({
     container: {
@@ -28,4 +22,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default AuthScreen;
+export default HomeScreen;
