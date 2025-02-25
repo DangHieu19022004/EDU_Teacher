@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import {View, Text, TextInput, TouchableOpacity, StyleSheet, Alert} from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Checkbox from "expo-checkbox";
 
 const RegisterScreen = () => {
+  const navigation = useNavigation();
 
   const [isChecked, setChecked] = useState(false);
-
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +35,7 @@ const RegisterScreen = () => {
   return (
     <View style={styles.container}>
       {/* Nút quay lại */}
-      <TouchableOpacity style={styles.backButton}>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="black" />
       </TouchableOpacity>
 

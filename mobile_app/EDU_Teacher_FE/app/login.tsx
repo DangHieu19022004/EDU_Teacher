@@ -2,10 +2,16 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image, Alert, StyleSheet } from "react-native";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation  } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "./app";
+
+type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, "login">;
 
 const LoginScreen = () => {
-  const [showPassword, setShowPassword] = useState(false);
+  const navigation = useNavigation<LoginScreenNavigationProp>();
 
+  const [showPassword, setShowPassword] = useState(false);
 
   const [ID, setID] = useState("");
   const validateID = () => {
@@ -81,7 +87,7 @@ const LoginScreen = () => {
       <View style={styles.line} />
 
       {/* Đăng ký */}
-      <Text style={styles.registerText}>Hoặc <TouchableOpacity><Text style={styles.registerLink}>Đăng ký</Text></TouchableOpacity> </Text>
+      <Text style={styles.registerText}>Hoặc <TouchableOpacity onPress={() => navigation.navigate("register")}><Text style={styles.registerLink}>Đăng ký</Text></TouchableOpacity> </Text>
 
     </View>
   );
