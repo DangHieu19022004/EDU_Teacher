@@ -1,10 +1,23 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, StyleSheet } from "react-native";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
 const LoginScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
+
+
+  const [ID, setID] = useState("");
+  const validateID = () => {
+    const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+    const phoneRegex = /^(03|09)\d{8}$/;
+
+    if (emailRegex.test(ID) || phoneRegex.test(ID)) {
+      // Hợp lệ hoặc rỗng (cho phép người dùng nhập tiếp)
+    } else {
+      Alert.alert("Lỗi", "Vui lòng nhập email hoặc số điện thoại hợp lệ!");
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -22,7 +35,7 @@ const LoginScreen = () => {
 
       <View style={styles.inputContainer}>
         <Ionicons name="mail-outline" size={20} color="#888" style={styles.icon} />
-        <TextInput placeholder="Email / Số điện thoại" style={styles.input} />
+        <TextInput placeholder="Email / Số điện thoại" style={styles.input} value={ID} keyboardType="email-address" onChangeText={setID}/>
       </View>
 
       <View style={styles.inputContainer}>
@@ -42,9 +55,9 @@ const LoginScreen = () => {
       </TouchableOpacity>
 
       {/* Button Đăng nhập */}
-      <TouchableOpacity style={styles.loginButton}>
+      <TouchableOpacity style={styles.loginButton} onPress={validateID}>
         <LinearGradient colors={["#2D9CDB", "#2F80ED"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} >
-          <Text style={styles.loginText}>Đăng nhập</Text>
+          <Text style={styles.loginText} >Đăng nhập</Text>
         </LinearGradient>
       </TouchableOpacity>
 
