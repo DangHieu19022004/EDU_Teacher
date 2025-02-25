@@ -15,7 +15,7 @@ const RegisterScreen = () => {
   const [repassword, setRePassword] = useState("");
 
     const validateRegistration = () => {
-      const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+      const emailRegex = /^$|^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/;
       const phoneRegex = /^(03|09)\d{8}$/;
       const passwordRegex = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{12,}$/;
 
