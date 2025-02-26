@@ -89,21 +89,7 @@ const Student: React.FC = () => {
         </View>
       ))}
 
-      {/* Bottom Navigation */}
-      <View className="absolute bottom-0 left-0 right-0 h-14 flex-row bg-gray-100 border-t border-gray-300 items-center justify-around">
-        <TouchableOpacity className="items-center" onPress={() => setCurrentTab('Home')}>
-          <FontAwesome name="home" size={24} color={currentTab === 'Home' ? 'blue' : 'gray'} />
-          <Text className={`text-xs ${currentTab === 'Home' ? 'text-blue-500' : 'text-gray-500'}`}>Trang chủ</Text>
-        </TouchableOpacity>
-        <TouchableOpacity className="items-center" onPress={() => setCurrentTab('Profile')}>
-          <FontAwesome name="user" size={24} color={currentTab === 'Profile' ? 'blue' : 'gray'} />
-          <Text className={`text-xs ${currentTab === 'Profile' ? 'text-blue-500' : 'text-gray-500'}`}>Bản thân</Text>
-        </TouchableOpacity>
-        <TouchableOpacity className="items-center" onPress={() => setCurrentTab('Settings')}>
-          <FontAwesome name="cog" size={24} color={currentTab === 'Settings' ? 'blue' : 'gray'} />
-          <Text className={`text-xs ${currentTab === 'Settings' ? 'text-blue-500' : 'text-gray-500'}`}>Cài đặt</Text>
-        </TouchableOpacity>
-      </View>
+      
     </View>
   );
 };
