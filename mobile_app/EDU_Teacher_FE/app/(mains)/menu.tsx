@@ -1,42 +1,68 @@
-import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, SafeAreaView, Platform, StatusBar, Alert } from 'react-native';
+import React from 'react';
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Platform,
+  StatusBar,
+} from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const Menu: React.FC = () => {
-  const [searchText, setSearchText] = useState('');
-
-  const handleSearch = () => {
-    if (searchText.trim() === '') {
-      Alert.alert('Thông báo', 'Vui lòng nhập từ khóa tìm kiếm.');
-    } else {
-      Alert.alert('Tìm kiếm', `Bạn đã tìm kiếm: ${searchText}`);
-      // Searching activity
-    }
-  };
-
   return (
-    <LinearGradient colors={['#3BA3F2', '#1A47C0']} className="flex-1">
-      <SafeAreaView className={`flex-1 px-5 ${Platform.OS === 'android' ? `pt-[${StatusBar.currentHeight || 20}px]` : 'pt-5'}`}>
-        
+    <LinearGradient colors={['#3BA3F2', '#1A47C0']} style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
         {/* Search Bar */}
-        <View className="flex-row items-center bg-white rounded-full px-4 h-10 shadow-lg">
+        <View style={styles.searchBar}>
           <TextInput
             placeholder="Tìm kiếm"
-            className="flex-1 text-base text-gray-900"
+            style={styles.input}
             placeholderTextColor="#888"
-            value={searchText}
-            onChangeText={setSearchText} // Update state while texing
-            onSubmitEditing={handleSearch} // Enter and search
+            editable={true} // Đảm bảo có thể nhập liệu
           />
-          <TouchableOpacity onPress={handleSearch}>
+          <TouchableOpacity style={styles.searchIcon}>
             <FontAwesome name="search" size={18} color="black" />
           </TouchableOpacity>
         </View>
-
       </SafeAreaView>
     </LinearGradient>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 20,
+    paddingHorizontal: 20,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    height: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  input: {
+    flex: 1, 
+    fontSize: 16,
+    color: '#333',
+    paddingHorizontal: 10,
+  },
+  searchIcon: {
+    padding: 10,
+  },
+});
 
 export default Menu;
