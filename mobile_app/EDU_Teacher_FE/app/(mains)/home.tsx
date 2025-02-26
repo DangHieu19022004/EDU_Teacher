@@ -1,61 +1,55 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 
-const Home: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState('Home'); // Curent page
-
+const HomeScreen: React.FC = () => {
   return (
-    <View className="flex-1 bg-white pt-10">
+    <View style={{ flex: 1, backgroundColor: '#fff', paddingTop: 40 }}>
       {/* Header */}
-      <View className="flex-row items-center justify-between px-5 py-2">
-        <TouchableOpacity onPress={() => {}}>
-          <FontAwesome name="bars" size={24} color="black" />
-        </TouchableOpacity>
-        <Text className="text-lg font-bold">Trang chủ</Text>
-        <TouchableOpacity onPress={() => {}}>
-          <FontAwesome name="user-circle" size={24} color="black" />
-        </TouchableOpacity>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10 }}>
+        <FontAwesome name="bars" size={24} color="black" />
+        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Trang chủ</Text>
+        <FontAwesome name="user-circle" size={24} color="black" />
       </View>
-
+      
       {/* Feature Section */}
-      <View className="bg-gray-200 m-3 rounded-lg p-4">
-        <Text className="text-base font-bold">Quản lý học bạ</Text>
-        <View className="flex-row justify-between mt-3">
-          <TouchableOpacity className="bg-purple-600 p-5 rounded-lg w-[48%] items-center" onPress={() => {}}>
-            <FontAwesome name="file-text" size={40} color="white" />
-            <Text className="text-white text-sm mt-2">Quét học bạ</Text>
-          </TouchableOpacity>
-          <View className="w-[48%]">
-            <TouchableOpacity className="bg-pink-500 p-3 rounded-lg mb-2 items-center" onPress={() => {}}>
+      <View style={{ backgroundColor: '#F0F0F0', margin: 10, borderRadius: 10, padding: 15 }}>
+        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Quản lý học bạ</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+          <View style={{ backgroundColor: '#7B61FF', padding: 20, borderRadius: 10, width: '48%' }}>
+            <FontAwesome name="file" size={40} color="white" />
+            <Text style={{ color: 'white', fontSize: 14, marginTop: 5 }}>Quét học bạ</Text>
+          </View>
+          <View style={{ width: '48%' }}>
+            <View style={{ backgroundColor: '#D94FBE', padding: 10, borderRadius: 10, marginBottom: 10 }}>
               <FontAwesome name="database" size={30} color="white" />
-              <Text className="text-white text-xs mt-2">Kho dữ liệu</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className="bg-purple-400 p-3 rounded-lg items-center" onPress={() => {}}>
-              <FontAwesome name="history" size={30} color="white" />
-              <Text className="text-white text-xs mt-2">Lịch sử chỉnh sửa</Text>
-            </TouchableOpacity>
+              <Text style={{ color: 'white', fontSize: 12, marginTop: 5 }}>Kho dữ liệu</Text>
+            </View>
+            <View style={{ backgroundColor: '#A47BEF', padding: 10, borderRadius: 10 }}>
+              <FontAwesome name="clock-o" size={30} color="white" />
+              <Text style={{ color: 'white', fontSize: 12, marginTop: 5 }}>Lịch sử chỉnh sửa</Text>
+            </View>
           </View>
         </View>
       </View>
-
+      
       {/* Bottom Navigation */}
-      <View className="absolute bottom-0 left-0 right-0 h-14 flex-row bg-gray-100 border-t border-gray-300 items-center justify-around">
-        <TouchableOpacity className="items-center" onPress={() => setCurrentTab('Home')}>
-          <FontAwesome name="home" size={24} color={currentTab === 'Home' ? 'blue' : 'gray'} />
-          <Text className={`text-xs ${currentTab === 'Home' ? 'text-blue-500' : 'text-gray-500'}`}>Trang chủ</Text>
+      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 60, flexDirection: 'row', backgroundColor: '#F8F8F8', borderTopWidth: 1, borderColor: '#DDD', alignItems: 'center', justifyContent: 'space-around' }}>
+        <TouchableOpacity>
+          <FontAwesome name="home" size={24} color="blue" />
+          <Text style={{ fontSize: 12, color: 'blue' }}>Trang chủ</Text>
         </TouchableOpacity>
-        <TouchableOpacity className="items-center" onPress={() => setCurrentTab('Profile')}>
-          <FontAwesome name="user" size={24} color={currentTab === 'Profile' ? 'blue' : 'gray'} />
-          <Text className={`text-xs ${currentTab === 'Profile' ? 'text-blue-500' : 'text-gray-500'}`}>Bản thân</Text>
+        <TouchableOpacity>
+          <FontAwesome name="user" size={24} color="gray" />
+          <Text style={{ fontSize: 12, color: 'gray' }}>Bản thân</Text>
         </TouchableOpacity>
-        <TouchableOpacity className="items-center" onPress={() => setCurrentTab('Settings')}>
-          <FontAwesome name="cog" size={24} color={currentTab === 'Settings' ? 'blue' : 'gray'} />
-          <Text className={`text-xs ${currentTab === 'Settings' ? 'text-blue-500' : 'text-gray-500'}`}>Cài đặt</Text>
+        <TouchableOpacity>
+          <FontAwesome name="cog" size={24} color="gray" />
+          <Text style={{ fontSize: 12, color: 'gray' }}>Cài đặt</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 };
 
-export default Home;
+export default HomeScreen;

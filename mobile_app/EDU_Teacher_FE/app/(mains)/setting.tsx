@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Switch, Image } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+
 
 const Setting: React.FC = () => {
   const [currentTab, setCurrentTab] = useState('Setting');
@@ -14,7 +14,7 @@ const Setting: React.FC = () => {
 
       {/* Logo */}
       <View className="items-center my-5">
-        <Image source={require('../assets/images/Edu.png')} className="w-36 h-36" resizeMode="contain" />
+        <Image source={require('../../assets/images/Edu.png')} className="w-36 h-36" resizeMode="contain" />
       </View>
 
       {/* Notification Toggle */}

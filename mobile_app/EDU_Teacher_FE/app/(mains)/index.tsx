@@ -1,5 +1,5 @@
-import HomeScreen from './home';
+import Home from './home';
 
-export default function Index() {
-  return <HomeScreen />;
+export default function HomeScreen() {
+  return <Home />;
 }
