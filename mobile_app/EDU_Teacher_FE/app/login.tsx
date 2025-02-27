@@ -49,7 +49,7 @@ const LoginScreen = () => {
         <TextInput placeholder="Mật khẩu" secureTextEntry={!showPassword} style={styles.input} />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
           <Ionicons
-            name={showPassword ? "eye-off-outline" : "eye-outline"}
+            name={showPassword ? "eye-outline" : "eye-off-outline"}
             size={20} color="#888"
             style={styles.eyeIcon}
           />
@@ -68,8 +68,9 @@ const LoginScreen = () => {
       </TouchableOpacity>
 
       {/* Đăng nhập bằng mạng xã hội */}
-      <Text style={styles.orText}>Tiếp tục với
+
       <View style={styles.socialContainer}>
+      <Text style={styles.orText}>Tiếp tục với</Text>
         <TouchableOpacity>
           <FontAwesome name="facebook" size={30} color="#1877F2" />
         </TouchableOpacity>
@@ -81,7 +82,7 @@ const LoginScreen = () => {
         </TouchableOpacity>
       </View>
 
-      </Text>
+
 
       {/* Đường kẻ ngang trên nút "Đăng ký" */}
       <View style={styles.line} />
@@ -164,10 +165,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginVertical: 20,
     textAlign: "center",
+    paddingTop: 5,
   },
   socialContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
+    alignItems: "center",
     width: "60%",
   },
   line: {

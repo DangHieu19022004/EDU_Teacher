@@ -81,19 +81,20 @@ const RegisterScreen = () => {
         </TouchableOpacity>
 
         {/* Đăng ký với mạng xã hội */}
-      <Text style={styles.socialText}>Đăng ký với
-      <View style={styles.socialIcons}>
-        <TouchableOpacity>
-          <FontAwesome name="facebook" size={30} color="#1877F2" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <FontAwesome name="google" size={30} color="#DB4437" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <FontAwesome name="instagram" size={30} color="#C13584" />
-        </TouchableOpacity>
-      </View>
-      </Text>
+
+        <View style={styles.socialIcons}>
+          <Text style={styles.socialText}>Đăng ký với </Text>
+          <TouchableOpacity>
+            <FontAwesome name="facebook" style={styles.socialIcon} size={30} color="#1877F2" />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <FontAwesome name="google" style={styles.socialIcon} size={30} color="#DB4437" />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <FontAwesome name="instagram" style={styles.socialIcon} size={30} color="#C13584" />
+          </TouchableOpacity>
+        </View>
+
 
       </View>
 
@@ -121,6 +122,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   formContainer: {
+
     backgroundColor: "white",
     borderRadius: 10,
     padding: 20,
@@ -174,21 +176,24 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   socialText: {
-    width: "100%",
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: 20,
-    color: "#666",
-    justifyContent: "space-around",
+    fontSize: 14,
+    color: "black",
     fontWeight: "bold",
+    marginVertical: 20,
+    textAlign: "center",
+    paddingTop: 5,
+
   },
   socialIcons: {
+    alignSelf: "center",
+    textAlign: "center",
     flexDirection: "row",
-    width: "40%",
     justifyContent: "space-around",
+    alignItems: "center",
+    width: "60%",
   },
   socialIcon: {
-    marginHorizontal: 10,
+    marginHorizontal: 5,
   },
 });
 
