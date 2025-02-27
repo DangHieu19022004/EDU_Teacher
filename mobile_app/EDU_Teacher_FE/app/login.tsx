@@ -62,7 +62,7 @@ const LoginScreen = () => {
 
       {/* Button Đăng nhập */}
       <TouchableOpacity style={styles.loginButton} onPress={validateID}>
-        <LinearGradient colors={["#2D9CDB", "#2F80ED"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} >
+        <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} >
           <Text style={styles.loginText} >Đăng nhập</Text>
         </LinearGradient>
       </TouchableOpacity>
