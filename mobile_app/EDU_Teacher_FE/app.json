@@ -26,6 +26,20 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "1393782815364458",
+          "clientToken": "38759410220d9776c0c77e12f8e6a813",
+          "displayName": "EDU_Teacher",
+          "scheme": "fb1393782815364458",
+          "advertiserIDCollectionEnabled": false,
+          "autoLogAppEventsEnabled": false,
+          "isAutoInitEnabled": false,
+          "iosUserTrackingPermission": "unavailable"
+        }
+      ],
+      "@react-native-firebase/auth",
       "@react-native-google-signin/google-signin",
       "@react-native-firebase/app",
       [
