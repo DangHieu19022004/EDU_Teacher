@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Alert, ActivityIndicator, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { View, Text, TextInput, Alert, ActivityIndicator, TouchableOpacity, Image, StyleSheet, Modal } from "react-native";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
@@ -12,7 +12,7 @@ GoogleSignin.configure({
     "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
 });
-const BASE_URL = "http://192.168.1.104:8000/auth";
+const BASE_URL = "http://192.168.70.51:8000/auth";
 
 const LoginScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,9 +21,12 @@ const LoginScreen = () => {
     const [password, setPassword] = useState("");
     const [initializing, setInitializing] = useState(true);
     const [user, setUser] = useState<auth.User | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
 
     async function onGoogleButtonPress() {
       try{
+        setIsLoading(true); // 🔥 Hiển thị loading
         // Check if your device supports Google Play
         await GoogleSignin.signOut();
         await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
@@ -66,12 +69,15 @@ const LoginScreen = () => {
             } else {
                 Alert.alert("Login Failed", data.message || "Unknown error occurred.");
             }
+            setIsLoading(false);
         } else {
             Alert.alert("Login Failed", "User data not found.");
+            setIsLoading(false);
         }
     } catch (error) {
         console.log("Google Sign-In Error:", error);
         Alert.alert("Google Sign-In Failed", error.message);
+        setIsLoading(false);
     }
 
       //   const firebaseIdToken = await userCredential.user.getIdToken();
@@ -131,6 +137,20 @@ const LoginScreen = () => {
 
   return (
       <View style={styles.container}>
+       {/* 🔥 Modal hiển thị trạng thái đăng ký */}
+              <Modal
+                transparent
+                animationType="fade"
+                visible={isLoading}
+                onRequestClose={() => setIsLoading(false)}
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContent}>
+                    <ActivityIndicator size="large" color="#2D9CDB" />
+                    <Text style={styles.loadingText}>Đang đăng ký bằng Google...</Text>
+                  </View>
+                </View>
+              </Modal>
         {/* Logo */}
         <Image
           source={require("../../assets/images/logo.png")}
@@ -202,6 +222,29 @@ const LoginScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)", // 🔥 Làm mờ nền
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#2D9CDB",
+    fontWeight: "bold",
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",

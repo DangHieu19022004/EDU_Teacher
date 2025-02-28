@@ -8,7 +8,7 @@ import RegisterScreen from './register';
 import HomeScreen from './home';
 import { useRouter } from "expo-router";
 
-const BASE_URL = "http://192.168.1.104:8000/auth";
+const BASE_URL = "http://192.168.70.51:8000/auth";
 
 const AuthScreen = () => {
     const router = useRouter();
