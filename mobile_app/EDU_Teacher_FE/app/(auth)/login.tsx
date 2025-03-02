@@ -1,4 +1,5 @@
 import { View, Text, TextInput, Alert, ActivityIndicator, TouchableOpacity, Image, StyleSheet, Modal } from "react-native";
+import { LoginManager, AccessToken } from 'react-native-fbsdk-next';
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
@@ -12,7 +13,7 @@ GoogleSignin.configure({
     "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
 });
-const BASE_URL = "http://192.168.70.51:8000/auth";
+const BASE_URL = "http://192.168.1.10:8000/auth";
 
 const LoginScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -23,8 +24,9 @@ const LoginScreen = () => {
     const [user, setUser] = useState<auth.User | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-
     async function onGoogleButtonPress() {
+      await AsyncStorage.removeItem("fb_uid");
+      await AsyncStorage.removeItem("access_token");
       try{
         setIsLoading(true); // 🔥 Hiển thị loading
         // Check if your device supports Google Play
@@ -135,6 +137,78 @@ const LoginScreen = () => {
 
     };
 
+    //facebook login
+    // Handle user state changes
+    function onAuthStateChanged(user : any) {
+      setUser(user);
+      if (initializing) setInitializing(false);
+    }
+
+    useEffect(() => {
+      const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
+      return subscriber; // unsubscribe on unmount
+    }, []);
+
+    async function onFacebookButtonPress() {
+      await AsyncStorage.removeItem("fb_uid");
+      await AsyncStorage.removeItem("access_token");
+      try {
+          setIsLoading(true);
+
+          const result = await LoginManager.logInWithPermissions(["public_profile"]);
+          if (result.isCancelled) throw new Error("User cancelled the login process");
+
+          const fbData = await AccessToken.getCurrentAccessToken();
+          if (!fbData) throw new Error("Failed to get Facebook access token");
+
+          const fbResponse = await fetch(
+              `https://graph.facebook.com/me?fields=id,name,picture.type(large)&access_token=${fbData.accessToken}`
+          );
+          const fbUserData = await fbResponse.json();
+
+          console.log("✅ Facebook User Data:", fbUserData);
+
+          if (!fbUserData.id || !fbUserData.name || !fbUserData.picture?.data?.url) {
+              throw new Error("Incomplete user data received from Facebook");
+          }
+
+          const userData = {
+              uid: fbUserData.id,
+              displayName: fbUserData.name,
+              photoURL: fbUserData.picture.data.url,
+          };
+
+          const response = await fetch(`${BASE_URL}/facebooklogin/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(userData),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.access_token) {
+          await AsyncStorage.setItem("fb_uid", data.access_token);
+
+          setTimeout(() => {
+              router.replace({
+                  pathname: "/home",
+                  params: { user: JSON.stringify(userData) },
+              });
+          }, 500);
+      } else {
+          throw new Error(data.error || "Login failed.");
+      }
+
+      } catch (error) {
+          console.error("Facebook Sign-In Error:", error);
+          Alert.alert("Facebook Sign-In Failed", error.message);
+      }
+      setIsLoading(false);
+  }
+
+
+
+
   return (
       <View style={styles.container}>
        {/* 🔥 Modal hiển thị trạng thái đăng ký */}
@@ -198,7 +272,7 @@ const LoginScreen = () => {
         {/* Đăng nhập bằng mạng xã hội */}
         <Text style={styles.orText}>Tiếp tục với
         <View style={styles.socialContainer}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={onFacebookButtonPress}>
             <FontAwesome name="facebook" size={30} color="#1877F2" />
           </TouchableOpacity>
           <TouchableOpacity onPress={onGoogleButtonPress}>

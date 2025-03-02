@@ -35,7 +35,7 @@
           "scheme": "fb1393782815364458",
           "advertiserIDCollectionEnabled": false,
           "autoLogAppEventsEnabled": false,
-          "isAutoInitEnabled": false,
+          "isAutoInitEnabled": true,
           "iosUserTrackingPermission": "unavailable"
         }
       ],
