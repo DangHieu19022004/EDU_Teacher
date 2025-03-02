@@ -28,10 +28,7 @@ const LoginScreen = () => {
   return (
     <View style={styles.container}>
       {/* Logo */}
-      <Image
-        source={require("../assets/images/logo.png")}
-        style={styles.logo}
-      />
+      <Image source={require("../assets/images/logo.png")} style={styles.logo}/>
       <Text style={styles.slogan}>
         Số hóa học bạ, kết nối tri thức, nâng bước tương lai
       </Text>
