@@ -1,15 +1,22 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider, NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from "@react-navigation/stack";
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-
+import LoginScreen from "./login"; // Import màn hình login
+import RegisterScreen from "./register"; // Import màn hình register
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+export type RootStackParamList = {
+  login: undefined;
+  register: undefined;
+};
+const Stack = createStackNavigator<RootStackParamList>();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -27,13 +34,17 @@ export default function RootLayout() {
     return null;
   }
 
+
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ headerShown: false }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <NavigationContainer>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack.Navigator initialRouteName="login">
+          <Stack.Screen name="login" options={{ headerShown: false }} component={LoginScreen} />
+          <Stack.Screen name="register" options={{ headerShown: false }} component={RegisterScreen} />
+        </Stack.Navigator>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </NavigationContainer>
   );
 }
