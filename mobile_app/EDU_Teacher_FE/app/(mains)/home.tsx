@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -7,50 +7,89 @@ const HomeScreen: React.FC = () => {
   const router = useRouter();
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff', paddingTop: 40 }}>
+    <View style={styles.container}>
       {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10 }}>
-        <TouchableOpacity onPress={() => router.push('/menu')}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.push('./menu')}>
           <FontAwesome name="bars" size={24} color="black" />
         </TouchableOpacity>
-        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Trang chủ</Text>
+        <Text style={styles.headerTitle}>Trang chủ</Text>
         <TouchableOpacity>
-          <FontAwesome name="user-circle" size={24} color="black" />
+          <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
         </TouchableOpacity>
       </View>
-      
+
       {/* Feature Section */}
-      <View style={{ backgroundColor: '#F0F0F0', margin: 10, borderRadius: 10, padding: 15 }}>
-        <Text style={{ fontSize: 16, fontWeight: 'bold' }}>Quản lý học bạ</Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
-          <TouchableOpacity style={{ backgroundColor: '#7B61FF', padding: 20, borderRadius: 10, width: '48%', alignItems: 'center' }}>
-            <FontAwesome name="file" size={40} color="white" />
-            <Text style={{ color: 'white', fontSize: 14, marginTop: 5 }}>Quét học bạ</Text>
+      <View style={styles.featureSection}>
+        <Text style={styles.sectionTitle}>Quản lý học bạ</Text>
+        <View style={styles.featureRow}>
+          <TouchableOpacity style={styles.scanButton}>
+            <FontAwesome name="file-text" size={90} color="white" />
+            <Text style={styles.scanButtonText}>Quét học bạ</Text>
           </TouchableOpacity>
-          <View style={{ width: '48%' }}>
-            <TouchableOpacity style={{ backgroundColor: '#D94FBE', padding: 10, borderRadius: 10, alignItems: 'center', marginBottom: 10 }}>
+          <View style={styles.sideButtons}>
+            <TouchableOpacity style={styles.dataButton}>
               <FontAwesome name="database" size={30} color="white" />
-              <Text style={{ color: 'white', fontSize: 12, marginTop: 5 }}>Kho dữ liệu</Text>
+              <Text style={styles.sideButtonText}>Kho dữ liệu</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={{ backgroundColor: '#A47BEF', padding: 10, borderRadius: 10, alignItems: 'center' }}>
-              <FontAwesome name="clock-o" size={30} color="white" />
-              <Text style={{ color: 'white', fontSize: 12, marginTop: 5 }}>Lịch sử chỉnh sửa</Text>
+            <TouchableOpacity style={styles.historyButton}>
+              <FontAwesome name="history" size={30} color="white" />
+              <Text style={styles.sideButtonText}>Lịch sử chỉnh sửa</Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
-      
+
       {/* Bottom Navigation */}
-      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 70, flexDirection: 'row', backgroundColor: '#fff', borderTopWidth: 1, borderColor: '#DDD', alignItems: 'center', justifyContent: 'space-around', paddingVertical: 10 }}>
+      <View style={styles.bottomNav}>
         {[{ icon: 'home', text: 'Trang chủ', route: '/(mains)/home' }, { icon: 'user', text: 'Bản thân', route: '/(mains)/infostudent' }, { icon: 'cog', text: 'Cài đặt', route: '/setting' }].map((item, index) => (
-          <TouchableOpacity key={index} style={{ alignItems: 'center' }} onPress={() => router.push(item.route)}>
+          <TouchableOpacity key={index} style={styles.navItem} onPress={() => router.push(item.route as any)}>
             <FontAwesome name={item.icon as any} size={24} color={item.route === '/(mains)/home' ? 'blue' : 'gray'} />
-            <Text style={{ fontSize: 12, color: item.route === '/(mains)/home' ? 'blue' : 'gray', marginTop: 3 }}>{item.text}</Text>
+            <Text style={[styles.navText, { color: item.route === '/(mains)/home' ? 'blue' : 'gray' }]}>{item.text}</Text>
           </TouchableOpacity>
         ))}
       </View>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F8F8F8' },
+  header: {
+    height: 80,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: 'white',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+
+  },
+  headerTitle: { fontSize: 25, fontWeight: 'bold' },
+  logo: { width: 30, height: 30, borderRadius: 15 },
+  featureSection: { backgroundColor: '#E8E8E8',marginRight: 40, borderBottomRightRadius: 20, borderTopRightRadius:20, padding: 15, marginTop: 120, paddingVertical: 20 },
+  sectionTitle: { fontSize: 25, fontWeight: 'bold', textAlign: 'right' },
+  featureRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
+  scanButton: { backgroundColor: '#6B46C1', padding: 20, borderRadius: 20, width: '56%', alignItems: 'center' },
+  scanButtonText: { color: 'white', fontSize: 14, marginTop: 5 },
+  sideButtons: { width: '40%' },
+  dataButton: { backgroundColor: '#D53F8C', padding: 10, borderRadius: 20, marginBottom: 10, alignItems: 'center' },
+  historyButton: { backgroundColor: '#805AD5', padding: 10, borderRadius: 20, alignItems: 'center' },
+  sideButtonText: { color: 'white', fontSize: 12, marginTop: 5 },
+  bottomNav: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 70, flexDirection: 'row',
+               backgroundColor: 'white', borderWidth: 1, borderColor: '#DDD', alignItems: 'center',
+               justifyContent: 'space-around', paddingVertical: 10, borderTopLeftRadius: 20, borderTopRightRadius: 20  },
+  navItem: { alignItems: 'center' },
+  navText: { fontSize: 12, marginTop: 3 }
+});
 
 export default HomeScreen;

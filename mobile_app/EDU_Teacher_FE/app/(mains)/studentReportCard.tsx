@@ -2,58 +2,9 @@ import React, {useState} from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from "expo-linear-gradient";
-import SuccessOverlay from "./overlay/successOverlay";
+import SuccessOverlay from "../overlay/successOverlay";
+import sampleStudentData from './studentData';
 
-const sampleStudentData = {
-    name: 'Hoàng Văn A',
-    gender: 'Nam',
-    dob: '01/01/2005',
-    classList: [
-        {class: '10D5',subjects: [
-            { name: 'Toán', hk1: '8.2', hk2: '8.2', cn: '8.2' },
-            { name: 'Vật lý', hk1: '8.2', hk2: '8.2', cn: '8.2' },
-            { name: 'Hóa học', hk1: '8.2', hk2: '8.2', cn: '8.2' },
-            { name: 'Ngữ Văn', hk1: '8.2', hk2: '8.2', cn: '8.2' },
-            { name: 'Lịch sử', hk1: '8.2', hk2: '8.2', cn: '8.2' },
-            { name: 'Địa lý', hk1: '8.2', hk2: '8.2', cn: '8.2' },
-            { name: 'Tiếng Anh', hk1: '8.2', hk2: '8.2', cn: '8.2' },
-            { name: 'GDQP', hk1: '8.2', hk2: '8.2', cn: '8.2' },
-            { name: 'Công nghệ', hk1: '8.2', hk2: '8.2', cn: '8.2' },
-            { name: 'Thể dục', hk1: '8.2', hk2: '8.2', cn: '8.2' },
-        ],
-        },
-        {class: '11D5',subjects: [
-            { name: 'Toán', hk1: '7.2', hk2: '7.2', cn: '7.2' },
-            { name: 'Vật lý', hk1: '7.2', hk2: '7.2', cn: '7.2' },
-            { name: 'Hóa học', hk1: '7.2', hk2: '7.2', cn: '7.2' },
-            { name: 'Ngữ Văn', hk1: '7.2', hk2: '7.2', cn: '7.2' },
-            { name: 'Lịch sử', hk1: '7.2', hk2: '7.2', cn: '7.2' },
-            { name: 'Địa lý', hk1: '7.2', hk2: '7.2', cn: '7.2' },
-            { name: 'Tiếng Anh', hk1: '7.2', hk2: '7.2', cn: '7.2' },
-            { name: 'GDQP', hk1: '7.2', hk2: '7.2', cn: '7.2' },
-            { name: 'Công nghệ', hk1: '7.2', hk2: '7.2', cn: '7.2' },
-            { name: 'Thể dục', hk1: '7.2', hk2: '7.2', cn: '7.2' },
-        ],
-        },
-        {class: '12D5',subjects: [
-            { name: 'Toán', hk1: '9.0', hk2: '9.0', cn: '9.0' },
-            { name: 'Vật lý', hk1: '9.0', hk2: '9.0', cn: '9.0' },
-            { name: 'Hóa học', hk1: '9.0', hk2: '9.0', cn: '9.0' },
-            { name: 'Ngữ Văn', hk1: '9.0', hk2: '9.0', cn: '9.0' },
-            { name: 'Lịch sử', hk1: '9.0', hk2: '9.0', cn: '9.0' },
-            { name: 'Địa lý', hk1: '9.0', hk2: '9.0', cn: '9.0' },
-            { name: 'Tiếng Anh', hk1: '9.0', hk2: '9.0', cn: '9.0' },
-            { name: 'GDQP', hk1: '9.0', hk2: '9.0', cn: '9.0' },
-            { name: 'Công nghệ', hk1: '9.0', hk2: '9.0', cn: '9.0' },
-            { name: 'Thể dục', hk1: '9.0', hk2: '9.0', cn: '9.0' },
-        ],
-        },
-    ],
-    school: 'THPT A',
-
-    academicPerformance: 'Giỏi',
-    conduct: 'Tốt'
-};
 
 const StudentReportCard = ({ studentData = sampleStudentData }) => {
     const [visible, setVisible] = useState(false);
@@ -86,7 +37,7 @@ const StudentReportCard = ({ studentData = sampleStudentData }) => {
             <View style={styles.profileContainer}>
                 <View style={styles.avatarContainer}>
                     <View style={styles.avatarFrame}>
-                        <Image source={require('../assets/images/user.png')} style={styles.avatar} />
+                        <Image source={require('../../assets/images/user.png')} style={styles.avatar} />
                     </View>
                     <TouchableOpacity style={styles.viewFileButton}>
                         <Text style={styles.viewFileText}>Xem file gốc</Text>

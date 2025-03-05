@@ -28,7 +28,9 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ headerShown: false }} initialRouteName="login">
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="register" options={{ headerShown: false }}/>
         <Stack.Screen name='home' options={{ headerShown: false }} />
         <Stack.Screen name='infostudent' options={{ headerShown: false }} />
         <Stack.Screen name='setting' options={{ headerShown: false }} />

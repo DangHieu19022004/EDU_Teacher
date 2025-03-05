@@ -1,45 +1,59 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Platform } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { useRouter } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
+import { KeyboardTypeOptions } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import sampleStudentData from './studentData';
+
 
 const Student: React.FC = () => {
-  const [name, setName] = useState('');
-  const [selectedGender, setSelectedGender] = useState('Nam');
-  const [showGenderModal, setShowGenderModal] = useState(false);
-  const [birthDate, setBirthDate] = useState<Date | undefined>();
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [school, setSchool] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const router = useRouter();
   const navigation = useNavigation();
-  
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState(sampleStudentData.phone);
+  const [name, setName] = useState(sampleStudentData.name);
+  const [selectedGender, setSelectedGender] = useState(sampleStudentData.gender);
+  const [birthDate, setBirthDate] = useState(new Date(sampleStudentData.dob.split('/').reverse().join('-'))); // Chuyển đổi từ dd/MM/yyyy sang Date
+  const [school, setSchool] = useState(sampleStudentData.school);
+
+
   const inputFields = [
     { label: 'Họ tên', value: name, setValue: setName },
     { label: 'Trường học hiện tại', value: school, setValue: setSchool },
-    { label: 'Số điện thoại', value: phoneNumber, setValue: setPhoneNumber, keyboardType: 'numeric', maxLength: 10 }
+    { label: 'Số điện thoại', value: phoneNumber, setValue: setPhoneNumber, keyboardType: 'phone-pad', maxLength: 10 }
   ];
 
+  const onChangeDate = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setBirthDate(selectedDate);
+    }
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff', paddingTop: 40, paddingHorizontal: 20 }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
-        <Text style={{ fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }}>Thông tin học sinh</Text>
-        
-        <View style={{ alignItems: 'center', marginBottom: 20 }}>
-          <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#E0E0E0', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#2F54EB' }}>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <Text style={styles.title}>Thông tin học sinh</Text>
+        <View style={styles.avatarContainer}>
+          <View style={styles.avatar}>
             <FontAwesome name="user" size={50} color="#555" />
           </View>
         </View>
 
+        <View style={styles.boxContainer}>
         {inputFields.map((item, index) => (
-          <View key={index} style={{ marginBottom: 15 }}>
-            <Text style={{ fontSize: 16, color: '#333', marginBottom: 5 }}>{item.label}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F6F6F6', padding: 15, borderRadius: 10, justifyContent: 'space-between' }}>
-              <TextInput 
-                value={item.value} 
-                onChangeText={item.setValue} 
-                style={{ fontSize: 16, color: '#555', flex: 1 }} 
-                keyboardType={item.keyboardType || 'default'} 
+          <View key={index} style={styles.inputContainer}>
+            <Text style={styles.label}>{item.label}</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                value={item.value}
+                onChangeText={item.setValue}
+                style={styles.input}
+                keyboardType={item.keyboardType as KeyboardTypeOptions || 'default'}
                 maxLength={item.maxLength}
               />
               <FontAwesome name="pencil" size={18} color="#555" />
@@ -47,33 +61,166 @@ const Student: React.FC = () => {
           </View>
         ))}
 
-        <View style={{ marginBottom: 15 }}>
-          <Text style={{ fontSize: 16, color: '#333', marginBottom: 5 }}>Giới tính</Text>
-          <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F6F6F6', padding: 15, borderRadius: 10, justifyContent: 'space-between' }} onPress={() => setShowGenderModal(true)}>
-            <Text style={{ fontSize: 16, color: '#555' }}>{selectedGender || 'Chọn giới tính'}</Text>
-            <FontAwesome name="chevron-down" size={18} color="#555" />
-          </TouchableOpacity>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Giới tính</Text>
+          <View style={styles.inputWrapperGender}>
+            <Picker
+              selectedValue={selectedGender}
+              onValueChange={(itemValue) => setSelectedGender(itemValue)}
+              style={styles.input}
+            >
+              <Picker.Item label="Nam" value="Nam" />
+              <Picker.Item label="Nữ" value="Nữ" />
+            </Picker>
+          </View>
         </View>
 
-        <View style={{ marginBottom: 15 }}>
-          <Text style={{ fontSize: 16, color: '#333', marginBottom: 5 }}>Ngày sinh</Text>
-          <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F6F6F6', padding: 15, borderRadius: 10, justifyContent: 'space-between' }} onPress={() => setShowDatePicker(true)}>
-            <Text style={{ fontSize: 16, color: '#555' }}>{birthDate ? birthDate.toLocaleDateString() : 'Chọn ngày sinh'}</Text>
-            <FontAwesome name="chevron-down" size={18} color="#555" />
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Ngày sinh</Text>
+          <TouchableOpacity style={styles.inputWrapperDoB} onPress={() => setShowDatePicker(true)}>
+            <Text style={styles.input}>{birthDate ? birthDate.toLocaleDateString('vi-VN') : 'Chọn ngày sinh'}</Text>
+            <FontAwesome name="caret-down" size={16} color="#555" />
           </TouchableOpacity>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={birthDate || new Date()}
+              mode="date"
+              display="default"
+              onChange={onChangeDate}
+            />
+          )}
         </View>
+      </View>
       </ScrollView>
 
-      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 70, flexDirection: 'row', backgroundColor: '#fff', borderTopWidth: 1, borderColor: '#DDD', alignItems: 'center', justifyContent: 'space-around', paddingVertical: 10 }}>
-        {[{ icon: 'home', text: 'Trang chủ', screen: 'home' }, { icon: 'user', text: 'Bản thân', screen: 'Student' }, { icon: 'cog', text: 'Cài đặt', screen: 'settings' }].map((item, i) => (
-          <TouchableOpacity key={i} style={{ alignItems: 'center' }} onPress={() => navigation.navigate(item.screen as never)}>
-            <FontAwesome name={item.icon as any} size={24} color={item.screen === 'Student' ? '#2F54EB' : 'gray'} />
-            <Text style={{ fontSize: 12, color: item.screen === 'Student' ? '#2F54EB' : 'gray', marginTop: 3 }}>{item.text}</Text>
+      <View style={styles.bottomNav}>
+        {[{ icon: 'home', text: 'Trang chủ', route: '/(mains)/home' },
+          { icon: 'user', text: 'Bản thân', route: '/(mains)/infostudent' },
+          { icon: 'cog', text: 'Cài đặt', route: '/setting' }].map((item, index) => (
+          <TouchableOpacity key={index} style={styles.navItem} onPress={() => router.push(item.route as any)}>
+            <FontAwesome name={item.icon as any} size={24} color={item.route === '/(mains)/infostudent' ? 'blue' : 'gray'} />
+            <Text style={[styles.navText, { color: item.route === '/(mains)/infostudent' ? 'blue' : 'gray' }]}>{item.text}</Text>
           </TouchableOpacity>
         ))}
       </View>
     </View>
+
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingHorizontal: 20
+  },
+  scrollContainer: {
+    paddingBottom: 80
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20
+  },
+  avatarContainer: {
+    alignItems: 'center',
+    marginBottom: 20
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#E0E0E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#2F54EB'
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 5
+  },
+  inputWrapper: {
+    borderWidth: 1,
+    borderColor: '#D9D9D9',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F6F6F6',
+    padding: 5,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    justifyContent: 'space-between'
+  },
+  inputWrapperGender: {
+    borderWidth: 1,
+    borderColor: '#D9D9D9',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F6F6F6',
+    paddingHorizontal: 5,
+    borderRadius: 10,
+    justifyContent: 'space-between'
+  },
+  inputWrapperDoB: {
+    borderWidth: 1,
+    borderColor: '#D9D9D9',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F6F6F6',
+    padding: 18,
+    paddingHorizontal: 20,
+    paddingRight: 24,
+    borderRadius: 10,
+    justifyContent: 'space-between'
+  },
+  input: {
+    fontSize: 16,
+    color: '#555',
+    flex: 1
+  },
+  boxContainer: {
+    backgroundColor: '#F9F9F9',
+    padding: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginBottom: 20
+  },
+
+  bottomNav: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 70,
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderColor: '#DDD',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    borderWidth: 1,
+  },
+  navItem: {
+    alignItems: 'center'
+  },
+  navText: {
+    fontSize: 12,
+    marginTop: 3
+  }
+});
 
 export default Student;
