@@ -1,14 +1,15 @@
 import React from "react";
 import { View, Text, Modal, StyleSheet, Image, TouchableWithoutFeedback } from "react-native";
 
-const SuccessOverlay = ({ visible, onClose }: { visible: boolean, onClose: () => void }) => {
+const FailOverlay = ({ visible, onClose }: { visible: boolean, onClose: () => void }) => {
   return (
     <Modal transparent visible={visible} animationType="fade">
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <View style={styles.container}>
-            <Image source={require("../../assets/images/success-overlay.png")} style={styles.image} />
-            <Text style={styles.text}>Lưu học bạ thành công</Text>
+            <Image source={require("../../../../assets/images/fail-overlay.png")} style={styles.image} />
+            <Text style={styles.mainText}>Không thành công</Text>
+            <Text style={styles.subText}>Vui lòng chụp lại học bạ</Text>
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -40,12 +41,18 @@ const styles = StyleSheet.create({
     height: 200,
     resizeMode: "contain",
   },
-  text: {
-    marginTop: 10,
+  mainText: {
+    marginTop: 0,
     fontSize: 20,
     fontWeight: "bold",
-    color: "#3B82F6",
+    color: "#D92D20",
+  },
+  subText: {
+    marginTop: 3,
+    fontSize: 16,
+    // fontWeight: "bold",
+    color: "#70798C",
   },
 });
 
-export default SuccessOverlay;
+export default FailOverlay;

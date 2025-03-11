@@ -37,6 +37,9 @@ const RegisterScreen = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.statusBar}>
+      </View>
+
       {/* Nút quay lại */}
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={24} color="black" />
@@ -198,6 +201,7 @@ const styles = StyleSheet.create({
   socialIcon: {
     marginHorizontal: 5,
   },
+  statusBar: {height: 30, backgroundColor: 'white'},
 });
 
 export default RegisterScreen;

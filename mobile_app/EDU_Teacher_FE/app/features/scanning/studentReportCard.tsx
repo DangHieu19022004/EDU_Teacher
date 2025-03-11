@@ -2,8 +2,8 @@ import React, {useState} from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from "expo-linear-gradient";
-import SuccessOverlay from "../overlay/successOverlay";
-import sampleStudentData from './studentData';
+import SuccessOverlay from "./overlay/successOverlay";
+import sampleStudentData from '../../test_data/studentData';
 
 
 const StudentReportCard = ({ studentData = sampleStudentData }) => {
@@ -23,6 +23,9 @@ const StudentReportCard = ({ studentData = sampleStudentData }) => {
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
 
+            <View style={styles.statusBar}>
+            </View>
+
             <View style={styles.headerContainer}>
                 <TouchableOpacity style={styles.backButton}>
                     <Text style={styles.backText}>{'\u25C0'}</Text>
@@ -37,7 +40,7 @@ const StudentReportCard = ({ studentData = sampleStudentData }) => {
             <View style={styles.profileContainer}>
                 <View style={styles.avatarContainer}>
                     <View style={styles.avatarFrame}>
-                        <Image source={require('../../assets/images/user.png')} style={styles.avatar} />
+                        <Image source={require('../../../assets/images/user.png')} style={styles.avatar} />
                     </View>
                     <TouchableOpacity style={styles.viewFileButton}>
                         <Text style={styles.viewFileText}>Xem file gốc</Text>
@@ -134,6 +137,7 @@ const styles = StyleSheet.create({
     button: { width: "100%", padding:10 , borderRadius: 10, overflow: "hidden",},
     gradient: {paddingVertical: 10, alignItems: "center", borderRadius: 10,},
     saveText: {color: "#fff", fontSize: 16, fontWeight: "bold"},
+    statusBar: {height: 30},
 });
 
 

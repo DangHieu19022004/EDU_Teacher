@@ -2,14 +2,11 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image, Alert, StyleSheet } from "react-native";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useNavigation  } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { RootStackParamList } from "./app";
+import { useRouter } from 'expo-router';
 
-type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, "login">;
 
 const LoginScreen = () => {
-  const navigation = useNavigation<LoginScreenNavigationProp>();
+  const router = useRouter();
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -19,7 +16,7 @@ const LoginScreen = () => {
     const phoneRegex = /^(03|09)\d{8}$/;
 
     if (emailRegex.test(ID) || phoneRegex.test(ID)) {
-      // Hợp lệ hoặc rỗng (cho phép người dùng nhập tiếp)
+      router.push('../main/home')
     } else {
       Alert.alert("Lỗi", "Vui lòng nhập email hoặc số điện thoại hợp lệ!");
     }
@@ -27,8 +24,11 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.statusBar}>
+      </View>
+
       {/* Logo */}
-      <Image source={require("../assets/images/logo.png")} style={styles.logo}/>
+      <Image source={require("../../assets/images/logo.png")} style={styles.logo}/>
       <Text style={styles.slogan}>
         Số hóa học bạ, kết nối tri thức, nâng bước tương lai
       </Text>
@@ -85,7 +85,7 @@ const LoginScreen = () => {
       <View style={styles.line} />
 
       {/* Đăng ký */}
-      <Text style={styles.registerText}>Hoặc <TouchableOpacity onPress={() => navigation.navigate("register")}><Text style={styles.registerLink}>Đăng ký</Text></TouchableOpacity> </Text>
+      <Text style={styles.registerText}>Hoặc <TouchableOpacity onPress={() => router.push('/login/registry')}><Text style={styles.registerLink}>Đăng ký</Text></TouchableOpacity> </Text>
 
     </View>
   );
@@ -188,6 +188,7 @@ const styles = StyleSheet.create({
     color: "#2F80ED",
     textDecorationLine: "underline",
   },
+  statusBar: {height: 30, backgroundColor: 'white'},
 });
 
 export default LoginScreen;

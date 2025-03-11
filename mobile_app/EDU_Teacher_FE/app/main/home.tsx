@@ -1,15 +1,20 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Button } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+
 
 const HomeScreen: React.FC = () => {
   const router = useRouter();
 
   return (
+
     <View style={styles.container}>
+
+
       {/* Header */}
       <View style={styles.header}>
+
         <TouchableOpacity onPress={() => router.push('./menu')}>
           <FontAwesome name="bars" size={24} color="black" />
         </TouchableOpacity>
@@ -23,10 +28,11 @@ const HomeScreen: React.FC = () => {
       <View style={styles.featureSection}>
         <Text style={styles.sectionTitle}>Quản lý học bạ</Text>
         <View style={styles.featureRow}>
-          <TouchableOpacity style={styles.scanButton}>
+          <TouchableOpacity style={styles.scanButton} onPress={() => router.push('../features/scanning/studentReportCard')}> //
             <FontAwesome name="file-text" size={90} color="white" />
             <Text style={styles.scanButtonText}>Quét học bạ</Text>
           </TouchableOpacity>
+
           <View style={styles.sideButtons}>
             <TouchableOpacity style={styles.dataButton}>
               <FontAwesome name="database" size={30} color="white" />
@@ -42,10 +48,10 @@ const HomeScreen: React.FC = () => {
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
-        {[{ icon: 'home', text: 'Trang chủ', route: '/(mains)/home' }, { icon: 'user', text: 'Bản thân', route: '/(mains)/infostudent' }, { icon: 'cog', text: 'Cài đặt', route: '/setting' }].map((item, index) => (
+        {[{ icon: 'home', text: 'Trang chủ', route: '/main/home' }, { icon: 'user', text: 'Bản thân', route: '/main/infostudent' }, { icon: 'cog', text: 'Cài đặt', route: '/main/setting' }].map((item, index) => (
           <TouchableOpacity key={index} style={styles.navItem} onPress={() => router.push(item.route as any)}>
-            <FontAwesome name={item.icon as any} size={24} color={item.route === '/(mains)/home' ? 'blue' : 'gray'} />
-            <Text style={[styles.navText, { color: item.route === '/(mains)/home' ? 'blue' : 'gray' }]}>{item.text}</Text>
+            <FontAwesome name={item.icon as any} size={24} color={item.route === '/main/home' ? '#1E88E5' : 'gray'} />
+            <Text style={[styles.navText, { color: item.route === '/main/home' ? '#1E88E5' : 'gray' }]}>{item.text}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -56,10 +62,11 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F8F8' },
   header: {
-    height: 80,
+    height: 100,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: 40,
     paddingHorizontal: 20,
     paddingVertical: 10,
     backgroundColor: 'white',
@@ -79,7 +86,7 @@ const styles = StyleSheet.create({
   featureSection: { backgroundColor: '#E8E8E8',marginRight: 40, borderBottomRightRadius: 20, borderTopRightRadius:20, padding: 15, marginTop: 120, paddingVertical: 20 },
   sectionTitle: { fontSize: 25, fontWeight: 'bold', textAlign: 'right' },
   featureRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
-  scanButton: { backgroundColor: '#6B46C1', padding: 20, borderRadius: 20, width: '56%', alignItems: 'center' },
+  scanButton: { backgroundColor: '#1E88E5', padding: 20, borderRadius: 20, width: '56%', alignItems: 'center' },
   scanButtonText: { color: 'white', fontSize: 14, marginTop: 5 },
   sideButtons: { width: '40%' },
   dataButton: { backgroundColor: '#D53F8C', padding: 10, borderRadius: 20, marginBottom: 10, alignItems: 'center' },
@@ -89,7 +96,13 @@ const styles = StyleSheet.create({
                backgroundColor: 'white', borderWidth: 1, borderColor: '#DDD', alignItems: 'center',
                justifyContent: 'space-around', paddingVertical: 10, borderTopLeftRadius: 20, borderTopRightRadius: 20  },
   navItem: { alignItems: 'center' },
-  navText: { fontSize: 12, marginTop: 3 }
+  navText: { fontSize: 12, marginTop: 3 },
+
+  message: {
+    textAlign: 'center',
+    paddingBottom: 10,
+  },
+  statusBar: {height: 30, backgroundColor: 'white'},
 });
 
 export default HomeScreen;

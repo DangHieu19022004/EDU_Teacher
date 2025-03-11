@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { KeyboardTypeOptions } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import sampleStudentData from './studentData';
+import sampleStudentData from '../test_data/studentData';
 
 
 const Student: React.FC = () => {
@@ -35,8 +35,12 @@ const Student: React.FC = () => {
   };
 
   return (
+
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.statusBar}>
+        </View>
+
         <Text style={styles.title}>Thông tin học sinh</Text>
         <View style={styles.avatarContainer}>
           <View style={styles.avatar}>
@@ -96,12 +100,12 @@ const Student: React.FC = () => {
       </ScrollView>
 
       <View style={styles.bottomNav}>
-        {[{ icon: 'home', text: 'Trang chủ', route: '/(mains)/home' },
-          { icon: 'user', text: 'Bản thân', route: '/(mains)/infostudent' },
-          { icon: 'cog', text: 'Cài đặt', route: '/setting' }].map((item, index) => (
+        {[{ icon: 'home', text: 'Trang chủ', route: '/main/home' },
+          { icon: 'user', text: 'Bản thân', route: '/main/infostudent' },
+          { icon: 'cog', text: 'Cài đặt', route: '/main/setting' }].map((item, index) => (
           <TouchableOpacity key={index} style={styles.navItem} onPress={() => router.push(item.route as any)}>
-            <FontAwesome name={item.icon as any} size={24} color={item.route === '/(mains)/infostudent' ? 'blue' : 'gray'} />
-            <Text style={[styles.navText, { color: item.route === '/(mains)/infostudent' ? 'blue' : 'gray' }]}>{item.text}</Text>
+            <FontAwesome name={item.icon as any} size={24} color={item.route === '/main/infostudent' ? '#1E88E5' : 'gray'} />
+            <Text style={[styles.navText, { color: item.route === '/main/infostudent' ? '#1E88E5' : 'gray' }]}>{item.text}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -137,7 +141,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#2F54EB'
+    borderColor: '#1E88E5'
   },
   inputContainer: {
     marginBottom: 15,
@@ -220,7 +224,8 @@ const styles = StyleSheet.create({
   navText: {
     fontSize: 12,
     marginTop: 3
-  }
+  },
+  statusBar: {height: 50, backgroundColor: 'white'},
 });
 
 export default Student;
