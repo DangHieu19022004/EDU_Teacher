@@ -29,6 +29,64 @@ const RegisterScreen = () => {
   const [isChecked, setChecked] = useState(false);
   const [user, setUser] = useState<auth.User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  //Đăng ký bằng email
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isCodeSent, setIsCodeSent] = useState(false);
+
+  async function handleRegister() {
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match!");
+      return;
+    }
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${BASE_URL}/register/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        Alert.alert("Success", "Verification code has been sent!");
+        setIsCodeSent(true);
+      } else {
+        Alert.alert("Registration Failed", data.error || "An error occurred");
+      }
+    } catch (error) {
+      console.error("Registration Error:", error);
+      Alert.alert("Error", "Cannot connect to the server.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleVerifyCode() {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${BASE_URL}/verify/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: verificationCode }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        Alert.alert("Verification Successful", "You can now log in!");
+        router.replace("/login");
+      } else {
+        Alert.alert("Verification Error", data.error || "Invalid code");
+      }
+    } catch (error) {
+      console.error("Verification Error:", error);
+      Alert.alert("Error", "Cannot connect to the server.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+  //Đăng ký bằng email
+
 
   async function onGoogleButtonPress() {
     try{

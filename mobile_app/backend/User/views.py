@@ -2,18 +2,136 @@ from backend import settings
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from django.core.mail import send_mail
 from firebase_admin import auth
 import json
-from User.models import User
+from User.models import User, EmailVerification
 import jwt
 from datetime import datetime, timedelta
 import logging
+import random
 SECRET_KEY = settings.SECRET_KEY
 
 # Configure logger
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 SECRET_KEY = settings.SECRET_KEY
+
+@csrf_exempt
+def register_email(request):
+    """ Đăng ký tài khoản bằng email và gửi mã OTP """
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+            password = data.get("password")
+
+            if not email or not password:
+                return JsonResponse({"error": "Email and password are required"}, status=400)
+
+            if User.objects.filter(email=email).exists():
+                return JsonResponse({"error": "Email already in use"}, status=400)
+
+            otp_code = random.randint(100000, 999999)
+            EmailVerification.objects.update_or_create(
+                email=email,
+                defaults={"otp_code": otp_code, "expires_at": datetime.utcnow() + timedelta(minutes=10)}
+            )
+
+            send_mail(
+                "Account verification code",
+                f"Your verification code is: {otp_code}",
+                "noreply@example.com",
+                [email],
+                fail_silently=False,
+            )
+
+            return JsonResponse({"message": "Verification code has been sent"}, status=200)
+
+        except Exception as e:
+            logger.error(f"Error in register_email: {str(e)}")
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+@csrf_exempt
+def verify_otp(request):
+    """ Xác thực mã OTP """
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+            otp_code = data.get("otp_code")
+            password = data.get("password")
+
+            if not email or not otp_code or not password:
+                return JsonResponse({"error": "Missing data"}, status=400)
+
+            verification = EmailVerification.objects.filter(email=email, otp_code=otp_code).first()
+            if not verification or verification.expires_at < datetime.utcnow():
+                return JsonResponse({"error": "OTP code is invalid or expired"}, status=400)
+
+            verification.delete()
+
+            user = User.objects.create(
+                uid=str(random.randint(100000, 999999)),
+                full_name=email.split("@")[0],
+                email=email,
+                password_hash=password,
+                created_at=int(datetime.utcnow().timestamp()),
+                last_sign_in_time=int(datetime.utcnow().timestamp()),
+            )
+
+            return JsonResponse({"message": "Registered successfully"}, status=201)
+
+        except Exception as e:
+            logger.error(f"Error in verify_otp: {str(e)}")
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+@csrf_exempt
+def email_login(request):
+    """ Đăng nhập bằng email """
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+            password = data.get("password")
+
+            if not email or not password:
+                return JsonResponse({"error": "Email and password are required"}, status=400)
+
+            user = User.objects.filter(email=email, password_hash=password).first()
+            if not user:
+                return JsonResponse({"error": "Wrong email or password"}, status=401)
+
+            payload = {
+                "user_id": user.uid,
+                "exp": datetime.utcnow() + timedelta(days=30),
+                "iat": datetime.utcnow(),
+            }
+            jwt_token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+            return JsonResponse({
+                "message": "Log in successfully",
+                "access_token": jwt_token,
+                "user": {
+                    "uid": user.uid,
+                    "full_name": user.full_name,
+                    "email": user.email,
+                    "avatar": user.avatar,
+                }
+            }, status=200)
+
+        except Exception as e:
+            logger.error(f"Error in email_login: {str(e)}")
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
 
 @csrf_exempt
 def facebook_login(request):
