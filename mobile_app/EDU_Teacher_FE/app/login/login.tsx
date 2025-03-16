@@ -16,7 +16,7 @@ const LoginScreen = () => {
     const phoneRegex = /^(03|09)\d{8}$/;
 
     if (emailRegex.test(ID) || phoneRegex.test(ID)) {
-      router.push('../main/home')
+      router.push('/login/intro')
     } else {
       Alert.alert("Lỗi", "Vui lòng nhập email hoặc số điện thoại hợp lệ!");
     }

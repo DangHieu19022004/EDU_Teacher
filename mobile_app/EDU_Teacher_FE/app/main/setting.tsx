@@ -36,16 +36,7 @@ const SettingsScreen: React.FC = () => {
         <Text style={styles.logoutText}> Đăng xuất</Text>
       </TouchableOpacity>
 
-      <View style={styles.bottomNav}>
-              {[{ icon: 'home', text: 'Trang chủ', route: '/main/home' },
-                { icon: 'user', text: 'Bản thân', route: '/main/infostudent' },
-                { icon: 'cog', text: 'Cài đặt', route: '/main/setting' }].map((item, index) => (
-                <TouchableOpacity key={index} style={styles.navItem} onPress={() => router.push(item.route as any)}>
-                  <FontAwesome name={item.icon as any} size={24} color={item.route === '/main/setting' ? '#1E88E5' : 'gray'} />
-                  <Text style={[styles.navText, { color: item.route === '/main/setting' ? '#1E88E5' : 'gray' }]}>{item.text}</Text>
-                </TouchableOpacity>
-              ))}
-        </View>
+
     </View>
   );
 };
@@ -63,10 +54,6 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
   logoutButton: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#D32F2F', padding: 15, borderRadius: 15 },
   logoutText: { fontSize: 16, color: 'white' },
-  bottomNav: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 70, flexDirection: 'row', backgroundColor: '#fff', borderWidth: 1, borderColor: '#DDD',
-               alignItems: 'center', justifyContent: 'space-around', paddingVertical: 10, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  navItem: { alignItems: 'center' },
-  navText: { fontSize: 12, color: 'gray', marginTop: 3 },
   statusBar: {height: 30, backgroundColor: 'white'},
 });
 

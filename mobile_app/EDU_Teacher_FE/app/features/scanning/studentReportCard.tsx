@@ -4,10 +4,12 @@ import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from "expo-linear-gradient";
 import SuccessOverlay from "./overlay/successOverlay";
 import sampleStudentData from '../../test_data/studentData';
+import { useNavigation } from '@react-navigation/native';
 
 
 const StudentReportCard = ({ studentData = sampleStudentData }) => {
     const [visible, setVisible] = useState(false);
+    const navigation = useNavigation();
 
       const showOverlay = () => {
         setVisible(true);
@@ -27,7 +29,7 @@ const StudentReportCard = ({ studentData = sampleStudentData }) => {
             </View>
 
             <View style={styles.headerContainer}>
-                <TouchableOpacity style={styles.backButton}>
+                <TouchableOpacity style={styles.backButton} onPress={navigation.goBack}>
                     <Text style={styles.backText}>{'\u25C0'}</Text>
                 </TouchableOpacity>
                 <Text style={styles.header}>Thông tin học bạ</Text>

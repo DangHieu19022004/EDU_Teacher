@@ -46,15 +46,6 @@ const HomeScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        {[{ icon: 'home', text: 'Trang chủ', route: '/main/home' }, { icon: 'user', text: 'Bản thân', route: '/main/infostudent' }, { icon: 'cog', text: 'Cài đặt', route: '/main/setting' }].map((item, index) => (
-          <TouchableOpacity key={index} style={styles.navItem} onPress={() => router.push(item.route as any)}>
-            <FontAwesome name={item.icon as any} size={24} color={item.route === '/main/home' ? '#1E88E5' : 'gray'} />
-            <Text style={[styles.navText, { color: item.route === '/main/home' ? '#1E88E5' : 'gray' }]}>{item.text}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
     </View>
   );
 };
@@ -92,12 +83,6 @@ const styles = StyleSheet.create({
   dataButton: { backgroundColor: '#D53F8C', padding: 10, borderRadius: 20, marginBottom: 10, alignItems: 'center' },
   historyButton: { backgroundColor: '#805AD5', padding: 10, borderRadius: 20, alignItems: 'center' },
   sideButtonText: { color: 'white', fontSize: 12, marginTop: 5 },
-  bottomNav: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 70, flexDirection: 'row',
-               backgroundColor: 'white', borderWidth: 1, borderColor: '#DDD', alignItems: 'center',
-               justifyContent: 'space-around', paddingVertical: 10, borderTopLeftRadius: 20, borderTopRightRadius: 20  },
-  navItem: { alignItems: 'center' },
-  navText: { fontSize: 12, marginTop: 3 },
-
   message: {
     textAlign: 'center',
     paddingBottom: 10,
