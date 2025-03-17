@@ -40,6 +40,7 @@ export default function RootLayout() {
         <Stack.Screen name="main/infostudent" />
         <Stack.Screen name="main/setting" />
         <Stack.Screen name="features/scanning/studentReportCard" />
+        <Stack.Screen name="features/scanning/photoCapture" />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

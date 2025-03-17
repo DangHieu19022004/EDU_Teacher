@@ -1,20 +1,19 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Button } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-
 
 const HomeScreen: React.FC = () => {
   const router = useRouter();
 
+  const handleScanPress = () => {
+    router.push('../features/scanning/photoCapture'); // Chuyển đến màn hình chụp ảnh
+  };
+
   return (
-
     <View style={styles.container}>
-
-
       {/* Header */}
       <View style={styles.header}>
-
         <TouchableOpacity onPress={() => router.push('./menu')}>
           <FontAwesome name="bars" size={24} color="black" />
         </TouchableOpacity>
@@ -28,9 +27,9 @@ const HomeScreen: React.FC = () => {
       <View style={styles.featureSection}>
         <Text style={styles.sectionTitle}>Quản lý học bạ</Text>
         <View style={styles.featureRow}>
-          <TouchableOpacity style={styles.scanButton} onPress={() => router.push('../features/scanning/studentReportCard')}> //
-            <FontAwesome name="file-text" size={90} color="white" />
-            <Text style={styles.scanButtonText}>Quét học bạ</Text>
+          <TouchableOpacity style={styles.scanButton} onPress={handleScanPress}>
+            <FontAwesome name="camera" size={90} color="white" />
+            <Text style={styles.scanButtonText}>Chụp ảnh học bạ</Text>
           </TouchableOpacity>
 
           <View style={styles.sideButtons}>
@@ -45,7 +44,6 @@ const HomeScreen: React.FC = () => {
           </View>
         </View>
       </View>
-
     </View>
   );
 };
@@ -70,24 +68,48 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-
   },
   headerTitle: { fontSize: 25, fontWeight: 'bold' },
   logo: { width: 30, height: 30, borderRadius: 15 },
-  featureSection: { backgroundColor: '#E8E8E8',marginRight: 40, borderBottomRightRadius: 20, borderTopRightRadius:20, padding: 15, marginTop: 120, paddingVertical: 20 },
+  featureSection: {
+    backgroundColor: '#E8E8E8',
+    marginRight: 40,
+    borderBottomRightRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 15,
+    marginTop: 120,
+    paddingVertical: 20,
+  },
   sectionTitle: { fontSize: 25, fontWeight: 'bold', textAlign: 'right' },
-  featureRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
-  scanButton: { backgroundColor: '#1E88E5', padding: 20, borderRadius: 20, width: '56%', alignItems: 'center' },
+  featureRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  scanButton: {
+    backgroundColor: '#1E88E5',
+    padding: 20,
+    borderRadius: 20,
+    width: '56%',
+    alignItems: 'center',
+  },
   scanButtonText: { color: 'white', fontSize: 14, marginTop: 5 },
   sideButtons: { width: '40%' },
-  dataButton: { backgroundColor: '#D53F8C', padding: 10, borderRadius: 20, marginBottom: 10, alignItems: 'center' },
-  historyButton: { backgroundColor: '#805AD5', padding: 10, borderRadius: 20, alignItems: 'center' },
-  sideButtonText: { color: 'white', fontSize: 12, marginTop: 5 },
-  message: {
-    textAlign: 'center',
-    paddingBottom: 10,
+  dataButton: {
+    backgroundColor: '#D53F8C',
+    padding: 10,
+    borderRadius: 20,
+    marginBottom: 10,
+    alignItems: 'center',
   },
-  statusBar: {height: 30, backgroundColor: 'white'},
+  historyButton: {
+    backgroundColor: '#805AD5',
+    padding: 10,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  sideButtonText: { color: 'white', fontSize: 12, marginTop: 5 },
 });
 
 export default HomeScreen;
