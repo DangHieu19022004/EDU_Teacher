@@ -88,7 +88,13 @@ DATABASES = {
 DATABASES = {
     'default': {
         'ENGINE': 'djongo',
-        'NAME': 'EDU_Teacher'
+        'NAME': 'EDU_Teacher',
+        'CLIENT': {
+            'host': 'mongodb://localhost:27017/',
+            'username': '',  # Nếu có tài khoản MongoDB thì điền vào đây
+            'password': '',  # Nếu có mật khẩu thì điền vào đây
+            'authSource': 'admin'  # Dùng khi MongoDB có xác thực
+        }
     }
 }
 
@@ -141,3 +147,6 @@ FIREBASE_CONFIG_PATH = os.path.join(BASE_DIR, "./backend/eduteacher-19063-fireba
 if not firebase_admin._apps:
     cred = credentials.Certificate(FIREBASE_CONFIG_PATH)
     firebase_admin.initialize_app(cred)
+
+
+

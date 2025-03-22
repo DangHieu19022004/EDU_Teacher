@@ -3,81 +3,106 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.core.mail import send_mail
+from django.utils.timezone import now
+from twilio.rest import Client
 from firebase_admin import auth
 import json
-from User.models import User, EmailVerification
+from User.models import User,  VerificationCode
 import jwt
 from datetime import datetime, timedelta
 import logging
 import random
+
 SECRET_KEY = settings.SECRET_KEY
 
 # Configure logger
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
-SECRET_KEY = settings.SECRET_KEY
+
+
+# Cấu hình Twilio
+TWILIO_ACCOUNT_SID = "your_twilio_account_sid"
+TWILIO_AUTH_TOKEN = "your_twilio_auth_token"
+TWILIO_PHONE_NUMBER = "your_twilio_phone_number"
+
+client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
 @csrf_exempt
-def register_email(request):
-    """ Đăng ký tài khoản bằng email và gửi mã OTP """
+def register_user(request):
+    """ Đăng ký tài khoản bằng email hoặc số điện thoại và gửi mã OTP """
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            email = data.get("email")
-            password = data.get("password")
+            identifier = data.get("identifier")  # Email hoặc số điện thoại
 
-            if not email or not password:
-                return JsonResponse({"error": "Email and password are required"}, status=400)
+            if not identifier:
+                return JsonResponse({"error": "Email or phone number is required"}, status=400)
 
-            if User.objects.filter(email=email).exists():
-                return JsonResponse({"error": "Email already in use"}, status=400)
+            # Kiểm tra xem identifier là email hay số điện thoại
+            if "@" in identifier:
+                if User.objects.filter(email=identifier).exists():
+                    return JsonResponse({"error": "Email already in use"}, status=400)
+            else:
+                if User.objects.filter(phone=identifier).exists():
+                    return JsonResponse({"error": "Phone number already in use"}, status=400)
 
-            otp_code = random.randint(100000, 999999)
-            EmailVerification.objects.update_or_create(
-                email=email,
-                defaults={"otp_code": otp_code, "expires_at": datetime.utcnow() + timedelta(minutes=10)}
+            # Tạo mã OTP
+            otp_code = str(random.randint(100000, 999999))
+            expires_at = now() + timedelta(minutes=10)
+
+            VerificationCode.objects.update_or_create(
+                identifier=identifier,
+                defaults={"otp_code": otp_code, "expires_at": expires_at}
             )
 
-            send_mail(
-                "Account verification code",
-                f"Your verification code is: {otp_code}",
-                "noreply@example.com",
-                [email],
-                fail_silently=False,
-            )
+            # Gửi OTP qua email hoặc SMS
+            if "@" in identifier:
+                send_mail(
+                    "Your verification code",
+                    f"Your OTP code is: {otp_code}",
+                    "noreply@example.com",
+                    [identifier],
+                    fail_silently=False,
+                )
+            else:
+                client.messages.create(
+                    body=f"Your verification code is: {otp_code}",
+                    from_=TWILIO_PHONE_NUMBER,
+                    to=identifier
+                )
 
-            return JsonResponse({"message": "Verification code has been sent"}, status=200)
+            return JsonResponse({"message": "Verification code sent"}, status=200)
 
         except Exception as e:
-            logger.error(f"Error in register_email: {str(e)}")
+            logger.error(f"Error in register_user: {str(e)}")
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Invalid request"}, status=400)
 
-
 @csrf_exempt
 def verify_otp(request):
-    """ Xác thực mã OTP """
+    """ Xác thực mã OTP và tạo tài khoản nếu hợp lệ """
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            email = data.get("email")
+            identifier = data.get("identifier")  # Email hoặc số điện thoại
             otp_code = data.get("otp_code")
             password = data.get("password")
 
-            if not email or not otp_code or not password:
+            if not identifier or not otp_code or not password:
                 return JsonResponse({"error": "Missing data"}, status=400)
 
-            verification = EmailVerification.objects.filter(email=email, otp_code=otp_code).first()
-            if not verification or verification.expires_at < datetime.utcnow():
+            verification = VerificationCode.objects.filter(identifier=identifier, otp_code=otp_code).first()
+            if not verification or verification.expires_at < now():
                 return JsonResponse({"error": "OTP code is invalid or expired"}, status=400)
 
             verification.delete()
 
             user = User.objects.create(
                 uid=str(random.randint(100000, 999999)),
-                full_name=email.split("@")[0],
-                email=email,
+                full_name=identifier.split("@")[0] if "@" in identifier else identifier,
+                email=identifier if "@" in identifier else None,
+                phone=identifier if "@" not in identifier else None,
                 password_hash=password,
                 created_at=int(datetime.utcnow().timestamp()),
                 last_sign_in_time=int(datetime.utcnow().timestamp()),
@@ -90,48 +115,6 @@ def verify_otp(request):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Invalid request"}, status=400)
-
-
-@csrf_exempt
-def email_login(request):
-    """ Đăng nhập bằng email """
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            email = data.get("email")
-            password = data.get("password")
-
-            if not email or not password:
-                return JsonResponse({"error": "Email and password are required"}, status=400)
-
-            user = User.objects.filter(email=email, password_hash=password).first()
-            if not user:
-                return JsonResponse({"error": "Wrong email or password"}, status=401)
-
-            payload = {
-                "user_id": user.uid,
-                "exp": datetime.utcnow() + timedelta(days=30),
-                "iat": datetime.utcnow(),
-            }
-            jwt_token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
-
-            return JsonResponse({
-                "message": "Log in successfully",
-                "access_token": jwt_token,
-                "user": {
-                    "uid": user.uid,
-                    "full_name": user.full_name,
-                    "email": user.email,
-                    "avatar": user.avatar,
-                }
-            }, status=200)
-
-        except Exception as e:
-            logger.error(f"Error in email_login: {str(e)}")
-            return JsonResponse({"error": str(e)}, status=500)
-
-    return JsonResponse({"error": "Invalid request"}, status=400)
-
 
 @csrf_exempt
 def facebook_login(request):

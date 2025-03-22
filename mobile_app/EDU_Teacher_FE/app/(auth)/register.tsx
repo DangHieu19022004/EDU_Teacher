@@ -29,6 +29,8 @@ const RegisterScreen = () => {
   const [isChecked, setChecked] = useState(false);
   const [user, setUser] = useState<auth.User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  
   //Đăng ký bằng email
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
