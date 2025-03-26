@@ -1,23 +1,47 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+import {View, Text, TextInput, TouchableOpacity, StyleSheet, Alert} from "react-native";
+import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Checkbox from "expo-checkbox";
 
 const RegisterScreen = () => {
-  
+  const router = useRouter();
+
   const [isChecked, setChecked] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [repassword, setRePassword] = useState("");
+
+    const validateRegistration = () => {
+      const emailRegex = /^$|^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/;
+      const phoneRegex = /^(03|09)\d{8}$/;
+      const passwordRegex = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{12,}$/;
+
+      if (emailRegex.test(email) == false) {
+        Alert.alert("Lỗi", "Vui lòng nhập email hợp lệ!");
+      } else if (phoneRegex.test(phone) == false) {
+        Alert.alert("Lỗi", "Vui lòng nhập số điện thoại hợp lệ!");
+      } else if (passwordRegex.test(password) == false) {
+        Alert.alert("Lỗi", "Vui lòng nhập lại mật khẩu hợp lệ!\n\nMật khẩu yêu cầu dài 12 ký tự trở lên và có tối thiểu 1 số và chữ cái in hoa");
+      } else if (password != repassword){
+        Alert.alert("Lỗi", "Mật khẩu xác nhận lại không chính xác!");
+      } else if (isChecked == false){
+        Alert.alert("Lỗi", "Vui lòng đồng ý điều khoản của chúng tôi để có thể sử dụng dịch vụ!");
+      }
+      else{
+        router.push('./login')
+      }
+    };
 
   return (
     <View style={styles.container}>
+      <View style={styles.statusBar}>
+      </View>
+
       {/* Nút quay lại */}
-      <TouchableOpacity style={styles.backButton}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={24} color="black" />
       </TouchableOpacity>
 
@@ -28,22 +52,22 @@ const RegisterScreen = () => {
       <View style={styles.formContainer}>
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Số điện thoại *</Text>
-          <TextInput style={styles.input} placeholder="Nhập số điện thoại" />
+          <TextInput style={styles.input} placeholder="Nhập số điện thoại" value={phone} onChangeText={setPhone}/>
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Email</Text>
-          <TextInput style={styles.input} placeholder="Nhập email" />
+          <TextInput style={styles.input} placeholder="Nhập email" value={email} keyboardType="email-address" onChangeText={setEmail}/>
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Mật khẩu *</Text>
-          <TextInput style={styles.input} placeholder="Nhập mật khẩu" secureTextEntry />
+          <TextInput style={styles.input} placeholder="Nhập mật khẩu" secureTextEntry value={password} onChangeText={setPassword} />
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Xác nhận mật khẩu *</Text>
-          <TextInput style={styles.input} placeholder="Nhập lại mật khẩu" secureTextEntry />
+          <TextInput style={styles.input} placeholder="Nhập lại mật khẩu" secureTextEntry value={repassword} onChangeText={setRePassword} />
         </View>
 
         {/* Checkbox */}
@@ -56,30 +80,31 @@ const RegisterScreen = () => {
         <Text style={styles.note}>(*) Những thông tin bắt buộc phải điền</Text>
 
         {/* Nút đăng ký */}
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={validateRegistration}>
           <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} >
-            <Text style={styles.buttonText}>Đăng ký</Text>
+            <Text style={styles.buttonText} >Đăng ký</Text>
           </LinearGradient>
         </TouchableOpacity>
 
         {/* Đăng ký với mạng xã hội */}
-      <Text style={styles.socialText}>Đăng ký với 
-      <View style={styles.socialIcons}>
-        <TouchableOpacity>
-          <FontAwesome name="facebook" size={30} color="#1877F2" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <FontAwesome name="google" size={30} color="#DB4437" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <FontAwesome name="instagram" size={30} color="#C13584" />
-        </TouchableOpacity>
-      </View>
-      </Text>
-      
+
+        <View style={styles.socialIcons}>
+          <Text style={styles.socialText}>Đăng ký với </Text>
+          <TouchableOpacity>
+            <FontAwesome name="facebook" style={styles.socialIcon} size={30} color="#1877F2" />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <FontAwesome name="google" style={styles.socialIcon} size={30} color="#DB4437" />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <FontAwesome name="instagram" style={styles.socialIcon} size={30} color="#C13584" />
+          </TouchableOpacity>
+        </View>
+
+
       </View>
 
-      
+
     </View>
   );
 };
@@ -103,6 +128,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   formContainer: {
+
     backgroundColor: "white",
     borderRadius: 10,
     padding: 20,
@@ -156,22 +182,26 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   socialText: {
-    width: "100%",
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: 20,
-    color: "#666",
-    justifyContent: "space-around",
+    fontSize: 14,
+    color: "black",
     fontWeight: "bold",
+    marginVertical: 20,
+    textAlign: "center",
+    paddingTop: 5,
+
   },
   socialIcons: {
+    alignSelf: "center",
+    textAlign: "center",
     flexDirection: "row",
-    width: "40%",
     justifyContent: "space-around",
+    alignItems: "center",
+    width: "60%",
   },
   socialIcon: {
-    marginHorizontal: 10,
+    marginHorizontal: 5,
   },
+  statusBar: {height: 30, backgroundColor: 'white'},
 });
 
 export default RegisterScreen;

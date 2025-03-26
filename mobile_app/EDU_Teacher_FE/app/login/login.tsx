@@ -1,18 +1,34 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, StyleSheet } from "react-native";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from 'expo-router';
+
 
 const LoginScreen = () => {
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
+
+  const [ID, setID] = useState("");
+  const validateID = () => {
+    const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+    const phoneRegex = /^(03|09)\d{8}$/;
+
+    if (emailRegex.test(ID) || phoneRegex.test(ID)) {
+      router.push('/login/intro')
+    } else {
+      Alert.alert("Lỗi", "Vui lòng nhập email hoặc số điện thoại hợp lệ!");
+    }
+  };
 
   return (
     <View style={styles.container}>
+      <View style={styles.statusBar}>
+      </View>
+
       {/* Logo */}
-      <Image
-        source={require("../assets/images/logo.png")}
-        style={styles.logo}
-      />
+      <Image source={require("../../assets/images/logo.png")} style={styles.logo}/>
       <Text style={styles.slogan}>
         Số hóa học bạ, kết nối tri thức, nâng bước tương lai
       </Text>
@@ -22,7 +38,7 @@ const LoginScreen = () => {
 
       <View style={styles.inputContainer}>
         <Ionicons name="mail-outline" size={20} color="#888" style={styles.icon} />
-        <TextInput placeholder="Email / Số điện thoại" style={styles.input} />
+        <TextInput placeholder="Email / Số điện thoại" style={styles.input} value={ID} keyboardType="email-address" onChangeText={setID}/>
       </View>
 
       <View style={styles.inputContainer}>
@@ -30,7 +46,7 @@ const LoginScreen = () => {
         <TextInput placeholder="Mật khẩu" secureTextEntry={!showPassword} style={styles.input} />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
           <Ionicons
-            name={showPassword ? "eye-off-outline" : "eye-outline"}
+            name={showPassword ? "eye-outline" : "eye-off-outline"}
             size={20} color="#888"
             style={styles.eyeIcon}
           />
@@ -42,15 +58,16 @@ const LoginScreen = () => {
       </TouchableOpacity>
 
       {/* Button Đăng nhập */}
-      <TouchableOpacity style={styles.loginButton}>
-        <LinearGradient colors={["#2D9CDB", "#2F80ED"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} >
-          <Text style={styles.loginText}>Đăng nhập</Text>
+      <TouchableOpacity style={styles.loginButton} onPress={validateID}>
+        <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} >
+          <Text style={styles.loginText} >Đăng nhập</Text>
         </LinearGradient>
       </TouchableOpacity>
 
       {/* Đăng nhập bằng mạng xã hội */}
-      <Text style={styles.orText}>Tiếp tục với
+
       <View style={styles.socialContainer}>
+      <Text style={styles.orText}>Tiếp tục với</Text>
         <TouchableOpacity>
           <FontAwesome name="facebook" size={30} color="#1877F2" />
         </TouchableOpacity>
@@ -62,13 +79,13 @@ const LoginScreen = () => {
         </TouchableOpacity>
       </View>
 
-      </Text>
+
 
       {/* Đường kẻ ngang trên nút "Đăng ký" */}
       <View style={styles.line} />
 
       {/* Đăng ký */}
-      <Text style={styles.registerText}>Hoặc <TouchableOpacity><Text style={styles.registerLink}>Đăng ký</Text></TouchableOpacity> </Text>
+      <Text style={styles.registerText}>Hoặc <TouchableOpacity onPress={() => router.push('/login/registry')}><Text style={styles.registerLink}>Đăng ký</Text></TouchableOpacity> </Text>
 
     </View>
   );
@@ -145,10 +162,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginVertical: 20,
     textAlign: "center",
+    paddingTop: 5,
   },
   socialContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
+    alignItems: "center",
     width: "60%",
   },
   line: {
@@ -169,6 +188,7 @@ const styles = StyleSheet.create({
     color: "#2F80ED",
     textDecorationLine: "underline",
   },
+  statusBar: {height: 30, backgroundColor: 'white'},
 });
 
 export default LoginScreen;

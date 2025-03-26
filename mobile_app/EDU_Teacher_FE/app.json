@@ -17,7 +17,10 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+
       "package": "com.danghieu19224.EDU_Teacher_FE"
+
+
     },
     "web": {
       "bundler": "metro",

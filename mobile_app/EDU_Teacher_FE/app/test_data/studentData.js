@@ -1,0 +1,37 @@
+const sampleStudentData = {
+    name: 'Hoàng Văn A',
+    gender: 'Nam',
+    dob: '01/01/2005',
+    phone: '0986802623',
+    classList: [
+        {class: '10D5', subjects: [
+            { name: 'Toán', hk1: '8.2', hk2: '8.2', cn: '8.2' },
+            { name: 'Vật lý', hk1: '8.2', hk2: '8.2', cn: '8.2' },
+            { name: 'Hóa học', hk1: '8.2', hk2: '8.2', cn: '8.2' },
+            { name: 'Ngữ Văn', hk1: '8.2', hk2: '8.2', cn: '8.2' },
+            { name: 'Lịch sử', hk1: '8.2', hk2: '8.2', cn: '8.2' },
+            { name: 'Địa lý', hk1: '8.2', hk2: '8.2', cn: '8.2' },
+            { name: 'Tiếng Anh', hk1: '8.2', hk2: '8.2', cn: '8.2' },
+            { name: 'GDQP', hk1: '8.2', hk2: '8.2', cn: '8.2' },
+            { name: 'Công nghệ', hk1: '8.2', hk2: '8.2', cn: '8.2' },
+            { name: 'Thể dục', hk1: '8.2', hk2: '8.2', cn: '8.2' },
+        ]},
+        {class: '11D5', subjects: [
+            { name: 'Toán', hk1: '7.2', hk2: '7.2', cn: '7.2' },
+            { name: 'Vật lý', hk1: '7.2', hk2: '7.2', cn: '7.2' },
+            { name: 'Hóa học', hk1: '7.2', hk2: '7.2', cn: '7.2' },
+            { name: 'Ngữ Văn', hk1: '7.2', hk2: '7.2', cn: '7.2' },
+            { name: 'Lịch sử', hk1: '7.2', hk2: '7.2', cn: '7.2' },
+            { name: 'Địa lý', hk1: '7.2', hk2: '7.2', cn: '7.2' },
+            { name: 'Tiếng Anh', hk1: '7.2', hk2: '7.2', cn: '7.2' },
+            { name: 'GDQP', hk1: '7.2', hk2: '7.2', cn: '7.2' },
+            { name: 'Công nghệ', hk1: '7.2', hk2: '7.2', cn: '7.2' },
+            { name: 'Thể dục', hk1: '7.2', hk2: '7.2', cn: '7.2' },
+        ]},
+    ],
+    school: 'THPT A',
+    academicPerformance: 'Giỏi',
+    conduct: 'Tốt'
+};
+
+export default sampleStudentData;
