@@ -4,7 +4,7 @@ import auth from "@react-native-firebase/auth";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
 
-const BASE_URL = "http://192.168.1.10:8000/auth";
+const BASE_URL = "http://192.168.1.244:8000/auth";
 
 const AuthScreen = () => {
     const router = useRouter();
