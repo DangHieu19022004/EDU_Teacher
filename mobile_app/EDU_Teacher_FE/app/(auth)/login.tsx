@@ -7,21 +7,23 @@ import auth from "@react-native-firebase/auth";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { router } from "expo-router";
+import { useUser } from "../contexts/UserContext";
 
 GoogleSignin.configure({
   webClientId:
     "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
 });
-const BASE_URL = "http://192.168.1.244:8000/auth";
+const BASE_URL = "http://192.168.1.117:8000/auth";
 
 const LoginScreen = () => {
+  const { setUser } = useUser();
   const [showPassword, setShowPassword] = useState(false);
     const [loggedIn, setLoggedIn] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [initializing, setInitializing] = useState(true);
-    const [user, setUser] = useState<auth.User | null>(null);
+    // const [user, setUser] = useState<auth.User | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     async function onGoogleButtonPress() {
@@ -62,11 +64,19 @@ const LoginScreen = () => {
 
             if (data.access_token && response.ok) {
                 await AsyncStorage.setItem("access_token", data.access_token);
+                setUser(
+                  {
+                    displayName: firebaseUser.displayName || "",
+                    email: firebaseUser.email || "",
+                    photoURL: firebaseUser.photoURL || firebaseUser.providerData?.[0]?.photoURL || "",
+                    phone: firebaseUser.phoneNumber || "",
+                    uid: firebaseUser.uid || "",
+                  }
+                );
 
-                // 🔹 Truyền thông tin user chính xác
+                // // 🔹 Truyền thông tin user chính xác
                 router.replace({
-                    pathname: "/home",
-                    params: { user: JSON.stringify(firebaseUser) }
+                    pathname: "../(main)/home",
                 });
             } else {
                 Alert.alert("Login Failed", data.message || "Unknown error occurred.");
@@ -81,43 +91,6 @@ const LoginScreen = () => {
         Alert.alert("Google Sign-In Failed", error.message);
         setIsLoading(false);
     }
-
-      //   const firebaseIdToken = await userCredential.user.getIdToken();
-      //   console.log("Firebase Token:", firebaseIdToken);
-
-      //   const response = await fetch(`${BASE_URL}/googlelogin/`, {
-      //     method: "POST",
-      //     headers: { "Content-Type": "application/json" },
-      //     body: JSON.stringify({ token: firebaseIdToken }),
-      //   });
-
-      //   const data = await response.json();
-      //   // console.log("Response from Backend:", data);
-
-      //   if (data.access_token && response.ok) {
-      //     await AsyncStorage.setItem("access_token", data.access_token); // Lưu token để duy trì đăng nhập
-
-      //     // Lấy thông tin user từ Firebase
-      //     const currentUser = auth().currentUser;
-      //     if (currentUser) {
-      //       setUser(currentUser);
-      //       setLoggedIn(true);
-
-      //       // CHUYỂN ĐẾN HOMESCREEN
-      //       router.push({ pathname: "/home", params: { user: JSON.stringify(user) } });
-      //       // return <HomeScreen user={currentUser} />
-
-      //     }
-
-      //   }else{
-      //     Alert.alert("Login Failed", data.message || "Unknown error occurred.");
-      //   }
-      // } catch (error) {
-      //   console.log("Google Sign-In Error:", error);
-      //   Alert.alert("Google Sign-In Failed", (error as Error).message);
-      // }
-      // // Sign-in the user with the credential
-      // return await auth().signInWithCredential(googleCredential);
     }
 
     const handleFormSubmit = () => {
@@ -176,7 +149,17 @@ const LoginScreen = () => {
               uid: fbUserData.id,
               displayName: fbUserData.name,
               photoURL: fbUserData.picture.data.url,
+              email: fbUserData.email || "",
+              phone: fbUserData.phone || "",
           };
+
+          setUser({
+            displayName: userData.displayName,
+            email: userData.email,
+            photoURL: userData.photoURL,
+            phone: userData.phone,
+            uid: userData.uid,
+          })
 
           const response = await fetch(`${BASE_URL}/facebooklogin/`, {
             method: "POST",
@@ -191,7 +174,7 @@ const LoginScreen = () => {
 
           setTimeout(() => {
               router.replace({
-                  pathname: "/home",
+                  pathname: "../(main)/home",
                   params: { user: JSON.stringify(userData) },
               });
           }, 500);

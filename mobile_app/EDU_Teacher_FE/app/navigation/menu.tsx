@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   input: {
-    flex: 1, 
+    flex: 1,
     fontSize: 16,
     color: '#333',
     paddingHorizontal: 10,

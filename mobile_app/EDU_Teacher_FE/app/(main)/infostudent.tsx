@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Platform, Image } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
@@ -7,12 +7,12 @@ import { KeyboardTypeOptions } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import sampleStudentData from '../test_data/studentData';
-
+import { useUser } from "../contexts/UserContext";
 
 const Student: React.FC = () => {
   const router = useRouter();
   const navigation = useNavigation();
-
+  const { user } = useUser();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState(sampleStudentData.phone);
   const [name, setName] = useState(sampleStudentData.name);
@@ -44,7 +44,11 @@ const Student: React.FC = () => {
         <Text style={styles.title}>Thông tin học sinh</Text>
         <View style={styles.avatarContainer}>
           <View style={styles.avatar}>
-            <FontAwesome name="user" size={50} color="#555" />
+            <Image
+              source={{ uri: user?.photoURL }}
+              style={{ width: 100, height: 100, borderRadius: 50 }}
+              resizeMode="cover"
+            />
           </View>
         </View>
 
@@ -54,7 +58,7 @@ const Student: React.FC = () => {
             <Text style={styles.label}>{item.label}</Text>
             <View style={styles.inputWrapper}>
               <TextInput
-                value={item.value}
+                value={user?.displayName}
                 onChangeText={item.setValue}
                 style={styles.input}
                 keyboardType={item.keyboardType as KeyboardTypeOptions || 'default'}
@@ -126,7 +130,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#E0E0E0',
+
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,

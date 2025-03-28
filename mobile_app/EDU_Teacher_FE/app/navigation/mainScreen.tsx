@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import HomeScreen from './home';
-import Student from './infostudent';
-import SettingsScreen from './setting';
+import HomeScreen from '../(main)/home';
+import Student from '../(main)/infostudent';
+import SettingsScreen from '../(main)/setting';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,

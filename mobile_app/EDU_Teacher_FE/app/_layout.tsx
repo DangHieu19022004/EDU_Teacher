@@ -9,6 +9,7 @@ import 'expo-dev-client';
 import { Stack } from 'expo-router';
 import { useColorScheme, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { UserProvider } from './contexts/UserContext';
 
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -31,22 +32,25 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <UserProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
         {/* <Stack.Screen name="index" /> */}
         <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="main/mainScreen" />
+        {/* <Stack.Screen name="(tabs)" /> */}
+        <Stack.Screen name="(main)" />
+        {/* <Stack.Screen name="main/mainScreen" />
         <Stack.Screen name="main/home" />
         <Stack.Screen name="main/infostudent" />
         <Stack.Screen name="main/setting" />
         <Stack.Screen name="features/scanning/studentReportCard" />
-        <Stack.Screen name="features/scanning/photoCapture" />
+        <Stack.Screen name="features/scanning/photoCapture" /> */}
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
     </GestureHandlerRootView>
+    </UserProvider>
   );
 }
   // GoogleSignin.configure({

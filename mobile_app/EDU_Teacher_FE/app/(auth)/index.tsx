@@ -3,12 +3,14 @@ import { View, ActivityIndicator, StyleSheet, Alert } from "react-native";
 import auth from "@react-native-firebase/auth";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
+import { useUser } from "../contexts/UserContext";
 
-const BASE_URL = "http://192.168.1.244:8000/auth";
+const BASE_URL = "http://192.168.1.117:8000/auth";
 
 const AuthScreen = () => {
     const router = useRouter();
-    const [user, setUser] = useState<auth.User | null>(null);
+    const { setUser } = useUser();
+    // const [user, setUser] = useState<auth.User | null>(null);
     const [loggedIn, setLoggedIn] = useState(false);
     const [initializing, setInitializing] = useState(true);
 
@@ -27,15 +29,18 @@ const AuthScreen = () => {
                   if (response.ok) {
                       const userData = await response.json();
                       console.log("✅ Google User authenticated:", userData);
-                      setUser(userData.user);
+                      setUser({
+                            displayName: userData.user.full_name || userData.user.displayName || "",
+                            email: userData.user.email || "",
+                            photoURL: userData.user.photoURL || userData.user.providerData?.[0]?.photoURL || userData.user.avatar ||"",
+                            phone: userData.user.phoneNumber || "",
+                            uid: userData.user.uid || "",
+                      });
                       setLoggedIn(true);
 
-                      router.replace({ pathname: "/home", params: { user: JSON.stringify(userData.user) } });
-                    //   if (loggedIn && user) {
-                    //     router.replace({ pathname: "/home", params: { user: JSON.stringify(user) } });
-                    // } else {
-                    //     router.replace("/login");
-                    // }
+                    //   router.replace({ pathname: "/home", params: { user: JSON.stringify(userData.user) } });
+                        router.replace('../(main)/home');
+
 
                       return;
                   } else {
@@ -59,11 +64,18 @@ const AuthScreen = () => {
                   if (fbCheckResponse.ok) {
                       const fbUserData = await fbCheckResponse.json();
                       console.log("✅ Facebook verify response:", fbUserData.user);
-                      setUser(fbUserData.user);
+                      setUser({
+                        displayName: fbUserData.user.full_name || fbUserData.user.displayName || "",
+                        email: fbUserData.user.email || "",
+                        photoURL: fbUserData.user.photoURL || fbUserData.user.providerData?.[0]?.photoURL || fbUserData.user.avatar || "",
+                        phone: fbUserData.user.phoneNumber || "",
+                        uid: fbUserData.user.uid || "",
+                      })
                       setLoggedIn(true);
 
 
-                    router.replace({ pathname: "/home", params: { user: JSON.stringify(fbUserData.user) } });
+                    // router.replace({ pathname: "/home", params: { user: JSON.stringify(fbUserData.user) } });
+                    router.replace('../(main)/home');
 
 
                       return;
@@ -83,20 +95,6 @@ const AuthScreen = () => {
 
       checkLoginStatus();
   }, []);
-
-
-
-//   useEffect(() => {
-//       if (!initializing) {
-//           console.log("📌 Checking navigation condition:", { loggedIn, user });
-
-//           if (loggedIn && user) {
-//               router.replace({ pathname: "/home", params: { user: JSON.stringify(user) } });
-//           } else {
-//               router.replace("/login");
-//           }
-//       }
-//   }, [loggedIn, user, initializing]);
 
 
 

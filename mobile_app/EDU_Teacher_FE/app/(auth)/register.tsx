@@ -14,20 +14,20 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { router } from "expo-router";
 import auth from "@react-native-firebase/auth";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-
+import { useUser } from "../contexts/UserContext";
+import { LoginManager, AccessToken } from 'react-native-fbsdk-next';
 
 GoogleSignin.configure({
   webClientId:
     "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
 });
-const BASE_URL = "http://192.168.1.244:8000/auth";
+const BASE_URL = "http://192.168.1.117:8000/auth";
 
 const RegisterScreen = () => {
+  const { setUser } = useUser();
   const [loggedIn, setLoggedIn] = useState(false);
   const [isChecked, setChecked] = useState(false);
-  const [user, setUser] = useState<auth.User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   async function onGoogleButtonPress() {
@@ -68,7 +68,13 @@ const RegisterScreen = () => {
 
               if (data.access_token && response.ok) {
                   await AsyncStorage.setItem("access_token", data.access_token);
-                  setUser(firebaseUser);
+                  setUser({
+                    displayName: firebaseUser.displayName || "",
+                    email: firebaseUser.email || "",
+                    photoURL: firebaseUser.photoURL || firebaseUser.providerData?.[0]?.photoURL || "",
+                    phone: firebaseUser.phoneNumber || "",
+                    uid: firebaseUser.uid || "",
+                  });
                   setLoggedIn(true);
               } else {
                   Alert.alert("Login Failed", data.error || "Unknown error occurred.");
@@ -88,11 +94,77 @@ const RegisterScreen = () => {
     // return await auth().signInWithCredential(googleCredential);
   }
   useEffect(() => {
-    if (loggedIn && user) {
-        router.replace({ pathname: "/home", params: { user: JSON.stringify(user) } });
+    if (loggedIn) {
+        router.replace({ pathname: "../(main)/home"});
     }
-}, [loggedIn, user]); // 🔹 Điều hướng khi `loggedIn` hoặc `user` thay đổi
+}, [loggedIn]); // 🔹 Điều hướng khi `loggedIn` hoặc `user` thay đổi
 
+async function onFacebookButtonPress() {
+  await AsyncStorage.removeItem("fb_uid");
+  await AsyncStorage.removeItem("access_token");
+  try {
+      setIsLoading(true);
+
+      const result = await LoginManager.logInWithPermissions(["public_profile"]);
+      if (result.isCancelled) throw new Error("User cancelled the login process");
+
+      const fbData = await AccessToken.getCurrentAccessToken();
+      if (!fbData) throw new Error("Failed to get Facebook access token");
+
+      const fbResponse = await fetch(
+          `https://graph.facebook.com/me?fields=id,name,picture.type(large)&access_token=${fbData.accessToken}`
+      );
+      const fbUserData = await fbResponse.json();
+
+      console.log("✅ Facebook User Data:", fbUserData);
+
+      if (!fbUserData.id || !fbUserData.name || !fbUserData.picture?.data?.url) {
+          throw new Error("Incomplete user data received from Facebook");
+      }
+
+      const userData = {
+          uid: fbUserData.id,
+          displayName: fbUserData.name,
+          photoURL: fbUserData.picture.data.url,
+          email: fbUserData.email || "",
+          phone: fbUserData.phone || "",
+      };
+
+      setUser({
+        displayName: userData.displayName,
+        email: userData.email,
+        photoURL: userData.photoURL,
+        phone: userData.phone,
+        uid: userData.uid,
+      })
+
+      const response = await fetch(`${BASE_URL}/facebooklogin/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.access_token) {
+      await AsyncStorage.setItem("fb_uid", data.access_token);
+
+      setTimeout(() => {
+          router.replace({
+              pathname: "../(main)/home",
+              params: { user: JSON.stringify(userData) },
+          });
+      }, 500);
+  } else {
+      throw new Error(data.error || "Login failed.");
+  }
+
+  } catch (error) {
+      console.error("Facebook Sign-In Error:", error);
+      Alert.alert("Facebook Sign-In Failed", error.message);
+  }
+  setIsLoading(false);
+}
 
   return (
       <View style={styles.container}>
@@ -159,7 +231,7 @@ const RegisterScreen = () => {
           {/* Đăng ký với mạng xã hội */}
         <Text style={styles.socialText}>Đăng ký với
         <View style={styles.socialIcons}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={onFacebookButtonPress}>
             <FontAwesome name="facebook" size={30} color="#1877F2" />
           </TouchableOpacity>
           <TouchableOpacity  onPress={onGoogleButtonPress}>

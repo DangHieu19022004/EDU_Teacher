@@ -2,10 +2,11 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useUser } from "../contexts/UserContext";
 
 const HomeScreen: React.FC = () => {
   const router = useRouter();
-
+  const { user } = useUser();
   const handleScanPress = () => {
     router.push('../features/scanning/photoCapture'); // Chuyển đến màn hình chụp ảnh
   };
@@ -14,12 +15,12 @@ const HomeScreen: React.FC = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('./menu')}>
+        <TouchableOpacity onPress={() => router.push('../navigation/menu')}>
           <FontAwesome name="bars" size={24} color="black" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Trang chủ</Text>
         <TouchableOpacity>
-          <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
+          <Image source={{ uri: user?.photoURL }} style={styles.logo} />
         </TouchableOpacity>
       </View>
 

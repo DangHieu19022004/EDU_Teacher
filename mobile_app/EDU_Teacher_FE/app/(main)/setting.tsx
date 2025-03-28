@@ -1,13 +1,38 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Switch, Image, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Switch, Image, StyleSheet, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LoginManager } from 'react-native-fbsdk-next';
+import auth from "@react-native-firebase/auth";
 
 const SettingsScreen: React.FC = () => {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
   const router = useRouter();
 
   const toggleNotifications = () => setIsNotificationsEnabled(!isNotificationsEnabled);
+
+  const handleSignOut = async () => {
+    try {
+        // Kiểm tra nếu user đăng nhập bằng Facebook
+        const fbUser = await AsyncStorage.getItem("fb_uid");
+        if (fbUser) {
+            console.log("Logging out from Facebook...");
+            LoginManager.logOut(); // 🔥 Đăng xuất khỏi Facebook
+            await AsyncStorage.removeItem("fb_uid"); // 🔥 Xóa dữ liệu Facebook user
+        }else{
+            // Đăng xuất khỏi Firebase (nếu có)
+            await auth().signOut();
+            await AsyncStorage.removeItem("access_token"); // 🔥 Xóa token Google/Facebook
+        }
+
+        // Điều hướng về màn hình login
+        router.replace("../(auth)");
+    } catch (error) {
+        console.log("Sign-Out Error:", error);
+        Alert.alert("Logout Failed", error.message);
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -31,7 +56,7 @@ const SettingsScreen: React.FC = () => {
         </TouchableOpacity>
       ))}
       <Text style={styles.sectionTitle}>Khác</Text>
-      <TouchableOpacity style={styles.logoutButton} onPress={() => router.push('../login/login')}>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
         <FontAwesome name="sign-out" size={20} color="white"/>
         <Text style={styles.logoutText}> Đăng xuất</Text>
       </TouchableOpacity>
