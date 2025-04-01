@@ -1,14 +1,20 @@
 import React from "react";
 import { View, Text, Modal, StyleSheet, Image, TouchableWithoutFeedback } from "react-native";
 
-const SuccessOverlay = ({ visible, onClose }: { visible: boolean, onClose: () => void }) => {
+interface SuccessModalProps {
+  visible: boolean;
+  onClose: () => void;
+  message?: string; // Optional custom message
+}
+
+const SuccessModal = ({ visible, onClose, message = "Lưu học bạ thành công" }: SuccessModalProps) => {
   return (
     <Modal transparent visible={visible} animationType="fade">
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <View style={styles.container}>
-            <Image source={require("../../../../assets/images/success-overlay.png")} style={styles.image} />
-            <Text style={styles.text}>Lưu học bạ thành công</Text>
+            <Image source={require("../assets/images/success-icon.png")} style={styles.image} />
+            <Text style={styles.text}>{message}</Text>
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -48,4 +54,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SuccessOverlay;
+export default SuccessModal;

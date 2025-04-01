@@ -3,6 +3,28 @@ import { View, Text, TouchableOpacity, Image, StyleSheet, FlatList, Alert } from
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import sampleStudentData from '../../test_data/studentData.json';
+
+interface StudentItem {
+  id: string;
+  name: string;
+  gender: string;
+  dob: string;
+  phone: string;
+  school: string;
+  academicPerformance: string;
+  conduct: string;
+  classList: {
+    class: string;
+    subjects: {
+      name: string;
+      hk1: string;
+      hk2: string;
+      cn: string;
+    }[];
+  }[];
+  images?: string[];
+}
 
 const PhotoCaptureScreen: React.FC = () => {
   const router = useRouter();
@@ -37,9 +59,21 @@ const PhotoCaptureScreen: React.FC = () => {
       Alert.alert('Thông báo', 'Bạn chưa chụp ảnh nào!');
       return;
     }
+
+    const studentDataWithImages: StudentItem = {
+      ...sampleStudentData,
+      images: images,
+    };
+
+    console.log('Navigating with data:', studentDataWithImages);
+
     router.push({
-      pathname: '../scanning/studentReportCard',
-      params: { imageUris: JSON.stringify(images) },
+      pathname: '/features/scanning/StudentReportCardScreen',
+      params: {
+        student: JSON.stringify(studentDataWithImages),
+        className: sampleStudentData.classList?.[0]?.class || '10D5',
+        isEditMode: 'true',
+      },
     });
   };
 
@@ -54,18 +88,13 @@ const PhotoCaptureScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Chụp ảnh học bạ</Text>
       </View>
-
-      {/* Nút chụp ảnh */}
       <TouchableOpacity style={styles.captureButton} onPress={openCamera}>
         <FontAwesome name="camera" size={30} color="white" />
         <Text style={styles.captureButtonText}>Chụp ảnh</Text>
       </TouchableOpacity>
-
-      {/* Danh sách ảnh đã chụp */}
       {images.length > 0 ? (
         <FlatList
           data={images}
@@ -77,8 +106,6 @@ const PhotoCaptureScreen: React.FC = () => {
       ) : (
         <Text style={styles.noImageText}>Chưa có ảnh nào được chụp</Text>
       )}
-
-      {/* Nút Tiếp theo */}
       {images.length > 0 && (
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
           <Text style={styles.nextButtonText}>Tiếp theo</Text>

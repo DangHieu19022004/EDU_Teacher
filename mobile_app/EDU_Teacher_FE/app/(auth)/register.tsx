@@ -1,259 +1,262 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
-  TouchableOpacity, Alert,
+  TouchableOpacity,
+  Alert,
   StyleSheet,
-  ActivityIndicator, Modal
+  ActivityIndicator,
+  Modal
 } from "react-native";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Checkbox from "expo-checkbox";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
 import auth from "@react-native-firebase/auth";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useUser } from "../contexts/UserContext";
-import { LoginManager, AccessToken } from 'react-native-fbsdk-next';
 
 GoogleSignin.configure({
-  webClientId:
-    "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
+  webClientId: "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
 });
-const BASE_URL = "http://192.168.1.117:8000/auth";
+const BASE_URL = "http://192.168.1.244:8000/auth";
 
 const RegisterScreen = () => {
-  const { setUser } = useUser();
+  const router = useRouter();
   const [loggedIn, setLoggedIn] = useState(false);
   const [isChecked, setChecked] = useState(false);
+  const [user, setUser] = useState<auth.User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [repassword, setRePassword] = useState("");
+
+  const validateRegistration = () => {
+    const emailRegex = /^$|^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/;
+    const phoneRegex = /^(03|09)\d{8}$/;
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{12,}$/;
+
+    if (email && emailRegex.test(email) == false) {
+      Alert.alert("Lỗi", "Vui lòng nhập email hợp lệ!");
+    } else if (phoneRegex.test(phone) == false) {
+      Alert.alert("Lỗi", "Vui lòng nhập số điện thoại hợp lệ!");
+    } else if (passwordRegex.test(password) == false) {
+      Alert.alert("Lỗi", "Vui lòng nhập lại mật khẩu hợp lệ!\n\nMật khẩu yêu cầu dài 12 ký tự trở lên và có tối thiểu 1 số và chữ cái in hoa");
+    } else if (password != repassword) {
+      Alert.alert("Lỗi", "Mật khẩu xác nhận lại không chính xác!");
+    } else if (isChecked == false) {
+      Alert.alert("Lỗi", "Vui lòng đồng ý điều khoản của chúng tôi để có thể sử dụng dịch vụ!");
+    } else {
+      // Thực hiện đăng ký bằng Firebase
+      handleRegistration();
+    }
+  };
+
+  const handleRegistration = async () => {
+    try {
+      setIsLoading(true);
+      // Tạo tài khoản với email/password
+      const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+
+      // Cập nhật số điện thoại
+      await userCredential.user.updateProfile({
+        displayName: phone
+      });
+
+      // Gửi email xác thực
+      await userCredential.user.sendEmailVerification();
+
+      Alert.alert("Thành công", "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.");
+      router.push('/(auth)/login');
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      Alert.alert("Lỗi", error.message || "Đăng ký không thành công");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   async function onGoogleButtonPress() {
-    try{
-      setIsLoading(true); // 🔥 Hiển thị loading
-
-      // Check if your device supports Google Play
+    try {
+      setIsLoading(true);
       await GoogleSignin.signOut();
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      // Get the users ID token
       const googleSignInResult = await GoogleSignin.signIn();
-
-      // Create a Google credential with the token
       const googleCredential = auth.GoogleAuthProvider.credential(
         googleSignInResult.data?.idToken ?? null
       );
-
       const userCredential = await auth().signInWithCredential(googleCredential);
-      // 🔹 Đảm bảo Firebase cập nhật user trước khi lấy thông tin
       await userCredential.user.reload();
       const firebaseUser = userCredential.user;
 
-      console.log("🔥 Firebase User:", firebaseUser);
+      console.log("Firebase User:", firebaseUser);
 
       if (firebaseUser) {
-          const firebaseIdToken = await firebaseUser.getIdToken();
-          console.log("🔹 Waiting 2 seconds before sending token...");
+        const firebaseIdToken = await firebaseUser.getIdToken();
+        const response = await fetch(`${BASE_URL}/googlelogin/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: firebaseIdToken }),
+        });
 
-          setTimeout(async () => {
-              const response = await fetch(`${BASE_URL}/googlelogin/`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ token: firebaseIdToken }),
-              });
+        const data = await response.json();
 
-              const data = await response.json();
-              console.log("📡 Server Response:", data);
-
-              if (data.access_token && response.ok) {
-                  await AsyncStorage.setItem("access_token", data.access_token);
-                  setUser({
-                    displayName: firebaseUser.displayName || "",
-                    email: firebaseUser.email || "",
-                    photoURL: firebaseUser.photoURL || firebaseUser.providerData?.[0]?.photoURL || "",
-                    phone: firebaseUser.phoneNumber || "",
-                    uid: firebaseUser.uid || "",
-                  });
-                  setLoggedIn(true);
-              } else {
-                  Alert.alert("Login Failed", data.error || "Unknown error occurred.");
-              }
-              setIsLoading(false);
-          }, 2000); // 🔹 Chờ 2 giây trước khi gửi request
+        if (data.access_token && response.ok) {
+          await AsyncStorage.setItem("access_token", data.access_token);
+          setUser(firebaseUser);
+          setLoggedIn(true);
+        } else {
+          Alert.alert("Login Failed", data.error || "Unknown error occurred.");
+        }
       } else {
-          Alert.alert("Login Failed", "User data not found.");
-          setIsLoading(false); // 🔥 Tắt loading khi lỗi
+        Alert.alert("Login Failed", "User data not found.");
       }
-  } catch (error) {
+    } catch (error: any) {
       console.log("Google Sign-In Error:", error);
       Alert.alert("Google Sign-In Failed", error.message);
-      setIsLoading(false); // 🔥 Tắt loading khi lỗi
-  }
-    // // Sign-in the user with the credential
-    // return await auth().signInWithCredential(googleCredential);
-  }
-  useEffect(() => {
-    if (loggedIn) {
-        router.replace({ pathname: "../(main)/home"});
+    } finally {
+      setIsLoading(false);
     }
-}, [loggedIn]); // 🔹 Điều hướng khi `loggedIn` hoặc `user` thay đổi
-
-async function onFacebookButtonPress() {
-  await AsyncStorage.removeItem("fb_uid");
-  await AsyncStorage.removeItem("access_token");
-  try {
-      setIsLoading(true);
-
-      const result = await LoginManager.logInWithPermissions(["public_profile"]);
-      if (result.isCancelled) throw new Error("User cancelled the login process");
-
-      const fbData = await AccessToken.getCurrentAccessToken();
-      if (!fbData) throw new Error("Failed to get Facebook access token");
-
-      const fbResponse = await fetch(
-          `https://graph.facebook.com/me?fields=id,name,picture.type(large)&access_token=${fbData.accessToken}`
-      );
-      const fbUserData = await fbResponse.json();
-
-      console.log("✅ Facebook User Data:", fbUserData);
-
-      if (!fbUserData.id || !fbUserData.name || !fbUserData.picture?.data?.url) {
-          throw new Error("Incomplete user data received from Facebook");
-      }
-
-      const userData = {
-          uid: fbUserData.id,
-          displayName: fbUserData.name,
-          photoURL: fbUserData.picture.data.url,
-          email: fbUserData.email || "",
-          phone: fbUserData.phone || "",
-      };
-
-      setUser({
-        displayName: userData.displayName,
-        email: userData.email,
-        photoURL: userData.photoURL,
-        phone: userData.phone,
-        uid: userData.uid,
-      })
-
-      const response = await fetch(`${BASE_URL}/facebooklogin/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.access_token) {
-      await AsyncStorage.setItem("fb_uid", data.access_token);
-
-      setTimeout(() => {
-          router.replace({
-              pathname: "../(main)/home",
-              params: { user: JSON.stringify(userData) },
-          });
-      }, 500);
-  } else {
-      throw new Error(data.error || "Login failed.");
   }
 
-  } catch (error) {
-      console.error("Facebook Sign-In Error:", error);
-      Alert.alert("Facebook Sign-In Failed", error.message);
-  }
-  setIsLoading(false);
-}
+  useEffect(() => {
+    if (loggedIn && user) {
+      router.replace({ pathname: "/home", params: { user: JSON.stringify(user) } });
+    }
+  }, [loggedIn, user]);
 
   return (
-      <View style={styles.container}>
-        {/* 🔥 Modal hiển thị trạng thái đăng ký */}
-        <Modal
-          transparent
-          animationType="fade"
-          visible={isLoading}
-          onRequestClose={() => setIsLoading(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <ActivityIndicator size="large" color="#2D9CDB" />
-              <Text style={styles.loadingText}>Đang đăng ký bằng Google...</Text>
-            </View>
+    <View style={styles.container}>
+      {/* Loading Modal */}
+      <Modal
+        transparent
+        animationType="fade"
+        visible={isLoading}
+        onRequestClose={() => setIsLoading(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ActivityIndicator size="large" color="#32ADE6" />
+            <Text style={styles.loadingText}>Đang xử lý...</Text>
           </View>
-        </Modal>
-        {/* Nút quay lại */}
-        <TouchableOpacity style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="black" />
+        </View>
+      </Modal>
+
+      {/* Status Bar */}
+      <View style={styles.statusBar}></View>
+
+      {/* Nút quay lại */}
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={24} color="black" />
+      </TouchableOpacity>
+
+      {/* Tiêu đề */}
+      <Text style={styles.title}>Đăng ký</Text>
+
+      {/* Khung chứa form */}
+      <View style={styles.formContainer}>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Số điện thoại *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Nhập số điện thoại"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Nhập email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Mật khẩu *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Nhập mật khẩu"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            autoCapitalize="none"
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Xác nhận mật khẩu *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Nhập lại mật khẩu"
+            secureTextEntry
+            value={repassword}
+            onChangeText={setRePassword}
+            autoCapitalize="none"
+          />
+        </View>
+
+        {/* Checkbox */}
+        <View style={styles.checkboxContainer}>
+          <Checkbox
+            value={isChecked}
+            onValueChange={setChecked}
+            color={isChecked ? "#32ADE6" : undefined}
+          />
+          <Text style={styles.checkboxLabel}>Tôi đồng ý với những chính sách của nhà phát triển *</Text>
+        </View>
+
+        {/* Chú thích */}
+        <Text style={styles.note}>(*) Những thông tin bắt buộc phải điền</Text>
+
+        {/* Nút đăng ký */}
+        <TouchableOpacity style={styles.button} onPress={validateRegistration}>
+          <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} >
+            <Text style={styles.buttonText}>Đăng ký</Text>
+          </LinearGradient>
         </TouchableOpacity>
 
-        {/* Tiêu đề */}
-        <Text style={styles.title}>Đăng ký</Text>
-
-        {/* Khung chứa form */}
-        <View style={styles.formContainer}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Số điện thoại *</Text>
-            <TextInput style={styles.input} placeholder="Nhập số điện thoại" />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput style={styles.input} placeholder="Nhập email" />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Mật khẩu *</Text>
-            <TextInput style={styles.input} placeholder="Nhập mật khẩu" secureTextEntry />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Xác nhận mật khẩu *</Text>
-            <TextInput style={styles.input} placeholder="Nhập lại mật khẩu" secureTextEntry />
-          </View>
-
-          {/* Checkbox */}
-          <View style={styles.checkboxContainer}>
-            <Checkbox value={isChecked} onValueChange={setChecked} color={isChecked ? "#2D9CDB" : undefined} />
-            <Text style={styles.checkboxLabel}>Tôi đồng ý với những chính sách của nhà phát triển *</Text>
-          </View>
-
-          {/* Chú thích */}
-          <Text style={styles.note}>(*) Những thông tin bắt buộc phải điền</Text>
-
-          {/* Nút đăng ký */}
-          <TouchableOpacity style={styles.button}>
-            <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} >
-              <Text style={styles.buttonText}>Đăng ký</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          {/* Đăng ký với mạng xã hội */}
-        <Text style={styles.socialText}>Đăng ký với
+        {/* Đăng ký với mạng xã hội */}
         <View style={styles.socialIcons}>
-          <TouchableOpacity onPress={onFacebookButtonPress}>
-            <FontAwesome name="facebook" size={30} color="#1877F2" />
+          <Text style={styles.socialText}>Đăng ký với </Text>
+          <TouchableOpacity>
+            <FontAwesome name="facebook" style={styles.socialIcon} size={30} color="#1877F2" />
           </TouchableOpacity>
-          <TouchableOpacity  onPress={onGoogleButtonPress}>
-            <FontAwesome name="google" size={30} color="#DB4437" />
+          <TouchableOpacity onPress={onGoogleButtonPress}>
+            <FontAwesome name="google" style={styles.socialIcon} size={30} color="#DB4437" />
           </TouchableOpacity>
           <TouchableOpacity>
-            <FontAwesome name="instagram" size={30} color="#C13584" />
+            <FontAwesome name="instagram" style={styles.socialIcon} size={30} color="#C13584" />
           </TouchableOpacity>
         </View>
-        </Text>
-
-        </View>
-
-
       </View>
-    );
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    paddingHorizontal: 20,
+    justifyContent: "center",
+  },
+  statusBar: {
+    height: 30,
+    backgroundColor: 'white'
+  },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // 🔥 Làm mờ nền
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -263,22 +266,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
-  loadingContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: "#2D9CDB",
+    color: "#32ADE6",
     fontWeight: "bold",
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    paddingHorizontal: 20,
-    justifyContent: "center",
   },
   backButton: {
     position: "absolute",
@@ -345,18 +337,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   socialText: {
-    width: "100%",
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: 20,
-    color: "#666",
-    justifyContent: "space-around",
+    fontSize: 14,
+    color: "black",
     fontWeight: "bold",
+    marginVertical: 20,
+    textAlign: "center",
+    paddingTop: 5,
   },
   socialIcons: {
+    alignSelf: "center",
     flexDirection: "row",
-    width: "40%",
-    justifyContent: "space-around",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
   },
   socialIcon: {
     marginHorizontal: 10,

@@ -34,7 +34,7 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
 
           <View style={styles.sideButtons}>
-            <TouchableOpacity style={styles.dataButton}>
+            <TouchableOpacity style={styles.dataButton} onPress={() => router.push('../features/data_manager/ClassListScreen')}>
               <FontAwesome name="database" size={30} color="white" />
               <Text style={styles.sideButtonText}>Kho dữ liệu</Text>
             </TouchableOpacity>

@@ -1,15 +1,22 @@
 import React from "react";
 import { View, Text, Modal, StyleSheet, Image, TouchableWithoutFeedback } from "react-native";
 
-const FailOverlay = ({ visible, onClose }: { visible: boolean, onClose: () => void }) => {
+interface ErrorModalProps {
+  visible: boolean;
+  onClose: () => void;
+  message?: string; // Optional custom message
+  subMessage?: string; // Optional custom sub-message
+}
+
+const ErrorModal = ({ visible, onClose, message = "Không thành công", subMessage = "Vui lòng chụp lại học bạ" }: ErrorModalProps) => {
   return (
     <Modal transparent visible={visible} animationType="fade">
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <View style={styles.container}>
-            <Image source={require("../../../../assets/images/fail-overlay.png")} style={styles.image} />
-            <Text style={styles.mainText}>Không thành công</Text>
-            <Text style={styles.subText}>Vui lòng chụp lại học bạ</Text>
+            <Image source={require("../assets/images/fail-icon.png")} style={styles.image} />
+            <Text style={styles.mainText}>{message}</Text>
+            <Text style={styles.subText}>{subMessage}</Text>
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -50,9 +57,8 @@ const styles = StyleSheet.create({
   subText: {
     marginTop: 3,
     fontSize: 16,
-    // fontWeight: "bold",
     color: "#70798C",
   },
 });
 
-export default FailOverlay;
+export default ErrorModal;
