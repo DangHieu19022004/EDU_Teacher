@@ -84,12 +84,14 @@ const StudentReportCard = ({
   const [editableStudent, setEditableStudent] = useState<StudentItem>(studentData);
 
   useEffect(() => {
-    console.log('Received studentData in StudentReportCard:', studentData);
+    //check data đã truyền đúng hay chưa
+    // console.log('Received studentData in StudentReportCard:', studentData);
     setEditableStudent(studentData);
   }, [studentData]);
 
-  console.log('Editable student in StudentReportCard:', editableStudent);
-  console.log('Class name in StudentReportCard:', className);
+
+  // console.log('Editable student in StudentReportCard:', editableStudent);
+  // console.log('Class name in StudentReportCard:', className);
 
   if (!editableStudent || !editableStudent.name) {
     return (
@@ -126,7 +128,7 @@ const StudentReportCard = ({
 
       // Xác định lớp lớn nhất từ classList
       const highestClassName = getHighestClass(editableStudent.classList);
-      console.log('Highest class determined:', highestClassName);
+      // console.log('Highest class determined:', highestClassName);
 
       // Kiểm tra xem lớp lớn nhất đã tồn tại chưa
       let targetClass = allClasses.find((c) => c.name === highestClassName);
@@ -134,7 +136,7 @@ const StudentReportCard = ({
         // Tạo lớp mới nếu chưa tồn tại
         targetClass = { id: Date.now().toString(), name: highestClassName, students: [] };
         allClasses.push(targetClass);
-        console.log('Created new class:', highestClassName);
+        // console.log('Created new class:', highestClassName);
       }
 
       const studentToSave = {
@@ -312,6 +314,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    paddingTop: 30,
   },
   scrollContent: {
     padding: 16,

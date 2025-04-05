@@ -162,7 +162,7 @@ const ClassListScreen: React.FC = () => {
       }
     }
 
-    console.log('Viewing student:', fullStudentData);
+    // console.log('Viewing student:', fullStudentData);
 
     router.push({
       pathname: '/features/scanning/StudentReportCardScreen', // Sửa lại thành StudentReportCardScreen

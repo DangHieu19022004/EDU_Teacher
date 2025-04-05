@@ -50,7 +50,7 @@ export default function StudentReportCardScreen() {
 
   const { student, className, isEditMode } = params;
 
-  console.log('Params received:', params);
+  // console.log('Params received:', params);
 
   if (!student || !className) {
     console.error('Missing required params:', params);
@@ -65,7 +65,7 @@ export default function StudentReportCardScreen() {
   let studentData: StudentItem | undefined;
   try {
     studentData = JSON.parse(student as string) as StudentItem;
-    console.log('Parsed studentData:', studentData);
+    // console.log('Parsed studentData:', studentData);
   } catch (error) {
     console.error('Error parsing student data:', error);
     navigation.goBack();
