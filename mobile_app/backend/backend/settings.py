@@ -88,7 +88,12 @@ DATABASES = {
 DATABASES = {
     'default': {
         'ENGINE': 'djongo',
-        'NAME': 'EDU_Teacher'
+        'NAME': 'EduTeacher',
+        'ENFORCE_SCHEMA': False,
+        'CLIENT': {
+            'host': '34.150.124.60',
+            'port': 27017,
+        }
     }
 }
 
