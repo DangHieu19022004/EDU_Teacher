@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
 import { useUser } from "../contexts/UserContext";
 
-const BASE_URL = "http://192.168.1.40:8000/auth";
+const BASE_URL = "http://192.168.1.56:8000/auth";
 
 const AuthScreen = () => {
     const router = useRouter();

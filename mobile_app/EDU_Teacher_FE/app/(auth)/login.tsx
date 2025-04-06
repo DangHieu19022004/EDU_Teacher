@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Alert, ActivityIndicator, TouchableOpacity, Image, StyleSheet, Modal } from "react-native";
+import { View, Text, TextInput, Alert, ActivityIndicator, TouchableOpacity, Image, StyleSheet, Modal, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { LoginManager, AccessToken } from 'react-native-fbsdk-next';
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -13,7 +13,7 @@ GoogleSignin.configure({
   webClientId: "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
 });
-const BASE_URL = "http://192.168.1.40:8000/auth";
+const BASE_URL = "http://192.168.1.56:8000/auth";
 
 const LoginScreen = () => {
   const router = useRouter();
@@ -24,6 +24,70 @@ const LoginScreen = () => {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState<auth.User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [isOTPMode, setIsOTPMode] = useState(false);       // bật/tắt chế độ OTP
+  const [phoneNumber, setPhoneNumber] = useState("");       // lưu số điện thoại
+  const [confirmation, setConfirmation] = useState(null);   // đối tượng xác minh
+  const [otpCode, setOtpCode] = useState("");               // mã OTP nhập từ người dùng
+
+  const sendOTP = async () => {
+    try {
+      setIsLoading(true);
+
+      let input = ID.trim().replace(/\s+/g, "");
+
+      // Nếu người dùng nhập 032xxxxxxx → tự đổi thành +8432xxxxxxx
+      if (input.startsWith("0")) {
+        input = "+84" + input.slice(1);
+      }
+
+      // Nếu không có +84 hoặc không đúng định dạng
+      const regex = /^\+84[1-9][0-9]{8}$/;
+      if (!regex.test(input)) {
+        Alert.alert("Lỗi", "Số điện thoại không hợp lệ. Vui lòng nhập đúng định dạng!");
+        setIsLoading(false);
+        return;
+      }
+
+      const confirm = await auth().signInWithPhoneNumber(input);
+      setConfirmation(confirm);
+      Alert.alert("Thông báo", "OTP đã được gửi về số điện thoại!");
+    } catch (error) {
+      Alert.alert("Lỗi gửi OTP", error.message);
+      console.error("OTP Error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+
+
+
+  const verifyOTP = async () => {
+    try {
+      setIsLoading(true);
+      await confirmation.confirm(otpCode);
+
+      const firebaseUser = auth().currentUser;
+      const token = await firebaseUser.getIdToken();
+
+      await AsyncStorage.setItem("access_token", token);
+
+      const isFirstTime = await checkFirstTimeLogin(firebaseUser.uid);
+      if (isFirstTime) {
+        router.replace("/(auth)/intro");
+      } else {
+        router.replace("/(main)/home");
+      }
+    } catch (error) {
+      Alert.alert("Lỗi xác minh", "Mã OTP sai hoặc đã hết hạn.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
 
   // Kiểm tra xem đây có phải là lần đăng nhập đầu tiên không
   const checkFirstTimeLogin = async (userId: string) => {
@@ -51,14 +115,26 @@ const LoginScreen = () => {
     if (emailRegex.test(ID) || phoneRegex.test(ID)) {
       setIsLoading(true);
       try {
-        // Giả lập quá trình đăng nhập
-        // Trong thực tế, bạn sẽ gọi API đăng nhập ở đây
-        const isFirstTime = await checkFirstTimeLogin(ID);
+        const response = await fetch(`${BASE_URL}/formlogin/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: ID, password }),
+        });
 
-        if (isFirstTime) {
-          router.push('/(auth)/intro');
+        const data = await response.json();
+
+        if (response.ok && data.access_token) {
+          await AsyncStorage.setItem("access_token", data.access_token);
+
+          const isFirstTime = await checkFirstTimeLogin(data.user.uid);
+
+          if (isFirstTime) {
+            router.replace('/(auth)/intro');
+          } else {
+            router.replace('/(main)/home');
+          }
         } else {
-          router.push('/(main)/home');
+          Alert.alert("Lỗi", data.error || "Đăng nhập thất bại");
         }
       } catch (error) {
         Alert.alert("Lỗi", "Đã có lỗi xảy ra khi đăng nhập");
@@ -69,6 +145,7 @@ const LoginScreen = () => {
       Alert.alert("Lỗi", "Vui lòng nhập email hoặc số điện thoại hợp lệ!");
     }
   };
+
 
   // Google Sign-In
   async function onGoogleButtonPress() {
@@ -204,7 +281,14 @@ const LoginScreen = () => {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === "ios" ? "padding" : undefined}
+  >
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
       {/* Loading Modal */}
       <Modal
         transparent
@@ -229,6 +313,50 @@ const LoginScreen = () => {
         Số hóa học bạ, kết nối tri thức, nâng bước tương lai
       </Text>
 
+
+      {/* Chế độ OTP */}
+      <TouchableOpacity onPress={() => setIsOTPMode(!isOTPMode)}>
+        <Text style={{ color: "#2F80ED", marginVertical: 10, fontWeight: "bold" }}>
+          {isOTPMode ? "← Quay lại đăng nhập Email/SĐT" : "Đăng nhập bằng SĐT + OTP"}
+        </Text>
+      </TouchableOpacity>
+      {isOTPMode ? (
+  <>
+    {!confirmation ? (
+      <TouchableOpacity style={styles.loginButton} onPress={sendOTP}>
+        <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient}>
+          <Text style={styles.loginText}>Gửi OTP</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    ) : (
+      <>
+        <TextInput
+         placeholder="Nhập mã OTP"
+         value={otpCode}
+         onChangeText={setOtpCode}
+         keyboardType="number-pad"
+         style={styles.input}
+         blurOnSubmit={false}
+        />
+        <TouchableOpacity style={styles.loginButton} onPress={verifyOTP}>
+          <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient}>
+            <Text style={styles.loginText}>Xác minh OTP</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </>
+    )}
+  </>
+) : (
+  <>
+    {/* Form đăng nhập truyền thống đã có sẵn */}
+  </>
+)}
+
+
+
+
+
+
       {/* Form đăng nhập */}
       <Text style={styles.title}>Đăng nhập</Text>
 
@@ -245,23 +373,39 @@ const LoginScreen = () => {
       </View>
 
       <View style={styles.inputContainer}>
-        <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.icon} />
-        <TextInput
-          placeholder="Mật khẩu"
-          secureTextEntry={!showPassword}
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          autoCapitalize="none"
-        />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <Ionicons
-            name={showPassword ? "eye-outline" : "eye-off-outline"}
-            size={20} color="#888"
-            style={styles.eyeIcon}
-          />
-        </TouchableOpacity>
-      </View>
+  <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.icon} />
+  <TextInput
+    placeholder="Mật khẩu"
+    secureTextEntry={!showPassword}
+    style={styles.input}
+    value={password}
+    onChangeText={setPassword}
+    autoCapitalize="none"
+  />
+  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+    <Ionicons
+      name={showPassword ? "eye-outline" : "eye-off-outline"}
+      size={20}
+      color="#888"
+      style={styles.eyeIcon}
+    />
+  </TouchableOpacity>
+</View>
+
+{isOTPMode && confirmation && (
+  <View style={styles.inputContainer}>
+    <Ionicons name="keypad-outline" size={20} color="#888" style={styles.icon} />
+    <TextInput
+      placeholder="Nhập mã OTP"
+      value={otpCode}
+      onChangeText={setOtpCode}
+      keyboardType="number-pad"
+      style={styles.input}
+      blurOnSubmit={false}
+    />
+  </View>
+)}
+
 
       <TouchableOpacity>
         <Text style={styles.forgotPassword}>Quên mật khẩu?</Text>
@@ -293,7 +437,8 @@ const LoginScreen = () => {
 
       {/* Đăng ký */}
       <Text style={styles.registerText}>Hoặc <TouchableOpacity onPress={() => router.push('/(auth)/register')}><Text style={styles.registerLink}>Đăng ký</Text></TouchableOpacity> </Text>
-    </View>
+      </ScrollView>
+  </KeyboardAvoidingView>
   );
 };
 
