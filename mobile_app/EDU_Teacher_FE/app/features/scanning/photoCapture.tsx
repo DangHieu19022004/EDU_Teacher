@@ -26,9 +26,37 @@ interface StudentItem {
   images?: string[];
 }
 
+const BASE_URL = "http://192.168.1.223:8000/";
+
+
+
+const uploadAndProcessImage = async (imageUri: string): Promise<any[]> => {
+  const formData = new FormData();
+  formData.append('image', {
+    uri: imageUri,
+    name: 'photo.jpg',
+    type: 'image/jpeg',
+  } as any);
+
+  const response = await fetch(`${BASE_URL}ocr/detect/`, {
+    method: 'POST',
+    body: formData,
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+  if (!response.ok) {
+    throw new Error('Lỗi server khi xử lý ảnh');
+  }
+
+  const data = await response.json();
+  return data.results; // Array of { image_url, ocr_data }
+};
+
+
 const PhotoCaptureScreen: React.FC = () => {
   const router = useRouter();
   const [images, setImages] = useState<string[]>([]);
+  const [processedResults, setProcessedResults] = useState<any[]>([]);
 
   const openCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -39,16 +67,48 @@ const PhotoCaptureScreen: React.FC = () => {
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
+      allowsEditing: false,
       quality: 1,
     });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
+    if (!result.canceled && result.assets.length > 0) {
       const imageUri = result.assets[0].uri;
-      setImages((prevImages) => [...prevImages, imageUri]);
+      try {
+        const results = await uploadAndProcessImage(imageUri);
+        console.log('📥 Kết quả từ server:', results);
+        setProcessedResults((prev) => [...prev, ...results]);
+      } catch (error) {
+        console.error(error);
+        Alert.alert('Lỗi', 'Xử lý ảnh thất bại.');
+      }
     }
   };
+
+  const pickImageFromLibrary = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Quyền truy cập thư viện bị từ chối');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets.length > 0) {
+      const imageUri = result.assets[0].uri;
+      try {
+        const results = await uploadAndProcessImage(imageUri);
+        setProcessedResults((prev) => [...prev, ...results]);
+      } catch (error) {
+        console.error(error);
+        Alert.alert('Lỗi', 'Xử lý ảnh thất bại.');
+      }
+    }
+  };
+
 
   const deleteImage = (index: number) => {
     setImages((prevImages) => prevImages.filter((_, i) => i !== index));
@@ -95,13 +155,24 @@ const PhotoCaptureScreen: React.FC = () => {
         <FontAwesome name="camera" size={30} color="white" />
         <Text style={styles.captureButtonText}>Chụp ảnh</Text>
       </TouchableOpacity>
-      {images.length > 0 ? (
+      <TouchableOpacity style={styles.galleryButton} onPress={pickImageFromLibrary}>
+        <FontAwesome name="photo" size={28} color="white" />
+        <Text style={styles.galleryButtonText}>Chọn ảnh từ thiết bị</Text>
+      </TouchableOpacity>
+
+      {processedResults.length > 0 ? (
         <FlatList
-          data={images}
-          renderItem={renderImageItem}
-          keyExtractor={(item, index) => index.toString()}
-          numColumns={2}
-          style={styles.imageList}
+          data={processedResults}
+          keyExtractor={(_, i) => i.toString()}
+          renderItem={({ item }) => (
+            <View style={{ marginVertical: 10, backgroundColor: '#fff', padding: 10, borderRadius: 10 }}>
+              <Image source={{ uri: `${BASE_URL}${item.image_url.replace(/^\/+/, '')}` }} style={{ height: 200, resizeMode: 'contain', borderRadius: 8 }} />
+              <Text style={{ fontWeight: 'bold', marginTop: 5 }}>Dữ liệu OCR:</Text>
+              {item.ocr_data.map((row: any, index: number) => (
+                <Text key={index}>• {row.ten_mon}: {row.hky1} - {row.hky2} - {row.ca_nam}</Text>
+              ))}
+            </View>
+          )}
         />
       ) : (
         <Text style={styles.noImageText}>Chưa có ảnh nào được chụp</Text>
@@ -116,6 +187,21 @@ const PhotoCaptureScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  galleryButton: {
+    backgroundColor: '#6A1B9A',
+    flexDirection: 'row',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  galleryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    marginLeft: 10,
+  },
+
   container: { flex: 1, backgroundColor: '#F8F8F8', padding: 10 },
   header: {
     height: 80,
