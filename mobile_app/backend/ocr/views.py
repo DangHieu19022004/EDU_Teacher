@@ -138,3 +138,35 @@ def extract_table_from_ocr_result(ocr_result):
             extracted.append(item)
 
     return extracted
+
+
+#Chatbot
+@csrf_exempt
+def chatbot_advice(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+
+            dtb = data.get("DTB", [0])[-1]
+            diem_data = data.get("diem", {})
+
+            strong = [subject for subject, scores in diem_data.items()
+                      if all(isinstance(s, (int, float)) for s in scores) and sum(scores)/len(scores) >= 8.0]
+
+            weak = [subject for subject, scores in diem_data.items()
+                    if all(isinstance(s, (int, float)) for s in scores) and sum(scores)/len(scores) <= 5.5]
+
+            message = (
+                f"🎓 Điểm trung bình: {dtb}\n"
+                f"✅ Môn mạnh: {', '.join(strong) if strong else 'Không có'}\n"
+                f"⚠️ Môn yếu: {', '.join(weak) if weak else 'Không có'}\n"
+                "💡 Gợi ý: Hãy chọn ngành học liên quan tới các môn mạnh, "
+                "đồng thời xem xét hỗ trợ thêm cho các môn yếu bằng cách học phụ đạo hoặc luyện tập thêm."
+            )
+
+            return JsonResponse({"advice": message}, json_dumps_params={'ensure_ascii': False})
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "Only POST method allowed"}, status=405)
