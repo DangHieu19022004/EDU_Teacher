@@ -26,7 +26,7 @@ interface StudentItem {
   images?: string[];
 }
 
-const BASE_URL = "http://192.168.1.223:8000/";
+const BASE_URL = "http://192.168.100.225:8000/";
 
 
 

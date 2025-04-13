@@ -16,17 +16,21 @@ import requests
 yolo_model = YOLO("E:/ORC_mobile_app/mobile_app/backend/ocr/runs/detect/train10/weights/best.pt")
 ocr_model = PaddleOCR(use_gpu=False, lang='vi')
 
-BART_SERVER_URL = "http://<YOUR_BART_SERVER_IP>:8001/correct"  # hoặc port bạn dùng
+BART_SERVER_URL = "http://35.225.133.162:8001/correct"  # hoặc port bạn dùng
 
 def correct_text_with_bart(text):
     try:
         response = requests.post(BART_SERVER_URL, json={"text": text})
         if response.status_code == 200:
-            return response.json().get("corrected", text)
+            result = response.json().get("corrected", text)
+            print(f"✅ BART sửa: '{text}' ➜ '{result}'")
+            return result
+        print(f"⚠️ BART HTTP error: {response.status_code}")
         return text
     except Exception as e:
-        print(f"⚠️ BART error: {e}")
+        print(f"⚠️ BART connection error: {e}")
         return text
+
 
 
 @csrf_exempt

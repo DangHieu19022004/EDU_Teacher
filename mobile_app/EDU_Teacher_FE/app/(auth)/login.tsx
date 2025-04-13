@@ -13,7 +13,7 @@ GoogleSignin.configure({
   webClientId: "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
 });
-const BASE_URL = "http://192.168.1.223:8000/auth";
+const BASE_URL = "http://192.168.100.225:8000/auth";
 
 const LoginScreen = () => {
   const router = useRouter();
