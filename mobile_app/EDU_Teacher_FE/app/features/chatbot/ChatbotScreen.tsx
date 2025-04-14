@@ -1,26 +1,59 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View, TextInput, Button, Text, ScrollView,
+  StyleSheet, KeyboardAvoidingView, Platform
+} from 'react-native';
+import { useRoute, RouteProp } from '@react-navigation/native';
+
+// Định nghĩa kiểu tham số cho màn hình này
+type ChatbotScreenParams = {
+  diemData?: any;
+};
+
+type RouteParams = RouteProp<{ ChatbotScreen: ChatbotScreenParams }, 'ChatbotScreen'>;
 
 const ChatbotScreen = () => {
   const [messages, setMessages] = useState<{ sender: string; text: string }[]>([]);
   const [input, setInput] = useState('');
 
+  const route = useRoute<RouteParams>();
+  const { diemData } = route.params || {};
+
+  const calculateDTB = (data: any) => {
+    try {
+      const allScores = Object.values(data)
+        .flat()
+        .map(s => parseFloat(String(s).replace(",", ".")))
+        .filter(n => !isNaN(n));
+      const dtb = allScores.length ? (allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0;
+      return Number(dtb.toFixed(2));
+    } catch {
+      return 0;
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const newMessages = [...messages, { sender: 'teacher', text: input }];
+    const newMessages = [...messages, { sender: 'user', text: input }];
     setMessages(newMessages);
 
-    // Gửi dữ liệu đến API backend
+    const DTB = calculateDTB(diemData);
+
     const res = await fetch('http://192.168.x.x:8000/chatbot/advice/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: input }),
+      body: JSON.stringify({
+        message: input,
+        DTB: [DTB],
+        diem: diemData
+      }),
     });
 
     const data = await res.json();
+    const reply = data.reply || data.advice || '🤖 Không có phản hồi từ hệ thống';
 
-    setMessages([...newMessages, { sender: 'bot', text: data.reply || data.advice || 'Không có phản hồi' }]);
+    setMessages([...newMessages, { sender: 'bot', text: reply }]);
     setInput('');
   };
 
@@ -33,7 +66,7 @@ const ChatbotScreen = () => {
               key={index}
               style={[
                 styles.messageBubble,
-                msg.sender === 'teacher' ? styles.teacherBubble : styles.botBubble,
+                msg.sender === 'user' ? styles.teacherBubble : styles.botBubble,
               ]}
             >
               <Text style={styles.messageText}>{msg.text}</Text>
@@ -44,7 +77,7 @@ const ChatbotScreen = () => {
           <TextInput
             value={input}
             onChangeText={setInput}
-            placeholder="Nhập câu hỏi..."
+            placeholder="Bạn muốn hỏi gì về kết quả?"
             style={styles.input}
           />
           <Button title="Gửi" onPress={handleSend} />
