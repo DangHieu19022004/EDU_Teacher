@@ -7,8 +7,13 @@ import { useUser } from "../contexts/UserContext";
 const HomeScreen: React.FC = () => {
   const router = useRouter();
   const { user } = useUser();
+
   const handleScanPress = () => {
-    router.push('../features/scanning/photoCapture'); // Chuyển đến màn hình chụp ảnh
+    router.push('../features/scanning/photoCapture');
+  };
+
+  const handleChatbotPress = () => {
+    // Chưa thực hiện chức năng, để trống
   };
 
   return (
@@ -34,7 +39,10 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
 
           <View style={styles.sideButtons}>
-            <TouchableOpacity style={styles.dataButton} onPress={() => router.push('../features/data_manager/ClassListScreen')}>
+            <TouchableOpacity
+              style={styles.dataButton}
+              onPress={() => router.push('../features/data_manager/ClassListScreen')}
+            >
               <FontAwesome name="database" size={30} color="white" />
               <Text style={styles.sideButtonText}>Kho dữ liệu</Text>
             </TouchableOpacity>
@@ -45,6 +53,11 @@ const HomeScreen: React.FC = () => {
           </View>
         </View>
       </View>
+
+      {/* Chatbot Button */}
+      <TouchableOpacity style={styles.chatbotButton} onPress={handleChatbotPress}>
+        <FontAwesome name="comments" size={30} color="white" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -111,6 +124,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sideButtonText: { color: 'white', fontSize: 12, marginTop: 5 },
+  chatbotButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    backgroundColor: '#FDD835', // Màu vàng đậm để tạo điểm nhấn
+    borderRadius: 30,
+    width: 60,
+    height: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
 });
 
 export default HomeScreen;

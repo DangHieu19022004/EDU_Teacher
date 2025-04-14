@@ -8,13 +8,16 @@ import {
   Image,
   Alert,
   Dimensions,
-  Modal,
   FlatList,
+  TextInput,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationProp } from '@react-navigation/native';
+import SuccessModal from '../../../components/SuccessModal';
+import ErrorModal from '../../../components/ErrorModal';
 
 const CLASS_STORAGE_KEY = '@student_classes';
 
@@ -84,14 +87,8 @@ const StudentReportCard = ({
   const [editableStudent, setEditableStudent] = useState<StudentItem>(studentData);
 
   useEffect(() => {
-    //check data đã truyền đúng hay chưa
-    // console.log('Received studentData in StudentReportCard:', studentData);
     setEditableStudent(studentData);
   }, [studentData]);
-
-
-  // console.log('Editable student in StudentReportCard:', editableStudent);
-  // console.log('Class name in StudentReportCard:', className);
 
   if (!editableStudent || !editableStudent.name) {
     return (
@@ -105,19 +102,32 @@ const StudentReportCard = ({
   const selectedSubjects = selectedClassData?.subjects || editableStudent.subjects || [];
   const images = editableStudent.images || [];
 
-  // Hàm tìm lớp lớn nhất từ classList
+  const updateStudentField = (field: keyof StudentItem, value: string) => {
+    setEditableStudent((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateSubject = (index: number, field: keyof Subject, value: string) => {
+    const updatedSubjects = [...selectedSubjects];
+    updatedSubjects[index] = { ...updatedSubjects[index], [field]: value };
+    setEditableStudent((prev) => ({
+      ...prev,
+      classList: prev.classList?.map((cls) =>
+        cls.class === className ? { ...cls, subjects: updatedSubjects } : cls
+      ),
+    }));
+  };
+
   const getHighestClass = (classList: ClassData[] | undefined): string => {
     if (!classList || classList.length === 0) return 'Unknown';
 
-    // Giả sử tên lớp có định dạng như "10D5", "11D5", "12A1", trích xuất số lớp
     const classNumbers = classList.map((cls) => {
-      const match = cls.class.match(/\d+/); // Lấy số từ tên lớp (10, 11, 12, ...)
+      const match = cls.class.match(/\d+/);
       return match ? parseInt(match[0], 10) : 0;
     });
 
     const maxClassNum = Math.max(...classNumbers);
     const highestClass = classList.find((cls) => cls.class.includes(maxClassNum.toString()));
-    return highestClass ? highestClass.class : classList[0].class; // Trả về lớp đầu tiên nếu không tìm thấy
+    return highestClass ? highestClass.class : classList[0].class;
   };
 
   const saveStudentReport = async () => {
@@ -126,17 +136,12 @@ const StudentReportCard = ({
       const savedClasses = await AsyncStorage.getItem(CLASS_STORAGE_KEY);
       let allClasses: ClassItem[] = savedClasses ? JSON.parse(savedClasses) : [];
 
-      // Xác định lớp lớn nhất từ classList
       const highestClassName = getHighestClass(editableStudent.classList);
-      // console.log('Highest class determined:', highestClassName);
 
-      // Kiểm tra xem lớp lớn nhất đã tồn tại chưa
       let targetClass = allClasses.find((c) => c.name === highestClassName);
       if (!targetClass) {
-        // Tạo lớp mới nếu chưa tồn tại
         targetClass = { id: Date.now().toString(), name: highestClassName, students: [] };
         allClasses.push(targetClass);
-        // console.log('Created new class:', highestClassName);
       }
 
       const studentToSave = {
@@ -144,17 +149,20 @@ const StudentReportCard = ({
         transcript: 'Có học bạ',
       };
 
-      // Cập nhật hoặc thêm học sinh vào lớp
       const studentIndex = targetClass.students.findIndex((s) => s.id === studentToSave.id);
       if (studentIndex !== -1) {
-        targetClass.students[studentIndex] = studentToSave; // Cập nhật học sinh
+        targetClass.students[studentIndex] = studentToSave;
       } else {
-        targetClass.students.push(studentToSave); // Thêm mới học sinh
+        targetClass.students.push(studentToSave);
       }
 
       await AsyncStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(allClasses));
 
-      if (onSave) onSave(studentToSave);
+      if (onSave) {
+        onSave(studentToSave);
+      }
+
+      // Ensure modal is shown before any navigation
       setShowSuccessModal(true);
     } catch (error) {
       console.error('Lỗi khi lưu học bạ:', error);
@@ -177,7 +185,11 @@ const StudentReportCard = ({
 
   const handleSuccessClose = () => {
     setShowSuccessModal(false);
-    navigation.goBack();
+    navigation.goBack(); // Navigate back only after modal is dismissed
+  };
+
+  const handleErrorClose = () => {
+    setShowErrorModal(false);
   };
 
   const handleBackPress = () => {
@@ -211,15 +223,46 @@ const StudentReportCard = ({
         </View>
 
         <View style={styles.infoContainer}>
-          <Text style={styles.infoText}>Họ tên: {editableStudent.name || 'N/A'}</Text>
+          <TextInput
+            style={styles.input}
+            value={editableStudent.name || ''}
+            onChangeText={(text) => updateStudentField('name', text)}
+            placeholder="Họ tên"
+            editable={isEditMode}
+          />
           <View style={styles.line} />
-          <Text style={styles.infoText}>Giới tính: {editableStudent.gender || 'N/A'}</Text>
+          <TextInput
+            style={styles.input}
+            value={editableStudent.gender || ''}
+            onChangeText={(text) => updateStudentField('gender', text)}
+            placeholder="Giới tính"
+            editable={isEditMode}
+          />
           <View style={styles.line} />
-          <Text style={styles.infoText}>Ngày sinh: {editableStudent.dob || 'N/A'}</Text>
+          <TextInput
+            style={styles.input}
+            value={editableStudent.dob || ''}
+            onChangeText={(text) => updateStudentField('dob', text)}
+            placeholder="Ngày sinh"
+            editable={isEditMode}
+          />
           <View style={styles.line} />
-          <Text style={styles.infoText}>Trường: {editableStudent.school || 'N/A'}</Text>
+          <TextInput
+            style={styles.input}
+            value={editableStudent.school || ''}
+            onChangeText={(text) => updateStudentField('school', text)}
+            placeholder="Trường"
+            editable={isEditMode}
+          />
           <View style={styles.line} />
-          <Text style={styles.infoText}>SĐT: {editableStudent.phone || 'N/A'}</Text>
+          <TextInput
+            style={styles.input}
+            value={editableStudent.phone || ''}
+            onChangeText={(text) => updateStudentField('phone', text)}
+            placeholder="SĐT"
+            keyboardType="phone-pad"
+            editable={isEditMode}
+          />
         </View>
       </View>
 
@@ -234,10 +277,37 @@ const StudentReportCard = ({
         {selectedSubjects.length > 0 ? (
           selectedSubjects.map((subject, index) => (
             <View key={index} style={styles.tableRow}>
-              <Text style={styles.tableCell}>{subject.name}</Text>
-              <Text style={styles.tableCell}>{subject.hk1}</Text>
-              <Text style={styles.tableCell}>{subject.hk2}</Text>
-              <Text style={styles.tableCell}>{subject.cn}</Text>
+              <TextInput
+                style={styles.tableInput}
+                value={subject.name || ''}
+                onChangeText={(text) => updateSubject(index, 'name', text)}
+                placeholder="Môn học"
+                editable={isEditMode}
+              />
+              <TextInput
+                style={styles.tableInput}
+                value={subject.hk1 || ''}
+                onChangeText={(text) => updateSubject(index, 'hk1', text)}
+                placeholder="HK1"
+                keyboardType="numeric"
+                editable={isEditMode}
+              />
+              <TextInput
+                style={styles.tableInput}
+                value={subject.hk2 || ''}
+                onChangeText={(text) => updateSubject(index, 'hk2', text)}
+                placeholder="HK2"
+                keyboardType="numeric"
+                editable={isEditMode}
+              />
+              <TextInput
+                style={styles.tableInput}
+                value={subject.cn || ''}
+                onChangeText={(text) => updateSubject(index, 'cn', text)}
+                placeholder="CN"
+                keyboardType="numeric"
+                editable={isEditMode}
+              />
             </View>
           ))
         ) : (
@@ -246,8 +316,20 @@ const StudentReportCard = ({
       </View>
 
       <View style={styles.evaluation}>
-        <Text style={styles.evaluationText}>Học lực: {editableStudent.academicPerformance || 'N/A'}</Text>
-        <Text style={styles.evaluationText}>Hạnh kiểm: {editableStudent.conduct || 'N/A'}</Text>
+        <TextInput
+          style={styles.input}
+          value={editableStudent.academicPerformance || ''}
+          onChangeText={(text) => updateStudentField('academicPerformance', text)}
+          placeholder="Học lực"
+          editable={isEditMode}
+        />
+        <TextInput
+          style={styles.input}
+          value={editableStudent.conduct || ''}
+          onChangeText={(text) => updateStudentField('conduct', text)}
+          placeholder="Hạnh kiểm"
+          editable={isEditMode}
+        />
       </View>
 
       {isEditMode && (
@@ -267,27 +349,18 @@ const StudentReportCard = ({
         </TouchableOpacity>
       )}
 
-      <Modal visible={showSuccessModal} transparent animationType="fade">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Lưu học bạ thành công!</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={handleSuccessClose}>
-              <Text style={styles.closeButtonText}>Đóng</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <SuccessModal
+        visible={showSuccessModal}
+        onClose={handleSuccessClose}
+        message="Lưu học bạ thành công"
+      />
 
-      <Modal visible={showErrorModal} transparent animationType="fade">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Lỗi khi lưu học bạ. Vui lòng thử lại.</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setShowErrorModal(false)}>
-              <Text style={styles.closeButtonText}>Đóng</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <ErrorModal
+        visible={showErrorModal}
+        onClose={handleErrorClose}
+        message="Không thành công"
+        subMessage="Vui lòng thử lại"
+      />
 
       <Modal visible={showImagesModal} animationType="slide" transparent>
         <View style={styles.modalContainer}>
@@ -374,10 +447,14 @@ const styles = StyleSheet.create({
   infoContainer: {
     flex: 1,
   },
-  infoText: {
+  input: {
     fontSize: 16,
     color: '#333',
     marginVertical: 3,
+    padding: 5,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 5,
   },
   line: {
     height: 1,
@@ -409,22 +486,21 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  tableCell: {
+  tableInput: {
     flex: 1,
     textAlign: 'center',
     color: '#333',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 5,
+    margin: 2,
+    padding: 5,
   },
   evaluation: {
     backgroundColor: '#E3F2FD',
     borderRadius: 8,
     padding: 15,
     marginBottom: 20,
-  },
-  evaluationText: {
-    fontSize: 16,
-    color: '#0D47A1',
-    fontWeight: 'bold',
-    marginBottom: 5,
   },
   button: {
     borderRadius: 8,

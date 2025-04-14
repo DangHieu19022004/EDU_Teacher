@@ -125,6 +125,115 @@ def google_login(request):
 
     return JsonResponse({"error": "Invalid request"}, status=400)
 
+@csrf_exempt
+def form_register(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            full_name = data.get("full_name", "")
+            email = data.get("email", "")
+            phone = data.get("phone", "")
+            password = data.get("password", "")
+
+            if not email or not phone or not password:
+                return JsonResponse({"error": "Thiếu thông tin đăng ký"}, status=400)
+
+            if User.objects.filter(email=email).exists():
+                return JsonResponse({"error": "Email đã được sử dụng"}, status=409)
+            if User.objects.filter(phone=phone).exists():
+                return JsonResponse({"error": "Số điện thoại đã được sử dụng"}, status=409)
+
+            uid = f"user_{int(datetime.utcnow().timestamp())}"
+
+            current_timestamp = int(datetime.utcnow().timestamp())
+
+            user = User.objects.create(
+                uid=uid,
+                full_name=full_name,
+                email=email,
+                phone=phone,
+                password_hash=password,  # lưu plain text tạm thời (nên hash bằng bcrypt sau này)
+                avatar="",
+                fingerprint="",
+                created_at=current_timestamp,
+                last_sign_in_time=current_timestamp,
+            )
+
+            payload = {
+                "user_id": user.uid,
+                "exp": current_timestamp + (30 * 24 * 60 * 60),
+                "iat": current_timestamp,
+            }
+            jwt_token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+            return JsonResponse({
+                "message": "Đăng ký thành công",
+                "access_token": jwt_token,
+                "user": {
+                    "uid": user.uid,
+                    "full_name": user.full_name,
+                    "email": user.email,
+                    "phone": user.phone,
+                    "avatar": user.avatar,
+                }
+            })
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+@csrf_exempt
+def form_login(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email_or_phone = data.get("id")
+            password = data.get("password")
+
+            if not email_or_phone or not password:
+                return JsonResponse({"error": "Thiếu thông tin đăng nhập"}, status=400)
+
+            # Tìm user bằng email hoặc SĐT
+            try:
+                user = User.objects.get(email=email_or_phone)
+            except User.DoesNotExist:
+                try:
+                    user = User.objects.get(phone=email_or_phone)
+                except User.DoesNotExist:
+                    return JsonResponse({"error": "Không tìm thấy người dùng"}, status=404)
+
+            # So sánh password (giả định đang lưu plain text hoặc hash đã biết)
+            if user.password_hash != password:
+                return JsonResponse({"error": "Sai mật khẩu"}, status=401)
+
+            # Tạo JWT token
+            payload = {
+                "user_id": user.uid,
+                "exp": datetime.utcnow() + timedelta(days=30),
+                "iat": datetime.utcnow(),
+            }
+            jwt_token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+            return JsonResponse({
+                "message": "Đăng nhập thành công",
+                "access_token": jwt_token,
+                "user": {
+                    "uid": user.uid,
+                    "full_name": user.full_name,
+                    "email": user.email,
+                    "phone": user.phone,
+                    "avatar": user.avatar,
+                }
+            })
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+
 
 @csrf_exempt
 def verify_token(request):
