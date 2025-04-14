@@ -40,7 +40,8 @@ const ChatbotScreen = () => {
 
     const DTB = calculateDTB(diemData);
 
-    const res = await fetch('http://192.168.x.x:8000/chatbot/advice/', {
+    //IP nội bộ có thể thay đổi theo từng loại mạng
+    const res = await fetch('http://192.168.1.4:8000/chatbot/advice/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
