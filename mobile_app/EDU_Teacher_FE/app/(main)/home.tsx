@@ -13,7 +13,7 @@ const HomeScreen: React.FC = () => {
   };
 
   const handleChatbotPress = () => {
-    // Chưa thực hiện chức năng, để trống
+    router.push('../features/chat_bot/ChatbotScreen');
   };
 
   return (
