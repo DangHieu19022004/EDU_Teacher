@@ -1,0 +1,47 @@
+[
+    {
+      "id": "1",
+      "name": "Lớp 10A1",
+      "students": [
+        {
+          "id": "1",
+          "name": "Hoàng Văn A",
+          "gender": "Nam",
+          "dob": "2005-01-01",
+          "phone": "0986802623",
+          "school": "THPT A",
+          "academicPerformance": "Giỏi",
+          "conduct": "Tốt",
+          "subjects": [
+            { "name": "Toán", "hk1": "8.5", "hk2": "9.0", "cn": "8.8" },
+            { "name": "Văn", "hk1": "7.0", "hk2": "7.5", "cn": "7.3" }
+          ]
+        },
+        {
+          "id": "2",
+          "name": "Nguyễn Văn B",
+          "gender": "Nam",
+          "dob": "2005-02-02",
+          "phone": "0986802624",
+          "school": "THPT A",
+          "academicPerformance": "Khá",
+          "conduct": "Tốt",
+          "subjects": [
+            { "name": "Toán", "hk1": "7.0", "hk2": "7.5", "cn": "7.3" },
+            { "name": "Lý", "hk1": "6.5", "hk2": "7.0", "cn": "6.8" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "name": "Lớp 10A2",
+      "students": []
+    },
+    {
+      "id": "3",
+      "name": "Lớp 11D1",
+      "students": []
+    }
+  ]
+  

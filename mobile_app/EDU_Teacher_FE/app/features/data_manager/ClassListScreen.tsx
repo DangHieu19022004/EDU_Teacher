@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CLASS_STORAGE_KEY = '@student_classes';
 
@@ -21,11 +20,6 @@ interface Subject {
   hk1: string;
   hk2: string;
   cn: string;
-}
-
-interface ClassData {
-  class: string;
-  subjects: Subject[];
 }
 
 interface StudentItem {
@@ -38,7 +32,6 @@ interface StudentItem {
   school: string;
   academicPerformance: string;
   conduct: string;
-  classList?: ClassData[];
   subjects?: Subject[];
   images?: string[];
 }
@@ -55,57 +48,81 @@ const ClassListScreen: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
   const [newClassName, setNewClassName] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedSearchClass, setSelectedSearchClass] = useState<ClassItem | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<StudentItem | null>(null);
 
+  const API_URL = 'http://localhost:8000/api';
+
   useEffect(() => {
-    const loadClasses = async () => {
-      try {
-        const savedClasses = await AsyncStorage.getItem(CLASS_STORAGE_KEY);
-        if (savedClasses) {
-          setClasses(JSON.parse(savedClasses));
-        } else {
-          setClasses([
-            {
-              id: '1',
-              name: 'Lớp 10A1',
-              students: [
-                {
-                  id: '1',
-                  name: 'Hoàng Văn A',
-                  transcript: '',
-                  gender: 'Nam',
-                  dob: '01/01/2005',
-                  phone: '0986802623',
-                  school: 'THPT A',
-                  academicPerformance: 'Giỏi',
-                  conduct: 'Tốt',
-                  subjects: [],
-                },
-                {
-                  id: '2',
-                  name: 'Nguyễn Văn B',
-                  transcript: '',
-                  gender: 'Nam',
-                  dob: '02/02/2005',
-                  phone: '0986802624',
-                  school: 'THPT A',
-                  academicPerformance: 'Khá',
-                  conduct: 'Tốt',
-                  subjects: [],
-                },
-              ],
-            },
-            { id: '2', name: 'Lớp 10A2', students: [] },
-            { id: '3', name: 'Lớp 11D1', students: [] },
-          ]);
-        }
-      } catch (error) {
-        console.error('Error loading classes:', error);
-      }
-    };
-    loadClasses();
+    fetch(`${API_URL}/classes/`)
+      .then((res) => res.json())
+      .then((data) => {
+        const classList = data.map((cls: any) => ({ ...cls, students: [] }));
+        setClasses(classList);
+      })
+      .catch((err) => console.error('Lỗi khi tải danh sách lớp:', err));
   }, []);
+
+  const fetchStudentsByClass = (classId: string) => {
+    fetch(`${API_URL}/class/${classId}/students/`)
+      .then((res) => res.json())
+      .then((students) => {
+        const selected = classes.find((cls) => cls.id === classId);
+        if (selected) {
+          const updated = { ...selected, students };
+          setSelectedClass(updated);
+        }
+      })
+      .catch((err) => console.error('Lỗi khi tải học sinh:', err));
+  };
+
+  const handleViewStudent = async (student: StudentItem) => {
+    try {
+      const res = await fetch(`${API_URL}/student/${student.id}/report/`);
+      const fullStudentData = await res.json();
+
+      router.push({
+        pathname: '/features/scanning/StudentReportCardScreen',
+        params: {
+          student: JSON.stringify(fullStudentData),
+          className: selectedClass?.name ?? '',
+          isEditMode: 'false',
+        },
+      });
+    } catch (err) {
+      console.error('Lỗi khi tải học bạ:', err);
+    }
+  };
+
+  const handleEditStudent = async (student: StudentItem) => {
+    try {
+      const res = await fetch(`${API_URL}/student/${student.id}/report/`);
+      const fullStudentData = await res.json();
+
+      router.push({
+        pathname: '/features/scanning/StudentReportCardScreen',
+        params: {
+          student: JSON.stringify(fullStudentData),
+          className: selectedClass?.name ?? '',
+          isEditMode: 'true',
+        },
+      });
+    } catch (err) {
+      console.error('Lỗi khi tải học bạ:', err);
+    }
+  };
+
+  const handleDeleteClass = async (id: string) => {
+    const updatedClasses = classes.filter((cls) => cls.id !== id);
+    setClasses(updatedClasses);
+    if (selectedClass?.id === id) {
+      setSelectedClass(null);
+    }
+  };
+
+  const handleDeleteStudent = async (classId: string, studentId: string) => {
+    const updatedStudents = selectedClass?.students.filter((s) => s.id !== studentId) || [];
+    setSelectedClass((prev) => prev && { ...prev, students: updatedStudents });
+  };
 
   const handleAddClass = async () => {
     if (newClassName.trim()) {
@@ -118,88 +135,7 @@ const ClassListScreen: React.FC = () => {
       setClasses(updatedClasses);
       setNewClassName('');
       setShowAddModal(false);
-      await AsyncStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(updatedClasses));
     }
-  };
-
-  const handleDeleteClass = async (id: string) => {
-    const updatedClasses = classes.filter((cls) => cls.id !== id);
-    setClasses(updatedClasses);
-    if (selectedClass?.id === id) {
-      setSelectedClass(null);
-    }
-    await AsyncStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(updatedClasses));
-  };
-
-  const handleDeleteStudent = async (classId: string, studentId: string) => {
-    const updatedClasses = classes.map((cls) => {
-      if (cls.id === classId) {
-        return { ...cls, students: cls.students.filter((s) => s.id !== studentId) };
-      }
-      return cls;
-    });
-    setClasses(updatedClasses);
-    if (selectedClass?.id === classId) {
-      setSelectedClass({
-        ...selectedClass,
-        students: selectedClass.students.filter((s) => s.id !== studentId),
-      });
-    }
-    await AsyncStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(updatedClasses));
-  };
-
-  const handleViewStudent = async (student: StudentItem, className: string) => {
-    // Lấy dữ liệu đầy đủ từ AsyncStorage nếu cần
-    const savedClasses = await AsyncStorage.getItem(CLASS_STORAGE_KEY);
-    let fullStudentData = student;
-
-    if (savedClasses) {
-      const parsedClasses: ClassItem[] = JSON.parse(savedClasses);
-      const targetClass = parsedClasses.find((cls) => cls.name === className);
-      if (targetClass) {
-        const foundStudent = targetClass.students.find((s) => s.id === student.id);
-        if (foundStudent) {
-          fullStudentData = foundStudent; // Cập nhật dữ liệu đầy đủ của học sinh
-        }
-      }
-    }
-
-    console.log('Viewing student:', fullStudentData);
-
-    router.push({
-      pathname: '/features/scanning/StudentReportCardScreen', // Sửa lại thành StudentReportCardScreen
-      params: {
-        student: JSON.stringify(fullStudentData),
-        className,
-        isEditMode: 'false',
-      },
-    });
-  };
-
-  const handleEditStudent = async (student: StudentItem, className: string) => {
-    // Tương tự, lấy dữ liệu đầy đủ từ AsyncStorage nếu cần
-    const savedClasses = await AsyncStorage.getItem(CLASS_STORAGE_KEY);
-    let fullStudentData = student;
-
-    if (savedClasses) {
-      const parsedClasses: ClassItem[] = JSON.parse(savedClasses);
-      const targetClass = parsedClasses.find((cls) => cls.name === className);
-      if (targetClass) {
-        const foundStudent = targetClass.students.find((s) => s.id === student.id);
-        if (foundStudent) {
-          fullStudentData = foundStudent; // Cập nhật dữ liệu đầy đủ của học sinh
-        }
-      }
-    }
-
-    router.push({
-      pathname: '/features/scanning/StudentReportCardScreen', // Sửa lại thành StudentReportCardScreen
-      params: {
-        student: JSON.stringify(fullStudentData),
-        className,
-        isEditMode: 'true',
-      },
-    });
   };
 
   return (
@@ -226,68 +162,7 @@ const ClassListScreen: React.FC = () => {
             placeholderTextColor="#888"
           />
         </View>
-
-        <View style={{ paddingHorizontal: 15, marginTop: 10 }}>
-        <Text style={{ fontWeight: 'bold', marginBottom: 5 }}>Tìm kiếm học bạ</Text>
-
-        {/* Combobox chọn lớp */}
-        <View style={{ backgroundColor: 'white', borderRadius: 5, marginBottom: 10, paddingHorizontal: 10 }}>
-          <Text style={{ marginVertical: 5 }}>Chọn lớp:</Text>
-          <FlatList
-            data={classes}
-            horizontal
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => {
-                  setSelectedSearchClass(item);
-                  setSelectedStudent(null); // reset chọn học sinh
-                }}
-                style={{
-                  padding: 10,
-                  marginRight: 10,
-                  borderRadius: 5,
-                  backgroundColor: selectedSearchClass?.id === item.id ? '#1E88E5' : '#EEE',
-                }}
-              >
-                <Text style={{ color: selectedSearchClass?.id === item.id ? 'white' : '#333' }}>
-                  {item.name}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-
-        {/* Combobox chọn học sinh */}
-        {selectedSearchClass && (
-          <View style={{ backgroundColor: 'white', borderRadius: 5, marginBottom: 10, paddingHorizontal: 10 }}>
-            <Text style={{ marginVertical: 5 }}>Chọn học sinh:</Text>
-            <FlatList
-              data={selectedSearchClass.students}
-              horizontal
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => {
-                    setSelectedStudent(item);
-                    handleViewStudent(item, selectedSearchClass.name);
-                  }}
-                  style={{
-                    padding: 10,
-                    marginRight: 10,
-                    borderRadius: 5,
-                    backgroundColor: '#EEE',
-                  }}
-                >
-                  <Text>{item.name}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        )}
-      </View>
-
-
+        
         {/* Class List */}
         <View style={styles.contentContainer}>
           <View style={styles.classListContainer}>
@@ -329,13 +204,13 @@ const ClassListScreen: React.FC = () => {
                       <View style={styles.studentActions}>
                         <TouchableOpacity
                           style={styles.actionButton}
-                          onPress={() => handleViewStudent(item, selectedClass.name)}
+                          onPress={() => handleViewStudent(item)}
                         >
                           <FontAwesome name="eye" size={18} color="#1E88E5" />
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={styles.actionButton}
-                          onPress={() => handleEditStudent(item, selectedClass.name)}
+                          onPress={() => handleEditStudent(item)}
                         >
                           <FontAwesome name="edit" size={18} color="#FFA500" />
                         </TouchableOpacity>

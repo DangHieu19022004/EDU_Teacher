@@ -7,5 +7,6 @@ from . import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("auth/", include("User.urls")),
-    path("ocr/", include("ocr.urls"))
+    path("ocr/", include("ocr.urls")),
+    path('api/search/', include('search.urls'))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
