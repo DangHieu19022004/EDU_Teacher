@@ -26,7 +26,7 @@ interface StudentItem {
   images?: string[];
 }
 
-const BASE_URL = "http://192.168.1.185:8000/";
+const BASE_URL = "http://192.168.100.225:8000/";
 
 const uploadAndProcessImage = async (imageUri: string): Promise<any[]> => {
   const formData = new FormData();

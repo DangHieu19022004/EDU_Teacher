@@ -16,7 +16,7 @@ import requests
 yolo_model = YOLO("E:/ORC_mobile_app/mobile_app/backend/ocr/runs/detect/train10/weights/best.pt")
 ocr_model = PaddleOCR(use_gpu=False, lang='vi')
 
-BART_SERVER_URL = "http://35.225.133.162:8001/correct"  # hoặc port bạn dùng
+BART_SERVER_URL = "http://34.69.155.77:8001/correct"  # hoặc port bạn dùng
 
 def correct_text_with_bart(text):
     try:

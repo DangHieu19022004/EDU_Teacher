@@ -21,7 +21,7 @@ GoogleSignin.configure({
   webClientId: "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
 });
-const BASE_URL = "http://192.168.1.223:8000/auth";
+const BASE_URL = "http://192.168.100.225:8000/auth";
 
 const RegisterScreen = () => {
   const router = useRouter();
@@ -30,28 +30,88 @@ const RegisterScreen = () => {
   const [user, setUser] = useState<auth.User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [phone, setPhone] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repassword, setRePassword] = useState("");
 
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+
+  const sendOtpToEmail = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${BASE_URL}/send-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setOtpSent(true);
+        Alert.alert("Thông báo", "Mã OTP đã được gửi đến email của bạn.");
+      } else {
+        Alert.alert("Lỗi", data.error || "Không thể gửi mã OTP.");
+      }
+    } catch (error) {
+      console.error("OTP error:", error);
+      Alert.alert("Lỗi", "Có lỗi xảy ra khi gửi mã OTP.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyOtpAndRegister = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${BASE_URL}/verify-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          otp,
+          phone,
+          password,
+          full_name: fullName,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        await handleRegistration(); // tạo tài khoản Firebase
+      } else {
+        Alert.alert("Lỗi", data.error || "Mã OTP không hợp lệ hoặc đã hết hạn.");
+      }
+    } catch (error) {
+      console.error("Verify OTP error:", error);
+      Alert.alert("Lỗi", "Không thể xác minh mã OTP.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   const validateRegistration = () => {
     const emailRegex = /^$|^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/;
     const phoneRegex = /^(03|09)\d{8}$/;
-    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{12,}$/;
+    // const passwordRegex = /^(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{12,}$/;
 
     if (email && emailRegex.test(email) == false) {
       Alert.alert("Lỗi", "Vui lòng nhập email hợp lệ!");
     } else if (phoneRegex.test(phone) == false) {
       Alert.alert("Lỗi", "Vui lòng nhập số điện thoại hợp lệ!");
-    } else if (passwordRegex.test(password) == false) {
-      Alert.alert("Lỗi", "Vui lòng nhập lại mật khẩu hợp lệ!\n\nMật khẩu yêu cầu dài 12 ký tự trở lên và có tối thiểu 1 số và chữ cái in hoa");
-    } else if (password != repassword) {
+    }
+    // else if (passwordRegex.test(password) == false) {
+    //   Alert.alert("Lỗi", "Vui lòng nhập lại mật khẩu hợp lệ!\n\nMật khẩu yêu cầu dài 12 ký tự trở lên và có tối thiểu 1 số và chữ cái in hoa");
+    // }
+     else if (password != repassword) {
       Alert.alert("Lỗi", "Mật khẩu xác nhận lại không chính xác!");
     } else if (isChecked == false) {
       Alert.alert("Lỗi", "Vui lòng đồng ý điều khoản của chúng tôi để có thể sử dụng dịch vụ!");
     } else {
-      // Thực hiện đăng ký bằng Firebase
-      handleRegistration();
+      sendOtpToEmail();
+      // handleRegistration();
     }
   };
 
@@ -159,7 +219,7 @@ const RegisterScreen = () => {
       {/* Khung chứa form */}
       <View style={styles.formContainer}>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Số điện thoại *</Text>
+          <Text style={styles.label}>Số điện thoại</Text>
           <TextInput
             style={styles.input}
             placeholder="Nhập số điện thoại"
@@ -170,7 +230,7 @@ const RegisterScreen = () => {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>Email *</Text>
           <TextInput
             style={styles.input}
             placeholder="Nhập email"
@@ -180,6 +240,17 @@ const RegisterScreen = () => {
             autoCapitalize="none"
           />
         </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Họ và tên *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Nhập họ và tên"
+            value={fullName}
+            onChangeText={setFullName}
+          />
+        </View>
+
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Mật khẩu *</Text>
@@ -215,15 +286,38 @@ const RegisterScreen = () => {
           <Text style={styles.checkboxLabel}>Tôi đồng ý với những chính sách của nhà phát triển *</Text>
         </View>
 
+        {/* Gửi mã OTP */}
+        {otpSent && (
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Mã OTP</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nhập mã OTP"
+              value={otp}
+              onChangeText={setOtp}
+              keyboardType="numeric"
+            />
+            <TouchableOpacity style={styles.button} onPress={verifyOtpAndRegister}>
+              <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient}>
+                <Text style={styles.buttonText}>Xác minh OTP & Đăng ký</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        )}
+
+
         {/* Chú thích */}
         <Text style={styles.note}>(*) Những thông tin bắt buộc phải điền</Text>
 
         {/* Nút đăng ký */}
+        {!otpSent && (
         <TouchableOpacity style={styles.button} onPress={validateRegistration}>
+
           <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} >
             <Text style={styles.buttonText}>Đăng ký</Text>
           </LinearGradient>
         </TouchableOpacity>
+        )}
 
         {/* Đăng ký với mạng xã hội */}
         <View style={styles.socialIcons}>
