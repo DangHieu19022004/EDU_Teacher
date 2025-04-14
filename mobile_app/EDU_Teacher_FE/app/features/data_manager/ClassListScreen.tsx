@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Picker } from '@react-native-picker/picker';
 
 const CLASS_STORAGE_KEY = '@student_classes';
 
@@ -48,7 +49,7 @@ const ClassListScreen: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
   const [newClassName, setNewClassName] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<StudentItem | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const API_URL = 'http://localhost:8000/api';
 
@@ -70,9 +71,25 @@ const ClassListScreen: React.FC = () => {
         if (selected) {
           const updated = { ...selected, students };
           setSelectedClass(updated);
+          setClasses((prev) =>
+            prev.map((cls) => (cls.id === classId ? updated : cls))
+          );
         }
       })
       .catch((err) => console.error('Lỗi khi tải học sinh:', err));
+  };
+
+  const handleSearch = (classId: string, query: string) => {
+    fetch(`${API_URL}/class/${classId}/students/?q=${encodeURIComponent(query)}`)
+      .then((res) => res.json())
+      .then((students) => {
+        const selected = classes.find((cls) => cls.id === classId);
+        if (selected) {
+          const updated = { ...selected, students };
+          setSelectedClass(updated);
+        }
+      })
+      .catch((err) => console.error('Lỗi khi tìm kiếm học sinh:', err));
   };
 
   const handleViewStudent = async (student: StudentItem) => {
@@ -160,6 +177,15 @@ const ClassListScreen: React.FC = () => {
             style={styles.searchInput}
             placeholder="Tìm kiếm lớp hoặc học sinh"
             placeholderTextColor="#888"
+            value={searchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              if (selectedClass && text.trim()) {
+                handleSearch(selectedClass.id, text);
+              } else if (selectedClass) {
+                fetchStudentsByClass(selectedClass.id);
+              }
+            }}
           />
         </View>
         
@@ -167,24 +193,24 @@ const ClassListScreen: React.FC = () => {
         <View style={styles.contentContainer}>
           <View style={styles.classListContainer}>
             <Text style={styles.sectionTitle}>Danh sách lớp</Text>
-            <FlatList
-              data={classes}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.classItem,
-                    selectedClass?.id === item.id && styles.selectedClassItem,
-                  ]}
-                  onPress={() => setSelectedClass(item)}
-                >
-                  <Text style={styles.className}>{item.name}</Text>
-                  <TouchableOpacity onPress={() => handleDeleteClass(item.id)}>
-                    <FontAwesome name="trash" size={18} color="#D92D20" />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              )}
-            />
+            <Picker
+              selectedValue={selectedClass?.id || ''}
+              onValueChange={(classId: string) => {
+                const selected = classes.find((cls) => cls.id === classId);
+                if (selected) {
+                  setSelectedClass(selected);
+                  fetchStudentsByClass(classId);
+                } else {
+                  setSelectedClass(null);
+                }
+              }}
+              style={styles.picker}
+            >
+              <Picker.Item label="Chọn lớp" value="" />
+              {classes.map((item) => (
+                <Picker.Item key={item.id} label={item.name} value={item.id} />
+              ))}
+            </Picker>
           </View>
 
           {/* Student List */}
@@ -304,6 +330,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#333',
   },
+  picker: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    marginBottom: 10,
+    elevation: 2,
+  },
+  
   classItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
