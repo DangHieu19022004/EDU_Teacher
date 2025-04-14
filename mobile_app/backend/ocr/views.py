@@ -31,6 +31,8 @@ def correct_text_with_bart(text):
         print(f"⚠️ BART connection error: {e}")
         return text
 
+
+
 @csrf_exempt
 def detect(request):
     if request.method != 'POST':
@@ -75,6 +77,8 @@ def detect(request):
                 "ocr_data": text_data
             })
 
+        return JsonResponse({'results': response_data}, json_dumps_params={'ensure_ascii': False})
+
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
@@ -84,5 +88,53 @@ def detect(request):
 
 
 
+def extract_table_from_ocr_result(ocr_result):
+    rows = []
+    for line in ocr_result[0]:
+        box = line[0]
+        text = line[1][0].strip()
+        if not text:
+            continue
+        x_center = (box[0][0] + box[2][0]) / 2
+        y_center = (box[0][1] + box[2][1]) / 2
+        height = abs(box[0][1] - box[2][1])
+        rows.append([y_center, x_center, text, box, height])
 
+    rows.sort(key=lambda r: r[0])
+    avg_height = np.mean([r[4] for r in rows])
 
+    grouped_rows = []
+    current_group = []
+
+    for r in rows:
+        if not current_group or abs(r[0] - current_group[-1][0]) < avg_height * 0.7:
+            current_group.append(r)
+        else:
+            grouped_rows.append(current_group)
+            current_group = [r]
+    if current_group:
+        grouped_rows.append(current_group)
+
+    extracted = []
+    for group in grouped_rows:
+        group.sort(key=lambda r: r[1])
+        texts = [item[2] for item in group]
+        if "Giao duc" in texts and "cong dan" in texts:
+            idx1 = texts.index("Giao duc")
+            idx2 = texts.index("cong dan")
+            if abs(idx1 - idx2) == 1:
+                new_text = "Giáo dục công dân"
+                min_idx = min(idx1, idx2)
+                texts[min_idx] = new_text
+                del texts[max(idx1, idx2)]
+        if len(texts) >= 3:
+            corrected_subject = correct_text_with_bart(texts[0])
+            item = {
+                "ten_mon": corrected_subject,
+                "hky1": texts[1] if len(texts) > 1 else "",
+                "hky2": texts[2] if len(texts) > 2 else "",
+                "ca_nam": texts[3] if len(texts) > 3 else ""
+            }
+            extracted.append(item)
+
+    return extracted
