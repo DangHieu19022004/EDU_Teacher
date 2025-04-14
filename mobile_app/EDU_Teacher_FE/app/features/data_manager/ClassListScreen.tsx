@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Picker } from '@react-native-picker/picker';
+import { Picker } from '@react-native-picker/picker'; 
 
 const CLASS_STORAGE_KEY = '@student_classes';
 
