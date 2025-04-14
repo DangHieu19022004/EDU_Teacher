@@ -55,6 +55,8 @@ const ClassListScreen: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
   const [newClassName, setNewClassName] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedSearchClass, setSelectedSearchClass] = useState<ClassItem | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<StudentItem | null>(null);
 
   useEffect(() => {
     const loadClasses = async () => {
@@ -224,6 +226,67 @@ const ClassListScreen: React.FC = () => {
             placeholderTextColor="#888"
           />
         </View>
+
+        <View style={{ paddingHorizontal: 15, marginTop: 10 }}>
+        <Text style={{ fontWeight: 'bold', marginBottom: 5 }}>Tìm kiếm học bạ</Text>
+
+        {/* Combobox chọn lớp */}
+        <View style={{ backgroundColor: 'white', borderRadius: 5, marginBottom: 10, paddingHorizontal: 10 }}>
+          <Text style={{ marginVertical: 5 }}>Chọn lớp:</Text>
+          <FlatList
+            data={classes}
+            horizontal
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedSearchClass(item);
+                  setSelectedStudent(null); // reset chọn học sinh
+                }}
+                style={{
+                  padding: 10,
+                  marginRight: 10,
+                  borderRadius: 5,
+                  backgroundColor: selectedSearchClass?.id === item.id ? '#1E88E5' : '#EEE',
+                }}
+              >
+                <Text style={{ color: selectedSearchClass?.id === item.id ? 'white' : '#333' }}>
+                  {item.name}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+
+        {/* Combobox chọn học sinh */}
+        {selectedSearchClass && (
+          <View style={{ backgroundColor: 'white', borderRadius: 5, marginBottom: 10, paddingHorizontal: 10 }}>
+            <Text style={{ marginVertical: 5 }}>Chọn học sinh:</Text>
+            <FlatList
+              data={selectedSearchClass.students}
+              horizontal
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedStudent(item);
+                    handleViewStudent(item, selectedSearchClass.name);
+                  }}
+                  style={{
+                    padding: 10,
+                    marginRight: 10,
+                    borderRadius: 5,
+                    backgroundColor: '#EEE',
+                  }}
+                >
+                  <Text>{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        )}
+      </View>
+
 
         {/* Class List */}
         <View style={styles.contentContainer}>
