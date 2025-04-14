@@ -138,6 +138,7 @@ const LoginScreen = () => {
         }
       } catch (error) {
         Alert.alert("Lỗi", "Đã có lỗi xảy ra khi đăng nhập");
+
       } finally {
         setIsLoading(false);
       }

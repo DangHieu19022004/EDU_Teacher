@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, FlatList, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, FlatList, Alert, Modal, ActivityIndicator } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -26,9 +26,7 @@ interface StudentItem {
   images?: string[];
 }
 
-const BASE_URL = "http://192.168.100.225:8000/";
-
-
+const BASE_URL = "http://192.168.1.185:8000/";
 
 const uploadAndProcessImage = async (imageUri: string): Promise<any[]> => {
   const formData = new FormData();
@@ -52,11 +50,11 @@ const uploadAndProcessImage = async (imageUri: string): Promise<any[]> => {
   return data.results; // Array of { image_url, ocr_data }
 };
 
-
 const PhotoCaptureScreen: React.FC = () => {
   const router = useRouter();
   const [images, setImages] = useState<string[]>([]);
   const [processedResults, setProcessedResults] = useState<any[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const openCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -73,6 +71,7 @@ const PhotoCaptureScreen: React.FC = () => {
 
     if (!result.canceled && result.assets.length > 0) {
       const imageUri = result.assets[0].uri;
+      setIsProcessing(true); // Bật loading
       try {
         const results = await uploadAndProcessImage(imageUri);
         console.log('📥 Kết quả từ server:', results);
@@ -80,6 +79,8 @@ const PhotoCaptureScreen: React.FC = () => {
       } catch (error) {
         console.error(error);
         Alert.alert('Lỗi', 'Xử lý ảnh thất bại.');
+      } finally {
+        setIsProcessing(false); // Tắt loading
       }
     }
   };
@@ -99,42 +100,74 @@ const PhotoCaptureScreen: React.FC = () => {
 
     if (!result.canceled && result.assets.length > 0) {
       const imageUri = result.assets[0].uri;
+      setIsProcessing(true); // Bật loading
       try {
         const results = await uploadAndProcessImage(imageUri);
         setProcessedResults((prev) => [...prev, ...results]);
       } catch (error) {
         console.error(error);
         Alert.alert('Lỗi', 'Xử lý ảnh thất bại.');
+      } finally {
+        setIsProcessing(false); // Tắt loading
       }
     }
   };
-
 
   const deleteImage = (index: number) => {
     setImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
 
   const handleNext = () => {
-    if (images.length === 0) {
-      Alert.alert('Thông báo', 'Bạn chưa chụp ảnh nào!');
+    if (processedResults.length === 0) {
+      Alert.alert('Thông báo', 'Bạn chưa xử lý ảnh nào!');
       return;
     }
 
-    const studentDataWithImages: StudentItem = {
-      ...sampleStudentData,
-      images: images,
-    };
+    // Tạo dữ liệu học sinh từ kết quả OCR
+    const ocrSubjects = processedResults.flatMap(result =>
+      result.ocr_data.map((row: any) => ({
+        name: row.ten_mon || 'Môn học',
+        hk1: row.hky1 || '0',
+        hk2: row.hky2 || '0',
+        cn: row.ca_nam || '0'
+      }))
+    );
 
-    console.log('Navigating with data:', studentDataWithImages);
+    const studentDataWithOCR: StudentItem = {
+      ...sampleStudentData, // Giữ các thông tin cơ bản từ sample data
+      classList: [{
+        class: sampleStudentData.classList?.[0]?.class || '10D5', // Giữ lớp mặc định hoặc từ sample data
+        subjects: ocrSubjects // Sử dụng dữ liệu môn học từ OCR
+      }],
+      images: processedResults.map(result => `${BASE_URL}${result.image_url.replace(/^\/+/, '')}`) // Lưu URL ảnh
+    };
 
     router.push({
       pathname: '/features/scanning/StudentReportCardScreen',
       params: {
-        student: JSON.stringify(studentDataWithImages),
-        className: sampleStudentData.classList?.[0]?.class || '10D5',
+        student: JSON.stringify(studentDataWithOCR),
+        className: studentDataWithOCR.classList[0].class,
         isEditMode: 'true',
       },
     });
+  };
+
+  // Thêm nút "Tiếp theo" khi có dữ liệu OCR
+  const renderNextButton = () => {
+    if (processedResults.length > 0) {
+      return (
+        <TouchableOpacity
+          style={styles.nextButton}
+          onPress={handleNext}
+          disabled={isProcessing}
+        >
+          <Text style={styles.nextButtonText}>
+            {isProcessing ? 'Đang xử lý...' : 'Xem bảng điểm'}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+    return null;
   };
 
   const renderImageItem = ({ item, index }: { item: string; index: number }) => (
@@ -148,39 +181,59 @@ const PhotoCaptureScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Loading Modal */}
+      <Modal
+        transparent
+        animationType="fade"
+        visible={isProcessing}
+        onRequestClose={() => setIsProcessing(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ActivityIndicator size="large" color="#32ADE6" />
+            <Text style={styles.loadingText}>Đang xử lý...</Text>
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Chụp ảnh học bạ</Text>
       </View>
+
       <TouchableOpacity style={styles.captureButton} onPress={openCamera}>
         <FontAwesome name="camera" size={30} color="white" />
         <Text style={styles.captureButtonText}>Chụp ảnh</Text>
       </TouchableOpacity>
+
       <TouchableOpacity style={styles.galleryButton} onPress={pickImageFromLibrary}>
         <FontAwesome name="photo" size={28} color="white" />
         <Text style={styles.galleryButtonText}>Chọn ảnh từ thiết bị</Text>
       </TouchableOpacity>
 
       {processedResults.length > 0 ? (
-        <FlatList
-          data={processedResults}
-          keyExtractor={(_, i) => i.toString()}
-          renderItem={({ item }) => (
-            <View style={{ marginVertical: 10, backgroundColor: '#fff', padding: 10, borderRadius: 10 }}>
-              <Image source={{ uri: `${BASE_URL}${item.image_url.replace(/^\/+/, '')}` }} style={{ height: 200, resizeMode: 'contain', borderRadius: 8 }} />
-              <Text style={{ fontWeight: 'bold', marginTop: 5 }}>Dữ liệu OCR:</Text>
-              {item.ocr_data.map((row: any, index: number) => (
-                <Text key={index}>• {row.ten_mon}: {row.hky1} - {row.hky2} - {row.ca_nam}</Text>
-              ))}
-            </View>
-          )}
-        />
+        <>
+          <FlatList
+            data={processedResults}
+            keyExtractor={(_, i) => i.toString()}
+            renderItem={({ item }) => (
+              <View style={styles.resultItem}>
+                <Image
+                  source={{ uri: `${BASE_URL}${item.image_url.replace(/^\/+/, '')}` }}
+                  style={styles.processedImage}
+                />
+                <Text style={styles.resultTitle}>Kết quả nhận diện:</Text>
+                {item.ocr_data.map((row: any, index: number) => (
+                  <Text key={index} style={styles.resultText}>
+                    • {row.ten_mon || 'Môn học'}: HK1 {row.hky1 || '0'} - HK2 {row.hky2 || '0'} - CN {row.ca_nam || '0'}
+                  </Text>
+                ))}
+              </View>
+            )}
+          />
+          {renderNextButton()}
+        </>
       ) : (
-        <Text style={styles.noImageText}>Chưa có ảnh nào được chụp</Text>
-      )}
-      {images.length > 0 && (
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>Tiếp theo</Text>
-        </TouchableOpacity>
+        <Text style={styles.noImageText}>Chưa có ảnh nào được xử lý</Text>
       )}
     </View>
   );
@@ -201,7 +254,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 10,
   },
-
   container: { flex: 1, backgroundColor: '#F8F8F8', padding: 10 },
   header: {
     height: 80,
@@ -256,6 +308,50 @@ const styles = StyleSheet.create({
   nextButtonText: {
     color: 'white',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  resultItem: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 15,
+    elevation: 2,
+  },
+  processedImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  resultTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 5,
+    color: '#333',
+  },
+  resultText: {
+    fontSize: 14,
+    color: '#555',
+    marginLeft: 10,
+    marginBottom: 3,
+  },
+  // Thêm style cho modal loading
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#32ADE6',
     fontWeight: 'bold',
   },
 });
