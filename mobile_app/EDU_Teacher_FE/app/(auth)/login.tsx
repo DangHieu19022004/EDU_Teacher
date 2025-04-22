@@ -138,7 +138,7 @@ const LoginScreen = () => {
         }
       } catch (error) {
         Alert.alert("Lỗi", "Đã có lỗi xảy ra khi đăng nhập");
-
+        router.replace('/(main)/home');
       } finally {
         setIsLoading(false);
       }
