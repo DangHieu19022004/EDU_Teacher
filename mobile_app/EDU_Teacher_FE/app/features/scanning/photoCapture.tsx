@@ -26,15 +26,21 @@ interface StudentItem {
   images?: string[];
 }
 
+interface ImageItem {
+  uri: string;
+  type: 'report_card' | 'student_info';
+}
+
 const BASE_URL = "http://192.168.100.225:8000/";
 
-const uploadAndProcessImage = async (imageUri: string): Promise<any[]> => {
+const uploadAndProcessImage = async (imageUri: string, imageType: string): Promise<any[]> => {
   const formData = new FormData();
   formData.append('image', {
     uri: imageUri,
     name: 'photo.jpg',
     type: 'image/jpeg',
   } as any);
+  formData.append('image_type', imageType);
 
   const response = await fetch(`${BASE_URL}ocr/detect/`, {
     method: 'POST',
@@ -47,12 +53,12 @@ const uploadAndProcessImage = async (imageUri: string): Promise<any[]> => {
   }
 
   const data = await response.json();
-  return data.results; // Array of { image_url, ocr_data }
+  return data.results;
 };
 
 const PhotoCaptureScreen: React.FC = () => {
   const router = useRouter();
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<ImageItem[]>([]);
   const [processedResults, setProcessedResults] = useState<any[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -70,20 +76,11 @@ const PhotoCaptureScreen: React.FC = () => {
     });
 
     if (!result.canceled && result.assets.length > 0) {
-      const imageUri = result.assets[0].uri;
-      setIsProcessing(true); // Bật loading
-      try {
-        const results = await uploadAndProcessImage(imageUri);
-        console.log('📥 Kết quả từ server:', results);
-        setProcessedResults((prev) => [...prev, ...results]);
-      } catch (error) {
-        console.error(error);
-        Alert.alert('Lỗi', 'Xử lý ảnh thất bại.');
-      } finally {
-        setIsProcessing(false); // Tắt loading
-      }
+      const newImage = { uri: result.assets[0].uri, type: 'report_card' };
+      setImages((prev) => [...prev, newImage]);
     }
   };
+
 
   const pickImageFromLibrary = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -96,20 +93,12 @@ const PhotoCaptureScreen: React.FC = () => {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
       quality: 1,
+      allowsMultipleSelection: true,
     });
 
     if (!result.canceled && result.assets.length > 0) {
-      const imageUri = result.assets[0].uri;
-      setIsProcessing(true); // Bật loading
-      try {
-        const results = await uploadAndProcessImage(imageUri);
-        setProcessedResults((prev) => [...prev, ...results]);
-      } catch (error) {
-        console.error(error);
-        Alert.alert('Lỗi', 'Xử lý ảnh thất bại.');
-      } finally {
-        setIsProcessing(false); // Tắt loading
-      }
+      const newImages = result.assets.map((asset) => ({ uri: asset.uri, type: 'report_card' }));
+      setImages((prev) => [...prev, ...newImages]);
     }
   };
 
@@ -117,77 +106,117 @@ const PhotoCaptureScreen: React.FC = () => {
     setImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
 
-  const handleNext = () => {
-    if (processedResults.length === 0) {
-      Alert.alert('Thông báo', 'Bạn chưa xử lý ảnh nào!');
-      return;
-    }
-
-    // Tạo dữ liệu học sinh từ kết quả OCR
-    const ocrSubjects = processedResults.flatMap(result =>
-      result.ocr_data.map((row: any) => ({
-        name: row.ten_mon || 'Môn học',
-        hk1: row.hky1 || '0',
-        hk2: row.hky2 || '0',
-        cn: row.ca_nam || '0'
-      }))
-    );
-
-    const studentDataWithOCR: StudentItem = {
-      ...sampleStudentData, // Giữ các thông tin cơ bản từ sample data
-      classList: [{
-        class: sampleStudentData.classList?.[0]?.class || '10D5', // Giữ lớp mặc định hoặc từ sample data
-        subjects: ocrSubjects // Sử dụng dữ liệu môn học từ OCR
-      }],
-      images: processedResults.map(result => `${BASE_URL}${result.image_url.replace(/^\/+/, '')}`) // Lưu URL ảnh
-    };
-
-    router.push({
-      pathname: '/features/scanning/StudentReportCardScreen',
-      params: {
-        student: JSON.stringify(studentDataWithOCR),
-        className: studentDataWithOCR.classList[0].class,
-        isEditMode: 'true',
-      },
+  const toggleType = (index: number) => {
+    setImages((prevImages) => {
+      const updated = [...prevImages];
+      updated[index].type = updated[index].type === 'report_card' ? 'student_info' : 'report_card';
+      return updated;
     });
   };
 
-  // Thêm nút "Tiếp theo" khi có dữ liệu OCR
-  const renderNextButton = () => {
-    if (processedResults.length > 0) {
-      return (
-        <TouchableOpacity
-          style={styles.nextButton}
-          onPress={handleNext}
-          disabled={isProcessing}
-        >
-          <Text style={styles.nextButtonText}>
-            {isProcessing ? 'Đang xử lý...' : 'Xem bảng điểm'}
-          </Text>
-        </TouchableOpacity>
-      );
+  const handleNext = async () => {
+    if (images.length === 0) {
+      Alert.alert('Thông báo', 'Bạn chưa chọn ảnh nào!');
+      return;
     }
-    return null;
+
+    setIsProcessing(true);
+    try {
+      const allResults = [];
+      let studentInfoExtracted: Partial<StudentItem> = {};
+
+      for (const img of images) {
+        const results = await uploadAndProcessImage(img.uri, img.type);
+        allResults.push(...results);
+
+        console.log('📄 Kết quả OCR:', results);
+
+        if (img.type === 'student_info') {
+          for (const result of results) {
+            if (result.student_info) {
+              const info = result.student_info;
+              studentInfoExtracted = {
+                ...studentInfoExtracted,
+                name: info.name || '',
+                gender: info.gender || '',
+                dob: info.dob || '',
+                school: info.school || '', // dù không có vẫn không lỗi
+              };
+              console.log("🧍 Dữ liệu student_info:", info);
+            }
+          }
+        }
+
+
+      }
+
+      setProcessedResults(allResults);
+
+      const ocrSubjects = allResults.flatMap(result =>
+        result.ocr_data.map((row: any) => ({
+          name: row.ten_mon || 'Môn học',
+          hk1: row.hky1 || '0',
+          hk2: row.hky2 || '0',
+          cn: row.ca_nam || '0',
+        }))
+      );
+
+      const studentDataWithOCR: StudentItem = {
+        ...sampleStudentData,
+        id: Date.now().toString(),
+        name: studentInfoExtracted.name ?? sampleStudentData.name,
+        gender: studentInfoExtracted.gender || '',
+        dob: studentInfoExtracted.dob || '',
+        school: studentInfoExtracted.school || '',
+        phone: '',
+        academicPerformance: '',
+        conduct: '',
+        classList: [
+          {
+            class: sampleStudentData.classList?.[0]?.class || '10D5',
+            subjects: ocrSubjects,
+          },
+        ],
+        images: allResults.map(result => `${BASE_URL}${result.image_url.replace(/^\/+/, '')}`),
+      };
+
+      console.log('📦 Thông tin học sinh:', studentInfoExtracted);
+
+      router.push({
+        pathname: '/features/scanning/StudentReportCardScreen',
+        params: {
+          student: JSON.stringify(studentDataWithOCR),
+          className: studentDataWithOCR.classList[0].class,
+          isEditMode: 'true',
+        },
+      });
+    } catch (error) {
+      Alert.alert('Lỗi', 'Xử lý ảnh thất bại.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const renderImageItem = ({ item, index }: { item: string; index: number }) => (
+
+  const renderImageItem = ({ item, index }: { item: ImageItem; index: number }) => (
     <View style={styles.imageContainer}>
-      <Image source={{ uri: item }} style={styles.thumbnail} />
+      <Image source={{ uri: item.uri }} style={styles.thumbnail} />
       <TouchableOpacity style={styles.deleteButton} onPress={() => deleteImage(index)}>
         <FontAwesome name="trash" size={20} color="white" />
       </TouchableOpacity>
+      <View style={styles.typeSwitchContainer}>
+        <TouchableOpacity onPress={() => toggleType(index)}>
+          <Text style={styles.typeSwitchText}>
+            {item.type === 'report_card' ? '📄 Học bạ' : '🧍 Thông tin'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      {/* Loading Modal */}
-      <Modal
-        transparent
-        animationType="fade"
-        visible={isProcessing}
-        onRequestClose={() => setIsProcessing(false)}
-      >
+      <Modal transparent animationType="fade" visible={isProcessing}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <ActivityIndicator size="large" color="#32ADE6" />
@@ -195,10 +224,6 @@ const PhotoCaptureScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Chụp ảnh học bạ</Text>
-      </View>
 
       <TouchableOpacity style={styles.captureButton} onPress={openCamera}>
         <FontAwesome name="camera" size={30} color="white" />
@@ -210,36 +235,34 @@ const PhotoCaptureScreen: React.FC = () => {
         <Text style={styles.galleryButtonText}>Chọn ảnh từ thiết bị</Text>
       </TouchableOpacity>
 
-      {processedResults.length > 0 ? (
+      {images.length > 0 ? (
         <>
           <FlatList
-            data={processedResults}
+            data={images}
             keyExtractor={(_, i) => i.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.resultItem}>
-                <Image
-                  source={{ uri: `${BASE_URL}${item.image_url.replace(/^\/+/, '')}` }}
-                  style={styles.processedImage}
-                />
-                <Text style={styles.resultTitle}>Kết quả nhận diện:</Text>
-                {item.ocr_data.map((row: any, index: number) => (
-                  <Text key={index} style={styles.resultText}>
-                    • {row.ten_mon || 'Môn học'}: HK1 {row.hky1 || '0'} - HK2 {row.hky2 || '0'} - CN {row.ca_nam || '0'}
-                  </Text>
-                ))}
-              </View>
-            )}
+            renderItem={renderImageItem}
           />
-          {renderNextButton()}
+          <TouchableOpacity style={styles.nextButton} onPress={handleNext} disabled={isProcessing}>
+            <Text style={styles.nextButtonText}>Xem bảng điểm</Text>
+          </TouchableOpacity>
         </>
       ) : (
-        <Text style={styles.noImageText}>Chưa có ảnh nào được xử lý</Text>
+        <Text style={styles.noImageText}>Chưa có ảnh nào được chọn</Text>
       )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  typeSwitchContainer: {
+    marginTop: 5,
+    alignItems: 'center',
+  },
+  typeSwitchText: {
+    fontSize: 14,
+    color: '#1E88E5',
+    fontWeight: '600'
+  },
   galleryButton: {
     backgroundColor: '#6A1B9A',
     flexDirection: 'row',

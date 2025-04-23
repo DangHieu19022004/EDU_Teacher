@@ -14,25 +14,32 @@ const SettingsScreen: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-        // Kiểm tra nếu user đăng nhập bằng Facebook
-        const fbUser = await AsyncStorage.getItem("fb_uid");
-        if (fbUser) {
-            console.log("Logging out from Facebook...");
-            LoginManager.logOut(); // 🔥 Đăng xuất khỏi Facebook
-            await AsyncStorage.removeItem("fb_uid"); // 🔥 Xóa dữ liệu Facebook user
-        }else{
-            // Đăng xuất khỏi Firebase (nếu có)
-            await auth().signOut();
-            await AsyncStorage.removeItem("access_token"); // 🔥 Xóa token Google/Facebook
-        }
+      const fbUser = await AsyncStorage.getItem("fb_uid");
+      const accessToken = await AsyncStorage.getItem("access_token");
 
-        // Điều hướng về màn hình login
-        router.replace("../(auth)");
+      if (fbUser) {
+        console.log("Logging out from Facebook...");
+        LoginManager.logOut();
+        await AsyncStorage.removeItem("fb_uid");
+      } else if (accessToken) {
+        console.log("Logging out from social login (Google/Facebook)...");
+        await AsyncStorage.removeItem("access_token");
+      } else {
+        // Mặc định: đăng xuất tài khoản email/password
+        console.log("Logging out from email/password...");
+      }
+
+      // Firebase luôn phải signOut để xóa thông tin user
+      await auth().signOut();
+
+      // Chuyển về màn hình login
+      router.replace("../(auth)");
     } catch (error) {
-        console.log("Sign-Out Error:", error);
-        Alert.alert("Logout Failed", error.message);
+      console.log("Sign-Out Error:", error);
+      Alert.alert("Logout Failed", error.message || "Có lỗi xảy ra khi đăng xuất.");
     }
-  }
+  };
+
 
   return (
     <View style={styles.container}>

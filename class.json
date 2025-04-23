@@ -1,0 +1,54 @@
+[
+    {
+      "id": "toan",
+      "name": "Toán"
+    },
+    {
+      "id": "vatly",
+      "name": "Vật lý"
+    },
+    {
+      "id": "hoahoc",
+      "name": "Hóa học"
+    },
+    {
+        "id": "sinhhoc",
+        "name": "Sinh học"
+    },
+    {
+        "id": "tinhoc",
+        "name": "Tin học"
+    },
+    {
+      "id": "nguvan",
+      "name": "Ngữ văn"
+    },
+    {
+      "id": "lichsu",
+      "name": "Lịch sử"
+    },
+    {
+      "id": "diali",
+      "name": "Địa lý"
+    },
+    {
+      "id": "ngoaingu",
+      "name": "Ngoại ngữ"
+    },
+    {
+        "id": "congnghe",
+        "name": "Công nghệ"
+    },
+    {
+        "id": "gdqp-an",
+        "name": "GDQP-AN"
+    },
+    {
+        "id": "theduc",
+        "name": "Thể dục"
+    },
+    {
+      "id": "gdcd",
+      "name": "Giáo dục công dân"
+    }
+  ]

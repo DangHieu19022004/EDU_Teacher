@@ -11,12 +11,17 @@ from paddleocr import PaddleOCR
 import json
 from django.conf import settings
 import requests
-
+import base64
+import google.generativeai as genai
+from PIL import Image
 
 yolo_model = YOLO("E:/ORC_mobile_app/mobile_app/backend/ocr/runs/detect/train10/weights/best.pt")
+yolo_infor = YOLO("E:/ORC_mobile_app/mobile_app/backend/ocr/runs/detect/train5/weights/best.pt")
 ocr_model = PaddleOCR(use_gpu=False, lang='vi')
+genai.configure(api_key="AIzaSyCiludt5vTQLBn38xAQI4F1Awleq2P6Mi0")
+gemini_model = genai.GenerativeModel("models/gemini-2.0-flash")
 
-BART_SERVER_URL = "http://34.69.155.77:8001/correct"  # hoặc port bạn dùng
+BART_SERVER_URL = "http://34.69.155.77:8001/correct"
 
 def correct_text_with_bart(text):
     try:
@@ -41,6 +46,8 @@ def detect(request):
     if 'image' not in request.FILES:
         return JsonResponse({'error': 'Missing image file'}, status=400)
 
+    image_type = request.POST.get('image_type', 'report_card')
+    model = yolo_model if image_type == 'report_card' else yolo_infor
     image_file = request.FILES['image']
     unique_filename = str(uuid.uuid4()) + ".jpg"
     temp_image_path = os.path.join(settings.MEDIA_ROOT, "temp", unique_filename)
@@ -50,7 +57,7 @@ def detect(request):
 
     try:
         # Chạy YOLO
-        results = yolo_model(temp_image_path)[0]
+        results = model(temp_image_path)[0]
         img = cv2.imread(temp_image_path)
         cropped_dir = os.path.join(settings.MEDIA_ROOT, "cropped", uuid.uuid4().hex[:6])
         os.makedirs(cropped_dir, exist_ok=True)
@@ -66,16 +73,24 @@ def detect(request):
 
             # OCR
             ocr_result = ocr_model.ocr(crop_path, det=True, rec=True, cls=False)
-            text_data = extract_table_from_ocr_result(ocr_result)
 
-            # Tạo URL trả về
-            relative_crop_url = os.path.relpath(crop_path, settings.MEDIA_ROOT).replace("\\", "/")
-            image_url = settings.MEDIA_URL + relative_crop_url
+            if image_type == 'report_card':
+                text_data = extract_report_card_from_ocr_result(ocr_result)
+                result_entry = {
+                    "image_url": settings.MEDIA_URL + os.path.relpath(crop_path, settings.MEDIA_ROOT).replace("\\", "/"),
+                    "ocr_data": text_data,
+                    "student_info": {}
+                }
+            else:
+                info_data = extract_student_info_from_image(crop_path)
 
-            response_data.append({
-                "image_url": image_url,
-                "ocr_data": text_data
-            })
+                result_entry = {
+                    "image_url": settings.MEDIA_URL + os.path.relpath(crop_path, settings.MEDIA_ROOT).replace("\\", "/"),
+                    "ocr_data": [],
+                    "student_info": info_data
+                }
+
+            response_data.append(result_entry)
 
         return JsonResponse({'results': response_data}, json_dumps_params={'ensure_ascii': False})
 
@@ -88,7 +103,7 @@ def detect(request):
 
 
 
-def extract_table_from_ocr_result(ocr_result):
+def extract_report_card_from_ocr_result(ocr_result):
     rows = []
     for line in ocr_result[0]:
         box = line[0]
@@ -138,3 +153,57 @@ def extract_table_from_ocr_result(ocr_result):
             extracted.append(item)
 
     return extracted
+
+
+def extract_student_info_from_image(image_path):
+    try:
+        with open(image_path, "rb") as img_file:
+            image_bytes = img_file.read()
+            base64_image = base64.b64encode(image_bytes).decode("utf-8")
+
+        prompt = """
+        Hãy trích xuất thông tin sau từ ảnh học bạ hoặc thông tin sinh viên:
+
+        - Họ và tên
+        - Giới tính
+        - Ngày sinh
+
+        Trả về kết quả JSON với các trường: name, gender, dob
+        """
+
+        response = gemini_model.generate_content([
+            {"text": prompt},
+            {
+                "inline_data": {
+                    "mime_type": "image/jpeg",
+                    "data": base64_image,
+                }
+            }
+        ])
+
+        output_text = response.text.strip()
+        print("📄 Gemini raw response:", output_text)
+
+        # Loại bỏ ```json hoặc ``` nếu tồn tại
+        if output_text.startswith("```json"):
+            output_text = output_text[7:]
+        elif output_text.startswith("```"):
+            output_text = output_text[3:]
+
+        if output_text.endswith("```"):
+            output_text = output_text[:-3]
+
+        output_text = output_text.strip()
+        print("✅ Gemini JSON cleaned:", output_text)
+
+        return json.loads(output_text)
+
+    except Exception as e:
+        print("❌ Lỗi khi xử lý ảnh bằng Gemini:", str(e))
+
+    return {
+        "name": "",
+        "gender": "",
+        "dob": ""
+    }
+

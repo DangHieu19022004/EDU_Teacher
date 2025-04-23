@@ -90,13 +90,14 @@ const StudentReportCard = ({
     setEditableStudent(studentData);
   }, [studentData]);
 
-  if (!editableStudent || !editableStudent.name) {
+  if (!editableStudent || !editableStudent.name || editableStudent.name.trim() === '' || editableStudent.name === 'Chưa rõ') {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>Lỗi: Dữ liệu học sinh không hợp lệ.</Text>
       </View>
     );
   }
+
 
   const selectedClassData = editableStudent.classList?.find((cls) => cls.class.trim() === className.trim());
   const selectedSubjects = selectedClassData?.subjects || editableStudent.subjects || [];
@@ -362,28 +363,47 @@ const StudentReportCard = ({
         subMessage="Vui lòng thử lại"
       />
 
-      <Modal visible={showImagesModal} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Ảnh học bạ</Text>
-            <FlatList
-              data={images}
-              renderItem={renderImageItem}
-              keyExtractor={(item, index) => index.toString()}
-              numColumns={2}
-              contentContainerStyle={styles.imageList}
-            />
-            <TouchableOpacity style={styles.closeButton} onPress={() => setShowImagesModal(false)}>
-              <Text style={styles.closeButtonText}>Đóng</Text>
-            </TouchableOpacity>
-          </View>
+    <Modal visible={showImagesModal} animationType="slide" transparent>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Ảnh học bạ</Text>
+
+          <FlatList
+            data={images}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(_, index) => index.toString()}
+            renderItem={({ item }) => (
+              <View style={styles.imageSlide}>
+                <Image source={{ uri: item }} style={styles.fullImage} resizeMode="contain" />
+              </View>
+            )}
+          />
+
+          <TouchableOpacity style={styles.closeButton} onPress={() => setShowImagesModal(false)}>
+            <Text style={styles.closeButtonText}>Đóng</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
+      </View>
+    </Modal>
+
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  imageSlide: {
+    width: Dimensions.get('window').width - 40,
+    height: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
