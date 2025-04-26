@@ -20,7 +20,7 @@ import SuccessModal from '../../../components/SuccessModal';
 import ErrorModal from '../../../components/ErrorModal';
 
 const CLASS_STORAGE_KEY = '@student_classes';
-
+const BASE_URL = "http://192.168.1.164:8000/";
 interface Subject {
   name: string;
   hk1: string;
@@ -134,37 +134,75 @@ const StudentReportCard = ({
   const saveStudentReport = async () => {
     setIsSaving(true);
     try {
-      const savedClasses = await AsyncStorage.getItem(CLASS_STORAGE_KEY);
-      let allClasses: ClassItem[] = savedClasses ? JSON.parse(savedClasses) : [];
-
-      const highestClassName = getHighestClass(editableStudent.classList);
-
-      let targetClass = allClasses.find((c) => c.name === highestClassName);
-      if (!targetClass) {
-        targetClass = { id: Date.now().toString(), name: highestClassName, students: [] };
-        allClasses.push(targetClass);
-      }
-
-      const studentToSave = {
-        ...editableStudent,
-        transcript: 'Có học bạ',
+      const payload = {
+        student: {
+          id: editableStudent.id,
+          name: editableStudent.name,
+          dob: editableStudent.dob,
+          gender: editableStudent.gender,
+          phone: editableStudent.phone,
+          school: editableStudent.school,
+          address: '',
+          parents_email: '',
+          class_id: '',
+          father_name: '',
+          mother_name: '',
+          guardian_name: '',
+          guardian_job: '',
+          ethnicity: '',
+          birthplace: '',
+        },
+        report_card: {
+          class_id: '',
+          school_year: '2022-2025',
+          conduct_year1_sem1: editableStudent.conduct,
+          conduct_year1_sem2: editableStudent.conduct,
+          conduct_year1_final: editableStudent.conduct,
+          conduct_year2_sem1: '',
+          conduct_year2_sem2: '',
+          conduct_year2_final: '',
+          conduct_year3_sem1: '',
+          conduct_year3_sem2: '',
+          conduct_year3_final: '',
+          academic_perform_year1: editableStudent.academicPerformance,
+          academic_perform_year2: '',
+          academic_perform_year3: '',
+          gpa_avg_year1: 0,
+          gpa_avg_year2: 0,
+          gpa_avg_year3: 0,
+          promotion_status: '',
+          teacher_comment: '',
+          teacher_signed: false,
+          principal_signed: false,
+        },
+        subjects: selectedSubjects.map(sub => ({
+          name: sub.name,
+          year: 1, // lớp 10
+          year1_sem1_score: parseFloat(sub.hk1 || "0"),
+          year1_sem2_score: parseFloat(sub.hk2 || "0"),
+          year1_final_score: parseFloat(sub.cn || "0"),
+          year2_sem1_score: null,
+          year2_sem2_score: null,
+          year2_final_score: null,
+          year3_sem1_score: null,
+          year3_sem2_score: null,
+          year3_final_score: null,
+        })),
       };
 
-      const studentIndex = targetClass.students.findIndex((s) => s.id === studentToSave.id);
-      if (studentIndex !== -1) {
-        targetClass.students[studentIndex] = studentToSave;
+      const response = await fetch(`${BASE_URL}ocr/save_full_report_card/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        setShowSuccessModal(true);
       } else {
-        targetClass.students.push(studentToSave);
+        throw new Error('Lưu thất bại');
       }
-
-      await AsyncStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(allClasses));
-
-      if (onSave) {
-        onSave(studentToSave);
-      }
-
-      // Ensure modal is shown before any navigation
-      setShowSuccessModal(true);
     } catch (error) {
       console.error('Lỗi khi lưu học bạ:', error);
       setShowErrorModal(true);
@@ -172,6 +210,7 @@ const StudentReportCard = ({
       setIsSaving(false);
     }
   };
+
 
   const handleConfirmSave = () => {
     Alert.alert(

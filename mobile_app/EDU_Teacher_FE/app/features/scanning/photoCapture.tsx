@@ -29,9 +29,10 @@ interface StudentItem {
 interface ImageItem {
   uri: string;
   type: 'report_card' | 'student_info';
+  grade: '10' | '11' | '12' | 'none';
 }
 
-const BASE_URL = "http://192.168.100.225:8000/";
+const BASE_URL = "http://192.168.1.164:8000/";
 
 const uploadAndProcessImage = async (imageUri: string, imageType: string): Promise<any[]> => {
   const formData = new FormData();
@@ -61,6 +62,18 @@ const PhotoCaptureScreen: React.FC = () => {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [processedResults, setProcessedResults] = useState<any[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectingGradeIndex, setSelectingGradeIndex] = useState<number | null>(null);
+
+  const handleSelectGrade = (grade: '10' | '11' | '12') => {
+    if (selectingGradeIndex !== null) {
+      setImages(prev => {
+        const updated = [...prev];
+        updated[selectingGradeIndex].grade = grade;
+        return updated;
+      });
+      setSelectingGradeIndex(null);
+    }
+  };
 
   const openCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -76,8 +89,9 @@ const PhotoCaptureScreen: React.FC = () => {
     });
 
     if (!result.canceled && result.assets.length > 0) {
-      const newImage = { uri: result.assets[0].uri, type: 'report_card' };
+      const newImage = { uri: result.assets[0].uri, type: 'report_card', grade: '10'  };
       setImages((prev) => [...prev, newImage]);
+      setSelectingGradeIndex(images.length);
     }
   };
 
@@ -97,8 +111,9 @@ const PhotoCaptureScreen: React.FC = () => {
     });
 
     if (!result.canceled && result.assets.length > 0) {
-      const newImages = result.assets.map((asset) => ({ uri: asset.uri, type: 'report_card' }));
+      const newImages = result.assets.map((asset) => ({ uri: asset.uri, type: 'report_card', grade: '10' }));
       setImages((prev) => [...prev, ...newImages]);
+      setSelectingGradeIndex(images.length);
     }
   };
 
@@ -106,13 +121,37 @@ const PhotoCaptureScreen: React.FC = () => {
     setImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
 
-  const toggleType = (index: number) => {
-    setImages((prevImages) => {
+  const toggleGrade = (index: number) => {
+    setImages(prevImages => {
       const updated = [...prevImages];
-      updated[index].type = updated[index].type === 'report_card' ? 'student_info' : 'report_card';
+      if (updated[index].type === 'report_card') {
+        const currentGrade = updated[index].grade;
+        let nextGrade: '10' | '11' | '12' = '10';
+        if (currentGrade === '10') nextGrade = '11';
+        else if (currentGrade === '11') nextGrade = '12';
+        else if (currentGrade === '12') nextGrade = '10';
+        updated[index].grade = nextGrade;
+      }
       return updated;
     });
   };
+
+
+  const toggleType = (index: number) => {
+    setImages(prevImages => {
+      const updated = [...prevImages];
+      if (updated[index].type === 'report_card') {
+        updated[index].type = 'student_info';
+        updated[index].grade = 'none'; // khi đổi sang thông tin, grade = none
+      } else {
+        updated[index].type = 'report_card';
+        updated[index].grade = '10'; // khi đổi về học bạ, grade = 10
+      }
+      return updated;
+    });
+  };
+
+
 
   const handleNext = async () => {
     if (images.length === 0) {
@@ -152,14 +191,43 @@ const PhotoCaptureScreen: React.FC = () => {
 
       setProcessedResults(allResults);
 
-      const ocrSubjects = allResults.flatMap(result =>
-        result.ocr_data.map((row: any) => ({
-          name: row.ten_mon || 'Môn học',
-          hk1: row.hky1 || '0',
-          hk2: row.hky2 || '0',
-          cn: row.ca_nam || '0',
-        }))
-      );
+      const allSubjects = [];
+
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    const grade = img.grade; // '10', '11', '12'
+    const results = await uploadAndProcessImage(img.uri, img.type);
+
+    allResults.push(...results);
+
+    if (img.type === 'student_info') {
+      for (const result of results) {
+        if (result.student_info) {
+          const info = result.student_info;
+          studentInfoExtracted = {
+            ...studentInfoExtracted,
+            name: info.name || '',
+            gender: info.gender || '',
+            dob: info.dob || '',
+            school: info.school || '',
+          };
+        }
+      }
+    }
+
+    const subjectsFromThisImage = results.flatMap(result =>
+      result.ocr_data.map((row: any) => ({
+        name: row.ten_mon || 'Môn học',
+        hk1: row.hky1 || '0',
+        hk2: row.hky2 || '0',
+        cn: row.ca_nam || '0',
+        year: grade === '10' ? 1 : grade === '11' ? 2 : 3,
+      }))
+    );
+
+    allSubjects.push(...subjectsFromThisImage);
+  }//                         setInitializing(false);
+
 
       const studentDataWithOCR: StudentItem = {
         ...sampleStudentData,
@@ -173,8 +241,8 @@ const PhotoCaptureScreen: React.FC = () => {
         conduct: '',
         classList: [
           {
-            class: sampleStudentData.classList?.[0]?.class || '10D5',
-            subjects: ocrSubjects,
+            class: '10',
+            subjects: allSubjects,
           },
         ],
         images: allResults.map(result => `${BASE_URL}${result.image_url.replace(/^\/+/, '')}`),
@@ -210,6 +278,13 @@ const PhotoCaptureScreen: React.FC = () => {
             {item.type === 'report_card' ? '📄 Học bạ' : '🧍 Thông tin'}
           </Text>
         </TouchableOpacity>
+
+        {/* Chỉ hiện lớp nếu là học bạ */}
+        {item.type === 'report_card' && (
+        <TouchableOpacity onPress={() => toggleGrade(index)} style={{ marginTop: 5 }}>
+          <Text style={styles.typeSwitchText}>🎓 Lớp {item.grade}</Text>
+        </TouchableOpacity>
+      )}
       </View>
     </View>
   );
@@ -254,6 +329,25 @@ const PhotoCaptureScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#1E88E5',
+  },
+  gradeButton: {
+    backgroundColor: '#1E88E5',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
+    width: '80%',
+    alignItems: 'center',
+  },
+  gradeButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   typeSwitchContainer: {
     marginTop: 5,
     alignItems: 'center',

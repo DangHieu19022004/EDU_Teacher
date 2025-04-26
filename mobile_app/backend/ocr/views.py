@@ -1,4 +1,5 @@
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -11,6 +12,7 @@ from paddleocr import PaddleOCR
 import json
 from django.conf import settings
 import requests
+from .models import StudentInfo, ReportCard, Subject
 import base64
 import google.generativeai as genai
 from PIL import Image
@@ -22,6 +24,94 @@ genai.configure(api_key="AIzaSyCiludt5vTQLBn38xAQI4F1Awleq2P6Mi0")
 gemini_model = genai.GenerativeModel("models/gemini-2.0-flash")
 
 BART_SERVER_URL = "http://34.69.155.77:8001/correct"
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def save_full_report_card(request):
+    try:
+        data = json.loads(request.body)
+
+        # 1. Lưu StudentInfo
+        student_id = data.get('student', {}).get('id')
+        if not student_id:
+            return JsonResponse({'error': 'Missing student ID'}, status=400)
+
+        student_info, created = StudentInfo.objects.get_or_create(
+            student_id=student_id,
+            defaults={
+                'name': data['student'].get('name', ''),
+                'dob': data['student'].get('dob', ''),
+                'gender': data['student'].get('gender', ''),
+                'address': data['student'].get('address', ''),
+                'father_name': data['student'].get('father_name', ''),
+                'mother_name': data['student'].get('mother_name', ''),
+                'phone': data['student'].get('phone', ''),
+                'parents_email': data['student'].get('parents_email', ''),
+                'class_id': data['student'].get('class_id', ''),
+                'ethnicity': data['student'].get('ethnicity', ''),
+                'birthplace': data['student'].get('birthplace', ''),
+            }
+        )
+
+        if not created:
+            for field, value in data['student'].items():
+                setattr(student_info, field, value)
+            student_info.save()
+
+        # 2. Lưu ReportCard
+        report_card = ReportCard.objects.create(
+            student_id=student_id,
+            class_id=data['report_card'].get('class_id', ''),
+            school_year=data['report_card'].get('school_year', ''),
+            conduct_year1_sem1=data['report_card'].get('conduct_year1_sem1', ''),
+            conduct_year1_sem2=data['report_card'].get('conduct_year1_sem2', ''),
+            conduct_year1_final=data['report_card'].get('conduct_year1_final', ''),
+            conduct_year2_sem1=data['report_card'].get('conduct_year2_sem1', ''),
+            conduct_year2_sem2=data['report_card'].get('conduct_year2_sem2', ''),
+            conduct_year2_final=data['report_card'].get('conduct_year2_final', ''),
+            conduct_year3_sem1=data['report_card'].get('conduct_year3_sem1', ''),
+            conduct_year3_sem2=data['report_card'].get('conduct_year3_sem2', ''),
+            conduct_year3_final=data['report_card'].get('conduct_year3_final', ''),
+            academic_perform_year1=data['report_card'].get('academic_perform_year1', ''),
+            academic_perform_year2=data['report_card'].get('academic_perform_year2', ''),
+            academic_perform_year3=data['report_card'].get('academic_perform_year3', ''),
+            gpa_avg_year1=data['report_card'].get('gpa_avg_year1', 0),
+            gpa_avg_year2=data['report_card'].get('gpa_avg_year2', 0),
+            gpa_avg_year3=data['report_card'].get('gpa_avg_year3', 0),
+            promotion_status=data['report_card'].get('promotion_status', ''),
+            teacher_comment=data['report_card'].get('teacher_comment', ''),
+            teacher_signed=data['report_card'].get('teacher_signed', False),
+            principal_signed=data['report_card'].get('principal_signed', False),
+        )
+
+        # 3. Lưu ReportCardSubject
+        subject_objs = []
+        for sub in data.get('subjects', []):
+            subject_objs.append(Subject(
+                name=sub['name'],
+                year=sub['year'],
+                year1_sem1_score=sub.get('year1_sem1_score'),
+                year1_sem2_score=sub.get('year1_sem2_score'),
+                year1_final_score=sub.get('year1_final_score'),
+                year2_sem1_score=sub.get('year2_sem1_score'),
+                year2_sem2_score=sub.get('year2_sem2_score'),
+                year2_final_score=sub.get('year2_final_score'),
+                year3_sem1_score=sub.get('year3_sem1_score'),
+                year3_sem2_score=sub.get('year3_sem2_score'),
+                year3_final_score=sub.get('year3_final_score'),
+            ))
+
+        ReportCardSubject.objects.create(
+            report_card_id=str(report_card._id),
+            subjects=subject_objs
+        )
+
+        return JsonResponse({'message': 'Lưu học bạ thành công'}, status=201)
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
 
 def correct_text_with_bart(text):
     try:
