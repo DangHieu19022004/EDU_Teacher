@@ -7,13 +7,13 @@ import auth from "@react-native-firebase/auth";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useRouter } from "expo-router";
+import { BASE_URL } from "@/constants/Config";
 
 
 GoogleSignin.configure({
   webClientId: "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
 });
-const BASE_URL = "http://192.168.1.164:8000/auth";
 
 const LoginScreen = () => {
   const router = useRouter();
@@ -111,7 +111,7 @@ const LoginScreen = () => {
     if (emailRegex.test(ID) || phoneRegex.test(ID)) {
       setIsLoading(true);
       try {
-        const response = await fetch(`${BASE_URL}/formlogin/`, {
+        const response = await fetch(`${BASE_URL}auth/formlogin/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: ID, password }),
@@ -166,7 +166,7 @@ const LoginScreen = () => {
         const firebaseIdToken = await firebaseUser.getIdToken();
         console.log("Firebase Token:", firebaseIdToken);
 
-        const response = await fetch(`${BASE_URL}/googlelogin/`, {
+        const response = await fetch(`${BASE_URL}auth/googlelogin/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token: firebaseIdToken }),
@@ -232,7 +232,7 @@ const LoginScreen = () => {
         photoURL: fbUserData.picture.data.url,
       };
 
-      const response = await fetch(`${BASE_URL}/facebooklogin/`, {
+      const response = await fetch(`${BASE_URL}auth/facebooklogin/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),

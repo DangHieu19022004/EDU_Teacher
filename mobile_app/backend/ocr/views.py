@@ -12,10 +12,13 @@ from paddleocr import PaddleOCR
 import json
 from django.conf import settings
 import requests
-from .models import StudentInfo, ReportCard, Subject
+from .models import StudentInfo, ReportCard, Subject, ReportCardSubject
+from User.models import User
 import base64
 import google.generativeai as genai
 from PIL import Image
+from bson import ObjectId
+from Classroom.models import Class
 
 yolo_model = YOLO("E:/ORC_mobile_app/mobile_app/backend/ocr/runs/detect/train10/weights/best.pt")
 yolo_infor = YOLO("E:/ORC_mobile_app/mobile_app/backend/ocr/runs/detect/train5/weights/best.pt")
@@ -25,15 +28,41 @@ gemini_model = genai.GenerativeModel("models/gemini-2.0-flash")
 
 BART_SERVER_URL = "http://34.69.155.77:8001/correct"
 
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def save_full_report_card(request):
     try:
+        print("🔵 Nhận request save_full_report_card")
+
+        body_unicode = request.body.decode('utf-8')
+        print("📦 Payload raw nhận được:", body_unicode)
         data = json.loads(request.body)
+        print("📋 Dữ liệu parse xong:", data)
+  # 0. Lấy UID từ Authorization Header
+        authorization_header = request.headers.get('Authorization')
+        if not authorization_header:
+            print("🔴 Lỗi: Thiếu Authorization Header (UID)")
+            return JsonResponse({'error': 'Missing Authorization header (UID)'}, status=401)
+
+        # Extract UID từ header 'Bearer user_xxx'
+        if not authorization_header.startswith("Bearer "):
+            print("🔴 Lỗi: Authorization Header không đúng định dạng Bearer")
+            return JsonResponse({'error': 'Invalid Authorization header format'}, status=400)
+
+        uid = authorization_header.split(' ')[1]
+        print(f"🔹 UID nhận được: {uid}")
+
+        try:
+            user = User.objects.get(uid=uid)
+        except User.DoesNotExist:
+            print(f"🔴 Lỗi: Không tìm thấy user với UID: {uid}")
+            return JsonResponse({'error': 'User not found'}, status=404)
 
         # 1. Lưu StudentInfo
         student_id = data.get('student', {}).get('id')
         if not student_id:
+            print("🔴 Lỗi: Không có student_id")
             return JsonResponse({'error': 'Missing student ID'}, status=400)
 
         student_info, created = StudentInfo.objects.get_or_create(
@@ -59,9 +88,15 @@ def save_full_report_card(request):
             student_info.save()
 
         # 2. Lưu ReportCard
+        class_uuid = data['report_card'].get('class_id', '')
+        try:
+            class_instance = Class.objects.get(id=class_uuid)
+        except Class.DoesNotExist:
+            return JsonResponse({'error': f'Class with id {class_uuid} not found'}, status=404)
         report_card = ReportCard.objects.create(
+            _id=ObjectId(),
             student_id=student_id,
-            class_id=data['report_card'].get('class_id', ''),
+            class_id=class_instance,
             school_year=data['report_card'].get('school_year', ''),
             conduct_year1_sem1=data['report_card'].get('conduct_year1_sem1', ''),
             conduct_year1_sem2=data['report_card'].get('conduct_year1_sem2', ''),
@@ -82,33 +117,20 @@ def save_full_report_card(request):
             teacher_comment=data['report_card'].get('teacher_comment', ''),
             teacher_signed=data['report_card'].get('teacher_signed', False),
             principal_signed=data['report_card'].get('principal_signed', False),
+            user_id=user.uid
         )
 
         # 3. Lưu ReportCardSubject
-        subject_objs = []
-        for sub in data.get('subjects', []):
-            subject_objs.append(Subject(
-                name=sub['name'],
-                year=sub['year'],
-                year1_sem1_score=sub.get('year1_sem1_score'),
-                year1_sem2_score=sub.get('year1_sem2_score'),
-                year1_final_score=sub.get('year1_final_score'),
-                year2_sem1_score=sub.get('year2_sem1_score'),
-                year2_sem2_score=sub.get('year2_sem2_score'),
-                year2_final_score=sub.get('year2_final_score'),
-                year3_sem1_score=sub.get('year3_sem1_score'),
-                year3_sem2_score=sub.get('year3_sem2_score'),
-                year3_final_score=sub.get('year3_final_score'),
-            ))
-
         ReportCardSubject.objects.create(
             report_card_id=str(report_card._id),
-            subjects=subject_objs
+            subjects=data.get('subjects', [])
         )
+
 
         return JsonResponse({'message': 'Lưu học bạ thành công'}, status=201)
 
     except Exception as e:
+        print(f"🔴 Exception trong save_full_report_card: {e}")
         return JsonResponse({'error': str(e)}, status=400)
 
 

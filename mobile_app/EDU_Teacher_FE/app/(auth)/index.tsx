@@ -4,8 +4,7 @@ import auth from "@react-native-firebase/auth";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
 import { useUser } from "../contexts/UserContext";
-
-const BASE_URL = "http://192.168.1.164:8000/auth";
+import { BASE_URL } from "@/constants/Config";
 
 const AuthScreen = () => {
     const router = useRouter();
@@ -47,7 +46,7 @@ const AuthScreen = () => {
                 const token = await AsyncStorage.getItem("access_token");
                 if (token) {
                     console.log("🔹 Checking Google token...", token);
-                    const response = await fetch(`${BASE_URL}/verify-token/`, {
+                    const response = await fetch(`${BASE_URL}auth/verify-token/`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
                         body: JSON.stringify({}),
@@ -74,7 +73,7 @@ const AuthScreen = () => {
                 const fb_uid = await AsyncStorage.getItem("fb_uid");
                 if (fb_uid) {
                     console.log("📌 Checking Facebook user:", fb_uid);
-                    const fbCheckResponse = await fetch(`${BASE_URL}/verify-token/`, {
+                    const fbCheckResponse = await fetch(`${BASE_URL}auth/verify-token/`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json", "Authorization": `Facebook ${fb_uid}` },
                         body: JSON.stringify({}),

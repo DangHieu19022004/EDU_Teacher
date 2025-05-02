@@ -1,16 +1,20 @@
 from djongo import models
+from bson import ObjectId
 import uuid
+from Classroom.models import Class
 
 # --- Bảng Students ---
 class StudentInfo(models.Model):
-    _id = models.ObjectIdField()
+    _id = models.ObjectIdField(default=ObjectId, editable=False)
     student_id = models.CharField(max_length=36, unique=True, default=uuid.uuid4)
     name = models.CharField(max_length=100)
     dob = models.CharField(max_length=20, default='')
     gender = models.CharField(max_length=10, default='Nam')  # Nam, Nữ, Khác
+    school = models.CharField(max_length=255, blank=True, default='')
     birthplace = models.CharField(max_length=100, blank=True, default='')
     ethnicity = models.CharField(max_length=50, blank=True, default='Kinh')
     address = models.TextField(blank=True, default='')
+    phone = models.CharField(max_length=20, blank=True, default='')
     father_name = models.CharField(max_length=100, blank=True, default='')
     father_job = models.CharField(max_length=100, blank=True, default='')
     mother_name = models.CharField(max_length=100, blank=True, default='')
@@ -25,9 +29,10 @@ class StudentInfo(models.Model):
 
 # --- Bảng ReportCards ---
 class ReportCard(models.Model):
-    _id = models.ObjectIdField()
+    _id = models.ObjectIdField(default=ObjectId, editable=False)
     student_id = models.CharField(max_length=36)  # FK -> Students
-    class_id = models.CharField(max_length=36, blank=True, default='')
+    class_id = models.ForeignKey(Class, on_delete=models.CASCADE, null=True)
+
     school_year = models.CharField(max_length=50)
 
     # Hạnh kiểm từng năm
@@ -57,6 +62,7 @@ class ReportCard(models.Model):
     teacher_signed = models.BooleanField(default=False)
     principal_signed = models.BooleanField(default=False)
     approval_date = models.DateField(null=True, blank=True)
+    user_id = models.CharField(max_length=100)
 
     def __str__(self):
         return f"ReportCard of {self.student_id} ({self.school_year})"
@@ -79,7 +85,7 @@ class Subject(models.Model):
         abstract = True
 
 class ReportCardSubject(models.Model):
-    _id = models.ObjectIdField()
+    _id = models.ObjectIdField(default=ObjectId, editable=False)
     report_card_id = models.CharField(max_length=36)  # FK -> ReportCard
     subjects = models.ArrayField(model_container=Subject)
 

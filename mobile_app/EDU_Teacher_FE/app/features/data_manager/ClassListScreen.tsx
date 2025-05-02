@@ -13,6 +13,8 @@ import {
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUser } from "../../contexts/UserContext";
+import { BASE_URL } from '@/constants/Config';
 
 const CLASS_STORAGE_KEY = '@student_classes';
 
@@ -55,70 +57,83 @@ const ClassListScreen: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
   const [newClassName, setNewClassName] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const { user } = useUser();
+  const [schoolName, setSchoolName] = useState('');
+  const [classYear, setClassYear] = useState('');
 
   useEffect(() => {
     const loadClasses = async () => {
+      if (!user?.uid) return;
+
       try {
-        const savedClasses = await AsyncStorage.getItem(CLASS_STORAGE_KEY);
-        if (savedClasses) {
-          setClasses(JSON.parse(savedClasses));
+        const response = await fetch(`${BASE_URL}classroom/get_classrooms/?teacher_id=${user.uid}`, {
+          headers: {
+            Authorization: `Bearer ${user.uid}`,
+          },
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          const formatted = data.map((cls: any) => ({
+            id: cls.id,
+            name: cls.name,
+            students: [], // nếu chưa trả danh sách học sinh thì để rỗng
+          }));
+          setClasses(formatted);
+          await AsyncStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(formatted));
         } else {
-          setClasses([
-            {
-              id: '1',
-              name: 'Lớp 10A1',
-              students: [
-                {
-                  id: '1',
-                  name: 'Hoàng Văn A',
-                  transcript: '',
-                  gender: 'Nam',
-                  dob: '01/01/2005',
-                  phone: '0986802623',
-                  school: 'THPT A',
-                  academicPerformance: 'Giỏi',
-                  conduct: 'Tốt',
-                  subjects: [],
-                },
-                {
-                  id: '2',
-                  name: 'Nguyễn Văn B',
-                  transcript: '',
-                  gender: 'Nam',
-                  dob: '02/02/2005',
-                  phone: '0986802624',
-                  school: 'THPT A',
-                  academicPerformance: 'Khá',
-                  conduct: 'Tốt',
-                  subjects: [],
-                },
-              ],
-            },
-            { id: '2', name: 'Lớp 10A2', students: [] },
-            { id: '3', name: 'Lớp 11D1', students: [] },
-          ]);
+          console.error('API error:', data);
         }
       } catch (error) {
-        console.error('Error loading classes:', error);
+        console.error('Lỗi khi tải lớp từ server:', error);
       }
     };
+
     loadClasses();
   }, []);
 
   const handleAddClass = async () => {
-    if (newClassName.trim()) {
-      const newClass: ClassItem = {
-        id: Date.now().toString(),
-        name: newClassName,
-        students: [],
-      };
-      const updatedClasses = [...classes, newClass];
-      setClasses(updatedClasses);
-      setNewClassName('');
-      setShowAddModal(false);
-      await AsyncStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(updatedClasses));
+    if (!newClassName.trim()) return;
+
+    try {
+      const response = await fetch(`${BASE_URL}classroom/save_classroom/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.uid}`,
+        },
+        body: JSON.stringify({
+          name: newClassName,
+          school_name: schoolName,
+          class_year: classYear,
+        }),
+      });
+
+      const data = await response.json();
+      console.log('uid:', user?.uid);
+      if (response.ok) {
+        const newClass: ClassItem = {
+          id: data.class_id,   // backend trả về class_id = UUID
+          name: newClassName,
+          students: [],
+        };
+        const updatedClasses = [...classes, newClass];
+        setClasses(updatedClasses);
+        await AsyncStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(updatedClasses));
+        setShowAddModal(false);
+        setNewClassName('');
+        setSchoolName('');
+        setClassYear('');
+      } else {
+        console.error('API error:', data);
+        alert('Không thể thêm lớp. Lỗi: ' + (data?.error || 'Không xác định'));
+      }
+    } catch (error) {
+      console.error('Request error:', error);
+      alert('Có lỗi khi kết nối tới máy chủ.');
     }
   };
+
 
   const handleDeleteClass = async (id: string) => {
     const updatedClasses = classes.filter((cls) => cls.id !== id);
@@ -223,7 +238,9 @@ const ClassListScreen: React.FC = () => {
             placeholder="Tìm kiếm lớp hoặc học sinh"
             placeholderTextColor="#888"
           />
+
         </View>
+
 
         {/* Class List */}
         <View style={styles.contentContainer}>
@@ -238,7 +255,22 @@ const ClassListScreen: React.FC = () => {
                     styles.classItem,
                     selectedClass?.id === item.id && styles.selectedClassItem,
                   ]}
-                  onPress={() => setSelectedClass(item)}
+                  onPress={async () => {
+                    try {
+                      const response = await fetch(`${BASE_URL}classroom/get_students_by_class/?class_id=${item.id}`, {
+                        headers: { Authorization: `Bearer ${user?.uid}` },
+                      });
+                      const students = await response.json();
+                      if (response.ok) {
+                        setSelectedClass({ ...item, students }); // Gán danh sách học sinh vào lớp được chọn
+                      } else {
+                        console.error('Lỗi lấy học sinh:', students);
+                      }
+                    } catch (error) {
+                      console.error('Lỗi fetch học sinh:', error);
+                    }
+                  }}
+
                 >
                   <Text style={styles.className}>{item.name}</Text>
                   <TouchableOpacity onPress={() => handleDeleteClass(item.id)}>
@@ -253,7 +285,20 @@ const ClassListScreen: React.FC = () => {
           <View style={styles.studentListContainer}>
             {selectedClass ? (
               <>
-                <Text style={styles.sectionTitle}>{selectedClass.name}</Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={styles.sectionTitle}>{selectedClass.name}</Text>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: '#1E88E5',
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                    }}
+                    onPress={() => router.push('/features/scanning/photoCapture')}
+                  >
+                    <Text style={{ color: 'white', fontWeight: 'bold' }}>+ Thêm học bạ</Text>
+                  </TouchableOpacity>
+                </View>
                 <FlatList
                   data={selectedClass.students}
                   keyExtractor={(item) => item.id}
@@ -304,6 +349,19 @@ const ClassListScreen: React.FC = () => {
                 value={newClassName}
                 onChangeText={setNewClassName}
               />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Tên trường"
+                value={schoolName}
+                onChangeText={setSchoolName}
+              />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Niên khóa (VD: 2022-2025)"
+                value={classYear}
+                onChangeText={setClassYear}
+              />
+
               <View style={styles.modalButtonContainer}>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.cancelButton]}

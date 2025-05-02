@@ -16,12 +16,12 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useRouter } from "expo-router";
 import auth from "@react-native-firebase/auth";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {BASE_URL} from "@/constants/Config";
 
 GoogleSignin.configure({
   webClientId: "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
 });
-const BASE_URL = "http://192.168.1.164:8000/auth";
 
 const RegisterScreen = () => {
   const router = useRouter();
@@ -41,7 +41,7 @@ const RegisterScreen = () => {
   const sendOtpToEmail = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${BASE_URL}/send-otp/`, {
+      const response = await fetch(`${BASE_URL}auth/send-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -65,7 +65,7 @@ const RegisterScreen = () => {
   const verifyOtpAndRegister = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${BASE_URL}/verify-otp/`, {
+      const response = await fetch(`${BASE_URL}auth/verify-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -156,7 +156,7 @@ const RegisterScreen = () => {
 
       if (firebaseUser) {
         const firebaseIdToken = await firebaseUser.getIdToken();
-        const response = await fetch(`${BASE_URL}/googlelogin/`, {
+        const response = await fetch(`${BASE_URL}auth/googlelogin/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token: firebaseIdToken }),
