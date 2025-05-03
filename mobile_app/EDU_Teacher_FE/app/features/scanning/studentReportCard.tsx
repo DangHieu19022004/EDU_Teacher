@@ -67,6 +67,7 @@ interface StudentReportCardProps {
   onSave?: (updatedStudent: StudentItem) => void;
   isEditMode?: boolean;
   navigation: StudentReportCardNavigationProp;
+  reportCardId?: string;
 }
 
 const StudentReportCard = ({
@@ -75,6 +76,7 @@ const StudentReportCard = ({
   onSave,
   isEditMode = false,
   navigation,
+  reportCardId,
 }: StudentReportCardProps) => {
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -124,9 +126,30 @@ const StudentReportCard = ({
       };
       fetchTeacherClasses();
 
+      if (cleanedStudent.classList && cleanedStudent.classList.length > 0) {
+        const highestClass = getHighestClass(cleanedStudent.classList);
+        setSelectedClass(highestClass.match(/\d+/)?.[0] || '10');
+      }
       setEditableStudent(cleanedStudent);
     }
   }, [studentData]);
+
+  useEffect(() => {
+    if (isEditMode && teacherClasses.length > 0 && editableStudent?.classList?.length > 0) {
+      const studentClassName = editableStudent.classList[0].class?.trim();
+      const matchedClass = teacherClasses.find(cls => cls.name.trim() === studentClassName);
+
+      if (matchedClass) {
+        setSelectedClassId(matchedClass.id);
+        updateStudentField('school', matchedClass.school_name);
+      } else {
+        console.warn("Không tìm thấy lớp khớp trong danh sách teacherClasses:", studentClassName);
+      }
+    }
+
+  }, [isEditMode, teacherClasses, editableStudent?.classList]);
+
+
 
   const sanitizeSubjectName = (name: string) => {
     // Nếu tên có dấu ":", thì chỉ lấy phần trước dấu ":"
@@ -262,11 +285,18 @@ const StudentReportCard = ({
   };
 
   const handleConfirmSave = async () => {
+    const method = reportCardId ? 'PUT' : 'POST';
+    const url = reportCardId
+      ? `${BASE_URL}ocr/update_report_card/?id=${reportCardId}`
+      : `${BASE_URL}ocr/save_full_report_card/`;
     if (!editableStudent.classList || editableStudent.classList.length === 0) {
       Alert.alert('Lỗi', 'Không có dữ liệu môn học.');
       return;
     }
-
+    if (!selectedClassId) {
+      Alert.alert('Lỗi', 'Vui lòng chọn lớp trước khi lưu.');
+      return;
+    }
     const allSubjects = editableStudent.classList?.flatMap(cls =>
       cls.subjects.map(sub => {
         const year = cls.class.includes('10') ? 1 : cls.class.includes('11') ? 2 : 3;
@@ -334,8 +364,8 @@ const StudentReportCard = ({
         subjects: allSubjects,
       };
       console.log('uid', user?.uid);
-      const response = await fetch(`${BASE_URL}ocr/save_full_report_card/`, {
-        method: 'POST',
+      const response = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user?.uid}`, },
         body: JSON.stringify(payload),
       });
@@ -380,6 +410,9 @@ const StudentReportCard = ({
           <FontAwesome name="arrow-left" size={24} color="#1E88E5" />
         </TouchableOpacity>
         <Text style={styles.header}>Thông tin học bạ</Text>
+        {!isEditMode && (
+          <Text style={styles.subHeader}>Lớp {className}</Text>
+        )}
         <View style={{ width: 24 }} />
       </View>
 
@@ -591,7 +624,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 10,
   },
-
+  subHeader: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
+  },
   gradeButton: {
     borderWidth: 1,
     borderColor: '#1E88E5',

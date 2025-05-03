@@ -9,6 +9,7 @@ import {
   Modal,
   SafeAreaView,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -43,6 +44,7 @@ interface StudentItem {
   classList?: ClassData[];
   subjects?: Subject[];
   images?: string[];
+  reportCardId?: string;
 }
 
 interface ClassItem {
@@ -136,84 +138,219 @@ const ClassListScreen: React.FC = () => {
 
 
   const handleDeleteClass = async (id: string) => {
-    const updatedClasses = classes.filter((cls) => cls.id !== id);
-    setClasses(updatedClasses);
-    if (selectedClass?.id === id) {
-      setSelectedClass(null);
+    try {
+      const response = await fetch(`${BASE_URL}classroom/delete_classroom/?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${user?.uid}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('❌ Lỗi xoá lớp:', result);
+        alert('Không thể xoá lớp. Vui lòng thử lại.');
+        return;
+      }
+
+      // Cập nhật danh sách lớp local
+      const updatedClasses = classes.filter((cls) => cls.id !== id);
+      setClasses(updatedClasses);
+      if (selectedClass?.id === id) {
+        setSelectedClass(null);
+      }
+      await AsyncStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(updatedClasses));
+      console.log('✅ Xoá lớp thành công:', result.message);
+    } catch (error) {
+      console.error('❌ Lỗi gọi API xoá lớp:', error);
+      alert('Đã xảy ra lỗi khi xoá lớp.');
     }
-    await AsyncStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(updatedClasses));
   };
+
 
   const handleDeleteStudent = async (classId: string, studentId: string) => {
-    const updatedClasses = classes.map((cls) => {
-      if (cls.id === classId) {
-        return { ...cls, students: cls.students.filter((s) => s.id !== studentId) };
-      }
-      return cls;
-    });
-    setClasses(updatedClasses);
-    if (selectedClass?.id === classId) {
-      setSelectedClass({
-        ...selectedClass,
-        students: selectedClass.students.filter((s) => s.id !== studentId),
+    try {
+      const response = await fetch(`${BASE_URL}ocr/get_full_report_card/?student_id=${studentId}`, {
+        headers: {
+          Authorization: `Bearer ${user?.uid}`,
+        },
       });
-    }
-    await AsyncStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(updatedClasses));
-  };
 
-  const handleViewStudent = async (student: StudentItem, className: string) => {
-    // Lấy dữ liệu đầy đủ từ AsyncStorage nếu cần
-    const savedClasses = await AsyncStorage.getItem(CLASS_STORAGE_KEY);
-    let fullStudentData = student;
-
-    if (savedClasses) {
-      const parsedClasses: ClassItem[] = JSON.parse(savedClasses);
-      const targetClass = parsedClasses.find((cls) => cls.name === className);
-      if (targetClass) {
-        const foundStudent = targetClass.students.find((s) => s.id === student.id);
-        if (foundStudent) {
-          fullStudentData = foundStudent; // Cập nhật dữ liệu đầy đủ của học sinh
-        }
+      const data = await response.json();
+      if (!response.ok) {
+        console.error('❌ Không thể lấy report card:', data);
+        alert('Không thể lấy học bạ để xoá.');
+        return;
       }
-    }
 
-    // console.log('Viewing student:', fullStudentData);
-
-    router.push({
-      pathname: '/features/scanning/StudentReportCardScreen', // Sửa lại thành StudentReportCardScreen
-      params: {
-        student: JSON.stringify(fullStudentData),
-        className,
-        isEditMode: 'false',
-      },
-    });
-  };
-
-  const handleEditStudent = async (student: StudentItem, className: string) => {
-    // Tương tự, lấy dữ liệu đầy đủ từ AsyncStorage nếu cần
-    const savedClasses = await AsyncStorage.getItem(CLASS_STORAGE_KEY);
-    let fullStudentData = student;
-
-    if (savedClasses) {
-      const parsedClasses: ClassItem[] = JSON.parse(savedClasses);
-      const targetClass = parsedClasses.find((cls) => cls.name === className);
-      if (targetClass) {
-        const foundStudent = targetClass.students.find((s) => s.id === student.id);
-        if (foundStudent) {
-          fullStudentData = foundStudent; // Cập nhật dữ liệu đầy đủ của học sinh
-        }
+      const reportCardId = data.report_card?.id;
+      if (!reportCardId) {
+        alert('Không tìm thấy reportCardId để xoá.');
+        return;
       }
-    }
 
-    router.push({
-      pathname: '/features/scanning/StudentReportCardScreen', // Sửa lại thành StudentReportCardScreen
-      params: {
-        student: JSON.stringify(fullStudentData),
-        className,
-        isEditMode: 'true',
-      },
-    });
+      const deleteResponse = await fetch(`${BASE_URL}ocr/delete_full_report_card/?id=${reportCardId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${user?.uid}`,
+        },
+      });
+
+      const result = await deleteResponse.json();
+      if (!deleteResponse.ok) {
+        console.error('❌ Lỗi xoá học bạ:', result);
+        alert('Không thể xoá học bạ.');
+        return;
+      }
+
+      console.log('✅ Đã xoá học bạ:', result.message);
+
+      // Cập nhật danh sách lớp trong frontend
+      const updatedClasses = classes.map((cls) => {
+        if (cls.id === classId) {
+          return {
+            ...cls,
+            students: cls.students.filter((s) => s.id !== studentId),
+          };
+        }
+        return cls;
+      });
+
+      setClasses(updatedClasses);
+
+      if (selectedClass?.id === classId) {
+        setSelectedClass({
+          ...selectedClass,
+          students: selectedClass.students.filter((s) => s.id !== studentId),
+        });
+      }
+
+      await AsyncStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(updatedClasses));
+    } catch (error) {
+      console.error('❌ Lỗi gọi API xoá học bạ:', error);
+      alert('Đã xảy ra lỗi khi xoá học bạ.');
+    }
   };
+
+
+  const handleViewStudent = async (student: StudentItem, fallbackClassName: string) => {
+    if (!user?.uid) return;
+
+    try {
+      const response = await fetch(`${BASE_URL}ocr/get_full_report_card/?student_id=${student.id}`, {
+        headers: {
+          Authorization: `Bearer ${user.uid}`,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        console.error('Lỗi lấy dữ liệu học bạ:', data);
+        alert('Không thể tải dữ liệu học bạ. Vui lòng thử lại.');
+        return;
+      }
+
+      // Map lại dữ liệu cho đúng interface StudentItem
+      const fullStudentData: StudentItem = {
+        id: data.student.id,
+        name: data.student.name || '',
+        dob: data.student.dob || '',
+        gender: data.student.gender || '',
+        phone: data.student.phone || '',
+        school: data.student.school || data.school_name || '', // ưu tiên student.school, fallback school_name
+        academicPerformance: data.student.academicPerformance || '',
+        conduct: data.student.conduct || '',
+        classList: data.classList || [],
+      };
+
+      const className = data.class_name || fallbackClassName;
+
+      router.push({
+        pathname: '/features/scanning/StudentReportCardScreen',
+        params: {
+          student: JSON.stringify(fullStudentData),
+          className,
+          isEditMode: 'false',
+          reportCardId: data.report_card?.id || '',
+
+        },
+      });
+
+    } catch (error) {
+      console.error('Lỗi gọi API xem học bạ:', error);
+      alert('Có lỗi xảy ra khi tải học bạ.');
+    }
+  };
+
+
+
+  const handleEditStudent = async (student: StudentItem, fallbackClassName: string) => {
+    // Hiển thị xác nhận trước
+    Alert.alert(
+      'Xác nhận',
+      `Bạn có chắc muốn sửa học bạ của học sinh "${student.name}"?`,
+      [
+        {
+          text: 'Hủy',
+          style: 'cancel',
+        },
+        {
+          text: 'Sửa',
+          style: 'default',
+          onPress: async () => {
+            if (!user?.uid) return;
+
+            try {
+              const response = await fetch(`${BASE_URL}ocr/get_full_report_card/?student_id=${student.id}`, {
+                headers: {
+                  Authorization: `Bearer ${user.uid}`,
+                },
+              });
+
+              const data = await response.json();
+              if (!response.ok) {
+                console.error('Lỗi lấy dữ liệu học bạ:', data);
+                alert('Không thể tải dữ liệu học bạ. Vui lòng thử lại.');
+                return;
+              }
+
+              const fullStudentData: StudentItem = {
+                id: data.student.id,
+                name: data.student.name || '',
+                dob: data.student.dob || '',
+                gender: data.student.gender || '',
+                phone: data.student.phone || '',
+                school: data.student.school || data.school_name || '',
+                academicPerformance: data.student.academicPerformance || '',
+                conduct: data.student.conduct || '',
+                classList: data.classList || [],
+                reportCardId: data.report_card?.id || '',
+              };
+
+              const className = data.class_name || fallbackClassName;
+
+              router.push({
+                pathname: '/features/scanning/StudentReportCardScreen',
+                params: {
+                  student: JSON.stringify(fullStudentData),
+                  className,
+                  isEditMode: 'true',
+                  reportCardId: data.report_card?.id || '',
+                }
+              });
+
+            } catch (error) {
+              console.error('Lỗi gọi API chỉnh sửa học bạ:', error);
+              alert('Có lỗi xảy ra khi tải học bạ.');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
