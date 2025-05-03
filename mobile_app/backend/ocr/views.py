@@ -21,6 +21,7 @@ from bson import ObjectId
 from Classroom.models import Class
 from uuid import UUID
 import base64
+import os, time
 
 yolo_model = YOLO("E:/ORC_mobile_app/mobile_app/backend/ocr/runs/detect/train10/weights/best.pt")
 yolo_infor = YOLO("E:/ORC_mobile_app/mobile_app/backend/ocr/runs/detect/train5/weights/best.pt")
@@ -28,6 +29,20 @@ ocr_model = PaddleOCR(use_gpu=False, lang='vi')
 genai.configure(api_key="AIzaSyCiludt5vTQLBn38xAQI4F1Awleq2P6Mi0")
 gemini_model = genai.GenerativeModel("models/gemini-2.0-flash")
 
+def cleanup_cropped_dir(base_dir, max_age_minutes=15):
+    now = time.time()
+    for folder in os.listdir(base_dir):
+        folder_path = os.path.join(base_dir, folder)
+        if os.path.isdir(folder_path):
+            if now - os.path.getmtime(folder_path) > max_age_minutes * 60:
+                try:
+                    for file in os.listdir(folder_path):
+                        os.remove(os.path.join(folder_path, file))
+                    os.rmdir(folder_path)
+                    print(f"🧹 Đã xoá thư mục cũ: {folder_path}")
+                except Exception as e:
+                    print(f"⚠️ Không thể xoá {folder_path}: {e}")
+                    
 BART_SERVER_URL = "http://34.69.155.77:8001/correct"
 
 @csrf_exempt
@@ -399,6 +414,8 @@ def detect(request):
         # Chạy YOLO
         results = model(temp_image_path)[0]
         img = cv2.imread(temp_image_path)
+        cleanup_cropped_dir(os.path.join(settings.MEDIA_ROOT, "cropped"))
+
         cropped_dir = os.path.join(settings.MEDIA_ROOT, "cropped", uuid.uuid4().hex[:6])
         os.makedirs(cropped_dir, exist_ok=True)
 
