@@ -56,7 +56,7 @@ const HomeScreen: React.FC = () => {
 
       {/* Chatbot Button */}
       <TouchableOpacity style={styles.chatbotButton} onPress={handleChatbotPress}>
-        <FontAwesome name="comments" size={30} color="white" />
+        <Image source={require('../../assets/images/chatbot-logo.png')}/>
       </TouchableOpacity>
     </View>
   );
@@ -128,10 +128,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 30,
     right: 20,
-    backgroundColor: '#FDD835', // Màu vàng đậm để tạo điểm nhấn
-    borderRadius: 30,
-    width: 60,
-    height: 60,
+    borderRadius: 90,
+    width: 80,
+    height: 80,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 5,

@@ -9,4 +9,5 @@ urlpatterns = [
     path("auth/", include("User.urls")),
     path("ocr/", include("ocr.urls")),
     path("classroom/", include("Classroom.urls")),
+    path("chatbot/", include("Chatbot.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

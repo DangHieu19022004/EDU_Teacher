@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "User",
     "ocr",
     "Classroom",
+    "Chatbot"
 ]
 
 MIDDLEWARE = [

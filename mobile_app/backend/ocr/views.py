@@ -42,8 +42,83 @@ def cleanup_cropped_dir(base_dir, max_age_minutes=15):
                     print(f"🧹 Đã xoá thư mục cũ: {folder_path}")
                 except Exception as e:
                     print(f"⚠️ Không thể xoá {folder_path}: {e}")
-                    
+
 BART_SERVER_URL = "http://34.69.155.77:8001/correct"
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_all_student_data(request):
+    try:
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return JsonResponse({'error': 'Thiếu Authorization'}, status=401)
+
+        uid = auth_header.split(" ")[1]
+        try:
+            teacher = User.objects.get(uid=uid)
+        except User.DoesNotExist:
+            return JsonResponse({'error': 'Người dùng không tồn tại'}, status=404)
+
+        all_data = []
+
+        # Lấy tất cả lớp của giáo viên
+        classes = Class.objects.filter(teacher_id=uid)
+        for cls in classes:
+            # Lấy tất cả học sinh trong lớp đó
+            students = StudentInfo.objects.filter(class_id=cls.id)
+            for student in students:
+                student_entry = {
+                    "student": {
+                        "id": student.student_id,
+                        "name": student.name,
+                        "gender": student.gender or '',
+                        "dob": str(student.dob) if student.dob else '',
+                        "school": cls.school_name,
+                        "class": cls.name,
+                        "class_year": cls.class_year,
+                    },
+                    "report_card": {},
+                    "subjects": []
+                }
+
+                # Lấy học bạ gần nhất
+                report = ReportCard.objects.filter(student_id=student.student_id).order_by('-school_year').first()
+                if report:
+                    student_entry["report_card"] = {
+                        "school_year": report.school_year,
+                        "teacher_comment": report.teacher_comment or '',
+                        "conduct": report.conduct_year3_final or '',
+                        "gpa": {
+                            "10": report.gpa_avg_year1,
+                            "11": report.gpa_avg_year2,
+                            "12": report.gpa_avg_year3
+                        }
+                    }
+
+                    # Lấy danh sách điểm môn học từ ReportCardSubject
+                    subjects_entry = ReportCardSubject.objects.filter(report_card_id=str(report._id)).first()
+                    if subjects_entry:
+                        for subject in subjects_entry.subjects:
+                            year = subject.get("year")
+                            year_str = str(year)
+                            subject_obj = {
+                                "name": subject.get("name", ""),
+                                "year": year_str,
+                                "hk1": str(subject.get(f"year{year}_sem1_score", '')),
+                                "hk2": str(subject.get(f"year{year}_sem2_score", '')),
+                                "cn": str(subject.get(f"year{year}_final_score", '')),
+                            }
+                            student_entry["subjects"].append(subject_obj)
+
+                all_data.append(student_entry)
+
+        return JsonResponse({"students": all_data}, json_dumps_params={'ensure_ascii': False}, status=200)
+
+    except Exception as e:
+        print(f"❌ Exception get_all_student_data: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
 
 @csrf_exempt
 @require_http_methods(["DELETE"])
