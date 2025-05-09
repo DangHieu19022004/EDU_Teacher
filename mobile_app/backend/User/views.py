@@ -8,12 +8,114 @@ from User.models import User
 import jwt
 from datetime import datetime, timedelta
 import logging
+from django.core.cache import cache
+import random
+from django.core.mail import send_mail
+
 SECRET_KEY = settings.SECRET_KEY
 
 # Configure logger
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 SECRET_KEY = settings.SECRET_KEY
+
+@csrf_exempt
+def send_otp(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+
+            if not email:
+                return JsonResponse({"error": "Email không hợp lệ"}, status=400)
+
+            otp_code = str(random.randint(100000, 999999))
+
+            # Lưu OTP vào cache, hết hạn sau 5 phút
+            cache.set(f"otp:{email}", otp_code, timeout=300)
+
+            # Gửi email
+            send_mail(
+                subject="Mã xác thực OTP",
+                message=f"Mã OTP của bạn là: {otp_code}",
+                from_email="danghieu19022004@gmail.com",  # thay bằng email thật
+                recipient_list=[email],
+                fail_silently=False,
+            )
+
+            return JsonResponse({"message": "OTP đã được gửi tới email"})
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Phương thức không hợp lệ"}, status=405)
+
+@csrf_exempt
+def verify_otp(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+            otp = data.get("otp")
+            phone = data.get("phone")
+            password = data.get("password")
+            full_name = data.get("full_name", "")
+
+            if not email or not otp or not phone or not password:
+                return JsonResponse({"error": "Thiếu thông tin"}, status=400)
+
+            cached_otp = cache.get(f"otp:{email}")
+
+            if cached_otp and cached_otp == otp:
+                cache.delete(f"otp:{email}")  # Xóa OTP sau khi dùng
+
+                if User.objects.filter(email=email).exists():
+                    return JsonResponse({"error": "Email đã tồn tại"}, status=409)
+                if User.objects.filter(phone=phone).exists():
+                    return JsonResponse({"error": "Số điện thoại đã tồn tại"}, status=409)
+
+                uid = f"user_{int(datetime.utcnow().timestamp())}"
+                current_timestamp = int(datetime.utcnow().timestamp())
+
+                user = User.objects.create(
+                    uid=uid,
+                    full_name=full_name,
+                    email=email,
+                    phone=phone,
+                    password_hash=password,
+                    avatar="",
+                    fingerprint="",
+                    created_at=current_timestamp,
+                    last_sign_in_time=current_timestamp,
+                )
+
+                payload = {
+                    "user_id": user.uid,
+                    "exp": current_timestamp + (30 * 24 * 60 * 60),
+                    "iat": current_timestamp,
+                }
+                jwt_token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+                return JsonResponse({
+                    "message": "Xác minh OTP và đăng ký thành công",
+                    "access_token": jwt_token,
+                    "user": {
+                        "uid": user.uid,
+                        "full_name": user.full_name,
+                        "email": user.email,
+                        "phone": user.phone,
+                        "avatar": user.avatar,
+                    }
+                })
+            else:
+                return JsonResponse({"success": False, "error": "Mã OTP không đúng hoặc đã hết hạn"}, status=400)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Phương thức không hợp lệ"}, status=405)
+
+
 
 @csrf_exempt
 def facebook_login(request):

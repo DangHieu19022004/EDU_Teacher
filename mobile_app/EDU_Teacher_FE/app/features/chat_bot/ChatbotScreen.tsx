@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useUser } from "../../contexts/UserContext";
+import { BASE_URL } from '@/constants/Config';
 
 interface Message {
   id: number;
@@ -14,6 +16,62 @@ const ChatbotScreen: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [activeTab, setActiveTab] = useState('Tư vấn học tập');
+  const [studentData, setStudentData] = useState<any[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingDots, setTypingDots] = useState('');
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (!isTyping) return;
+
+    let count = 0;
+    const interval = setInterval(() => {
+      count = (count + 1) % 4;
+      setTypingDots('.'.repeat(count));
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isTyping]);
+
+
+  useEffect(() => {
+    const initChatbot = async () => {
+      const token = user?.uid || null;
+
+      if (activeTab === 'Tư vấn học tập') {
+        const welcomeMessage: Message = {
+          id: Date.now(),
+          text: 'Xin chào, tôi là EDUchatbot. Tôi có thể giúp gì cho bạn về học tập?',
+          sender: 'bot',
+        };
+        setMessages([welcomeMessage]);
+
+        if (token) {
+          try {
+            const res = await fetch(`${BASE_URL}ocr/get_all_student_data/`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            const json = await res.json();
+            setStudentData(json.students || []);
+          } catch (error) {
+            console.error('❌ Lỗi khi load studentData:', error);
+          }
+        }
+      } else {
+        setMessages([
+          {
+            id: Date.now(),
+            text: 'Xin chào, tôi có thể hỗ trợ bạn các vấn đề về ứng dụng',
+            sender: 'bot',
+          }
+        ]);
+      }
+    };
+
+    initChatbot();
+  }, [activeTab]);
 
   const studySuggestions = [
     'Học sinh Nguyễn Văn A lớp 11A3 niên khóa 2022 - 2024 nền khi nào đi học tiết Văn - Anh',
@@ -27,68 +85,133 @@ const ChatbotScreen: React.FC = () => {
   ];
 
   const currentSuggestions = activeTab === 'Tư vấn học tập' ? studySuggestions : appSupportSuggestions;
-
-  useEffect(() => {
-    const welcomeMessage: Message = {
-      id: Date.now(),
-      text: activeTab === 'Tư vấn học tập'
-        ? 'Xin chào, tôi là EDUchatbot. Tôi có thể giúp gì cho bạn về học tập?'
-        : 'Xin chào, tôi có thể hỗ trợ bạn các vấn đề về ứng dụng',
-      sender: 'bot',
-    };
-    setMessages([welcomeMessage]);
-  }, [activeTab]);
-
-  const handleSendMessage = (text: string = inputText) => {
+  const typingId = -1;
+  const handleSendMessage = async (text: string = inputText) => {
     if (text.trim() === '') return;
 
     const userMessage: Message = {
       id: Date.now(),
-      text: text,
+      text,
       sender: 'user',
     };
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
 
-    setTimeout(() => {
-      let botResponse = '';
-
-      if (activeTab === 'Tư vấn học tập') {
-        // Logic trả lời cho tab tư vấn học tập
-        if (text.toLowerCase().includes('xin chào')) {
-          botResponse = 'Xin chào, tôi có thể giúp gì cho bạn về học tập?';
-        } else if (text.toLowerCase().includes('khối') || text.toLowerCase().includes('ngành')) {
-          botResponse = 'Dựa trên môn Văn - Anh, bạn có thể xem xét các khối D (Văn, Toán, Anh) hoặc khối C (Văn, Sử, Địa). Bạn cần tư vấn cụ thể hơn không?';
-        } else if (text.toLowerCase().includes('yếu')) {
-          botResponse = 'Theo học bạ, bạn cần cải thiện môn Toán. Điểm trung bình môn Toán của bạn là 5.8, thấp hơn mặt bằng lớp.';
-        } else if (text.toLowerCase().includes('cải thiện')) {
-          botResponse = 'Bạn nên tập trung cải thiện môn Hóa vì điểm môn này đang ở mức trung bình (6.2) và là môn quan trọng cho khối thi bạn định hướng.';
-        } else {
-          botResponse = 'Tôi là EDUchatbot, hệ thống hỗ trợ giáo dục. Bạn có thể hỏi tôi về thông tin học bạ, điểm số hoặc các vấn đề liên quan đến giáo dục.';
-        }
-      } else {
-        // Logic trả lời cho tab hỗ trợ app
-        if (text.toLowerCase().includes('xin chào')) {
-          botResponse = 'Xin chào, tôi có thể hỗ trợ bạn các vấn đề về ứng dụng';
-        } else if (text.toLowerCase().includes('giới thiệu') || text.toLowerCase().includes('ứng dụng')) {
-          botResponse = 'Ứng dụng là một nền tảng hỗ trợ giáo viên trong công tác quản lý học bạ và theo dõi học lực học sinh, tích hợp các công nghệ hiện đại như AI, OCR, và chatbot. Với các tính năng nổi bật như quét học bạ bằng ảnh, phân tích điểm số, tư vấn học tập, và gửi email cho phụ huynh, hệ thống giúp tự động hóa quá trình nhập liệu, tra cứu và thống kê học tập. Giáo viên có thể đăng ký, đăng nhập linh hoạt qua Google, Facebook hoặc tài khoản cá nhân, đồng thời sử dụng chatbot thông minh để được hỗ trợ sử dụng ứng dụng và tư vấn hướng nghiệp theo từng học sinh. Dữ liệu được lưu trữ và xử lý hiệu quả trên nền tảng MongoDB và VectorDB, bảo đảm tính chính xác và tiện lợi trong công tác giáo dục.';
-        } else if (text.toLowerCase().includes('hướng dẫn') || text.toLowerCase().includes('sử dụng')) {
-          botResponse = 'Để sử dụng ứng dụng:\n1. Đăng nhập bằng tài khoản Google/Facebook hoặc email\n2. Vào mục Quét học bạ để chụp ảnh học bạ\n3. Hệ thống sẽ tự động nhận diện và nhập điểm\n4. Sử dụng chatbot để được tư vấn học tập hoặc hỗ trợ kỹ thuật';
-        } else if (text.toLowerCase().includes('chức năng')) {
-          botResponse = 'Các chức năng chính của chatbot:\n- Tư vấn học tập theo từng học sinh\n- Hướng dẫn sử dụng ứng dụng\n- Phân tích điểm số và đưa ra nhận xét\n- Gợi ý cải thiện học lực\n- Trả lời các câu hỏi thường gặp về ứng dụng';
-        } else {
-          botResponse = 'Tôi có thể hỗ trợ bạn về cách sử dụng ứng dụng hoặc các tính năng của hệ thống. Bạn cần giúp gì cụ thể không?';
-        }
+    if (activeTab === 'Hỗ trợ App') {
+      const token = user?.uid || null;
+      if (!token) {
+        setMessages((prev) => [...prev, {
+          id: Date.now() + 2,
+          text: '⚠️ Bạn chưa đăng nhập.',
+          sender: 'bot'
+        }]);
+        return;
       }
 
+      setIsTyping(true);
+      setMessages((prev) => [...prev, {
+        id: typingId,
+        text: '🤖 ',
+        sender: 'bot'
+      }]);
+
+      try {
+        const response = await fetch(`${BASE_URL}chatbot/ask_chatbot/`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            question: text,
+            students: [], // gửi mảng rỗng vì tab này không dùng dữ liệu học sinh
+          }),
+        });
+
+        const data = await response.json();
+        const botMessage: Message = {
+          id: Date.now() + 1,
+          text: data.answer || data.error || 'Không có phản hồi',
+          sender: 'bot',
+        };
+        setMessages((prev) => [
+          ...prev.filter((msg) => msg.id !== typingId),
+          botMessage
+        ]);
+      } catch (error) {
+        console.error('❌ Lỗi gọi chatbot:', error);
+        setMessages((prev) => [
+          ...prev.filter((msg) => msg.id !== typingId),
+          {
+            id: Date.now() + 1,
+            text: '⚠️ Lỗi khi gọi chatbot, vui lòng thử lại sau.',
+            sender: 'bot'
+          }
+        ]);
+      } finally {
+        setIsTyping(false);
+      }
+
+      return;
+    }
+
+    try {
+      const token = user?.uid || null;
+      if (!token) {
+        setMessages((prev) => [...prev, {
+          id: Date.now() + 2,
+          text: '⚠️ Bạn chưa đăng nhập.',
+          sender: 'bot'
+        }]);
+        return;
+      }
+
+      // ✅ Thêm trạng thái đang nhập
+      setIsTyping(true);
+      setMessages((prev) => [...prev, {
+        id: typingId,
+        text: '🤖 ',
+        sender: 'bot'
+      }]);
+
+      const response = await fetch(`${BASE_URL}chatbot/ask_chatbot/`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: text,
+          students: studentData,
+        }),
+      });
+
+      const data = await response.json();
       const botMessage: Message = {
         id: Date.now() + 1,
-        text: botResponse,
+        text: data.answer || data.error || 'Không có phản hồi',
         sender: 'bot',
       };
-      setMessages((prev) => [...prev, botMessage]);
-    }, 500);
+      // ✅ Xóa dòng đang nhập và thêm kết quả thực
+      setMessages((prev) => [
+        ...prev.filter((msg) => msg.id !== typingId),
+        botMessage
+      ]);
+    } catch (error) {
+      console.error('❌ Lỗi gọi chatbot:', error);
+      setMessages((prev) => [
+        ...prev.filter((msg) => msg.id !== typingId),
+        {
+          id: Date.now() + 1,
+          text: '⚠️ Lỗi khi gọi chatbot, vui lòng thử lại sau.',
+          sender: 'bot'
+        }
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
   };
+
 
   const handleSuggestionPress = (suggestion: string) => {
     setInputText(suggestion);
@@ -150,10 +273,13 @@ const ChatbotScreen: React.FC = () => {
               ]}
             >
               <Text style={message.sender === 'user' ? styles.userText : styles.botText}>
-                {message.text}
+                {message.id === typingId
+                  ? `${message.text}${typingDots}`
+                  : message.text}
               </Text>
             </View>
           ))}
+
         </ScrollView>
 
         {/* Suggestions */}

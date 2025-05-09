@@ -18,6 +18,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationProp } from '@react-navigation/native';
 import SuccessModal from '../../../components/SuccessModal';
 import ErrorModal from '../../../components/ErrorModal';
+import { useUser } from "../../contexts/UserContext";
+import { BASE_URL } from '@/constants/Config';
 
 const CLASS_STORAGE_KEY = '@student_classes';
 
@@ -48,12 +50,6 @@ interface StudentItem {
   transcript?: string;
 }
 
-interface ClassItem {
-  id: string;
-  name: string;
-  students: StudentItem[];
-}
-
 type RootStackParamList = {
   StudentReportCard: {
     student: string;
@@ -71,6 +67,7 @@ interface StudentReportCardProps {
   onSave?: (updatedStudent: StudentItem) => void;
   isEditMode?: boolean;
   navigation: StudentReportCardNavigationProp;
+  reportCardId?: string;
 }
 
 const StudentReportCard = ({
@@ -79,18 +76,90 @@ const StudentReportCard = ({
   onSave,
   isEditMode = false,
   navigation,
+  reportCardId,
 }: StudentReportCardProps) => {
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showImagesModal, setShowImagesModal] = useState(false);
   const [editableStudent, setEditableStudent] = useState<StudentItem>(studentData);
+  const [selectedClass, setSelectedClass] = useState('10');
+  const [teacherClasses, setTeacherClasses] = useState<{ id: string; name: string; school_name: string }[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const { user } = useUser();
 
   useEffect(() => {
-    setEditableStudent(studentData);
+    if (studentData) {
+      const cleanedStudent = { ...studentData };
+
+      if (cleanedStudent.classList && cleanedStudent.classList.length > 0) {
+        cleanedStudent.classList = cleanedStudent.classList.map(cls => {
+          const subjects = [...cls.subjects]
+            .map(sub => ({
+              ...sub,
+              name: sanitizeSubjectName(sub.name) // 🔵 sanitize ngay lần đầu
+            }));
+
+          // Tính lại DTB
+          const averageRow = calculateAverageSubjects(subjects);
+
+          return {
+            ...cls,
+            subjects: [...subjects, averageRow],
+          };
+        });
+      }
+      const fetchTeacherClasses = async () => {
+        if (!user?.uid) return;
+        try {
+          const response = await fetch(`${BASE_URL}classroom/get_classrooms/?teacher_id=${user.uid}`, {
+            headers: {
+              Authorization: `Bearer ${user.uid}`,
+            },
+          });
+          const data = await response.json();
+          if (response.ok) setTeacherClasses(data);
+          else console.error('Không lấy được danh sách lớp:', data);
+        } catch (error) {
+          console.error('Lỗi khi gọi API lớp:', error);
+        }
+      };
+      fetchTeacherClasses();
+
+      if (cleanedStudent.classList && cleanedStudent.classList.length > 0) {
+        const highestClass = getHighestClass(cleanedStudent.classList);
+        setSelectedClass(highestClass.match(/\d+/)?.[0] || '10');
+      }
+      setEditableStudent(cleanedStudent);
+    }
   }, [studentData]);
 
-  if (!editableStudent || !editableStudent.name) {
+  useEffect(() => {
+    if (isEditMode && teacherClasses.length > 0 && editableStudent?.classList?.length > 0) {
+      const studentClassName = editableStudent.classList[0].class?.trim();
+      const matchedClass = teacherClasses.find(cls => cls.name.trim() === studentClassName);
+
+      if (matchedClass) {
+        setSelectedClassId(matchedClass.id);
+        updateStudentField('school', matchedClass.school_name);
+      } else {
+        console.warn("Không tìm thấy lớp khớp trong danh sách teacherClasses:", studentClassName);
+      }
+    }
+
+  }, [isEditMode, teacherClasses, editableStudent?.classList]);
+
+
+
+  const sanitizeSubjectName = (name: string) => {
+    // Nếu tên có dấu ":", thì chỉ lấy phần trước dấu ":"
+    if (name.includes(':')) {
+      return name.split(':')[0].trim();
+    }
+    return name.trim();
+  };
+
+  if (!editableStudent || !editableStudent.name || editableStudent.name.trim() === '' || editableStudent.name === 'Chưa rõ') {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>Lỗi: Dữ liệu học sinh không hợp lệ.</Text>
@@ -98,8 +167,60 @@ const StudentReportCard = ({
     );
   }
 
-  const selectedClassData = editableStudent.classList?.find((cls) => cls.class.trim() === className.trim());
-  const selectedSubjects = selectedClassData?.subjects || editableStudent.subjects || [];
+  function calculateAverageSubjects(subjects: Subject[]) {
+    if (!subjects || subjects.length === 0) return { name: 'DTB các môn', hk1: '0', hk2: '0', cn: '0' };
+
+    // Xóa dòng đầu nếu rác
+    const first = subjects[0];
+    if (first && (
+      first.name.toLowerCase().includes('học') ||
+      first.name.toLowerCase().includes('các môn') ||
+      first.name.toLowerCase().includes('dtb')
+    )) {
+      subjects.shift();
+    }
+
+    // Xóa dòng cuối nếu rác
+    const last = subjects[subjects.length - 1];
+    if (last && (
+      last.name.toLowerCase().includes('học') ||
+      last.name.toLowerCase().includes('các môn') ||
+      last.name.toLowerCase().includes('dtb')
+    )) {
+      subjects.pop();
+    }
+
+    const isNumeric = (value: string) => !isNaN(parseFloat(value)) && isFinite(parseFloat(value));
+
+    let sumHK1 = 0, sumHK2 = 0, sumCN = 0;
+    let count = 0;
+
+    subjects.forEach(sub => {
+      if (isNumeric(sub.hk1) && isNumeric(sub.hk2) && isNumeric(sub.cn)) {
+        sumHK1 += parseFloat(sub.hk1);
+        sumHK2 += parseFloat(sub.hk2);
+        sumCN += parseFloat(sub.cn);
+        count += 1;
+      }
+    });
+
+    if (count === 0) count = 1; // tránh chia 0
+
+    return {
+      name: 'DTB các môn',
+      hk1: (sumHK1 / count).toFixed(1),
+      hk2: (sumHK2 / count).toFixed(1),
+      cn: (sumCN / count).toFixed(1),
+    };
+  }
+
+
+  const selectedClassData = editableStudent.classList?.find((cls) => {
+    const classNumber = cls.class.match(/\d+/)?.[0] || '';
+    return classNumber === selectedClass;
+  });
+  const selectedSubjects = selectedClassData?.subjects || [];
+
   const images = editableStudent.images || [];
 
   const updateStudentField = (field: keyof StudentItem, value: string) => {
@@ -107,15 +228,48 @@ const StudentReportCard = ({
   };
 
   const updateSubject = (index: number, field: keyof Subject, value: string) => {
-    const updatedSubjects = [...selectedSubjects];
-    updatedSubjects[index] = { ...updatedSubjects[index], [field]: value };
-    setEditableStudent((prev) => ({
-      ...prev,
-      classList: prev.classList?.map((cls) =>
-        cls.class === className ? { ...cls, subjects: updatedSubjects } : cls
-      ),
-    }));
+    setEditableStudent(prev => {
+      const updatedClassList = prev.classList?.map(cls => {
+        if (!cls.class.includes(selectedClass)) return cls;
+
+        const updatedSubjects = [...cls.subjects];
+
+        // Cập nhật môn học đang chỉnh
+        if (updatedSubjects[index]) {
+          updatedSubjects[index] = { ...updatedSubjects[index], [field]: value };
+        }
+
+        // Xóa dòng đầu (nếu là học/các môn) và dòng cuối (nếu là các môn/DTB) để không ảnh hưởng
+        const first = updatedSubjects[0];
+        if (first && (
+          first.name.toLowerCase().includes('học') ||
+          first.name.toLowerCase().includes('các môn') ||
+          first.name.toLowerCase().includes('dtb')
+        )) {
+          updatedSubjects.shift();
+        }
+        const last = updatedSubjects[updatedSubjects.length - 1];
+        if (last && (
+          last.name.toLowerCase().includes('học') ||
+          last.name.toLowerCase().includes('các môn') ||
+          last.name.toLowerCase().includes('dtb')
+        )) {
+          updatedSubjects.pop();
+        }
+
+        // Tính lại điểm trung bình sau khi người dùng chỉnh sửa
+        const averageRow = calculateAverageSubjects(updatedSubjects);
+
+        return {
+          ...cls,
+          subjects: [...updatedSubjects, averageRow],
+        };
+      }) || [];
+
+      return { ...prev, classList: updatedClassList };
+    });
   };
+
 
   const getHighestClass = (classList: ClassData[] | undefined): string => {
     if (!classList || classList.length === 0) return 'Unknown';
@@ -130,58 +284,106 @@ const StudentReportCard = ({
     return highestClass ? highestClass.class : classList[0].class;
   };
 
-  const saveStudentReport = async () => {
+  const handleConfirmSave = async () => {
+    const method = reportCardId ? 'PUT' : 'POST';
+    const url = reportCardId
+      ? `${BASE_URL}ocr/update_report_card/?id=${reportCardId}`
+      : `${BASE_URL}ocr/save_full_report_card/`;
+    if (!editableStudent.classList || editableStudent.classList.length === 0) {
+      Alert.alert('Lỗi', 'Không có dữ liệu môn học.');
+      return;
+    }
+    if (!selectedClassId) {
+      Alert.alert('Lỗi', 'Vui lòng chọn lớp trước khi lưu.');
+      return;
+    }
+    const allSubjects = editableStudent.classList?.flatMap(cls =>
+      cls.subjects.map(sub => {
+        const year = cls.class.includes('10') ? 1 : cls.class.includes('11') ? 2 : 3;
+        return {
+          name: sanitizeSubjectName(sub.name),
+          year,
+          year1_sem1_score: year === 1 ? parseFloat(sub.hk1 || "0") : null,
+          year1_sem2_score: year === 1 ? parseFloat(sub.hk2 || "0") : null,
+          year1_final_score: year === 1 ? parseFloat(sub.cn || "0") : null,
+          year2_sem1_score: year === 2 ? parseFloat(sub.hk1 || "0") : null,
+          year2_sem2_score: year === 2 ? parseFloat(sub.hk2 || "0") : null,
+          year2_final_score: year === 2 ? parseFloat(sub.cn || "0") : null,
+          year3_sem1_score: year === 3 ? parseFloat(sub.hk1 || "0") : null,
+          year3_sem2_score: year === 3 ? parseFloat(sub.hk2 || "0") : null,
+          year3_final_score: year === 3 ? parseFloat(sub.cn || "0") : null,
+        };
+      })
+    ) || [];
+
+
+
     setIsSaving(true);
     try {
-      const savedClasses = await AsyncStorage.getItem(CLASS_STORAGE_KEY);
-      let allClasses: ClassItem[] = savedClasses ? JSON.parse(savedClasses) : [];
-
-      const highestClassName = getHighestClass(editableStudent.classList);
-
-      let targetClass = allClasses.find((c) => c.name === highestClassName);
-      if (!targetClass) {
-        targetClass = { id: Date.now().toString(), name: highestClassName, students: [] };
-        allClasses.push(targetClass);
-      }
-
-      const studentToSave = {
-        ...editableStudent,
-        transcript: 'Có học bạ',
+      const payload = {
+        student: {
+          id: editableStudent.id,
+          name: editableStudent.name,
+          dob: editableStudent.dob,
+          gender: editableStudent.gender,
+          phone: editableStudent.phone,
+          school: editableStudent.school,
+          address: '',
+          parents_email: '',
+          class_id: selectedClassId || '',
+          father_name: '',
+          mother_name: '',
+          guardian_name: '',
+          guardian_job: '',
+          ethnicity: '',
+          birthplace: '',
+        },
+        report_card: {
+          class_id: selectedClassId || '',
+          school_year: '2022-2025',
+          conduct_year1_sem1: editableStudent.conduct,
+          conduct_year1_sem2: editableStudent.conduct,
+          conduct_year1_final: editableStudent.conduct,
+          conduct_year2_sem1: '',
+          conduct_year2_sem2: '',
+          conduct_year2_final: '',
+          conduct_year3_sem1: '',
+          conduct_year3_sem2: '',
+          conduct_year3_final: '',
+          academic_perform_year1: editableStudent.academicPerformance,
+          academic_perform_year2: '',
+          academic_perform_year3: '',
+          gpa_avg_year1: 0,
+          gpa_avg_year2: 0,
+          gpa_avg_year3: 0,
+          promotion_status: '',
+          teacher_comment: '',
+          teacher_signed: false,
+          principal_signed: false,
+        },
+        subjects: allSubjects,
       };
+      console.log('uid', user?.uid);
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user?.uid}`, },
+        body: JSON.stringify(payload),
+      });
 
-      const studentIndex = targetClass.students.findIndex((s) => s.id === studentToSave.id);
-      if (studentIndex !== -1) {
-        targetClass.students[studentIndex] = studentToSave;
+      if (response.ok) {
+        setShowSuccessModal(true);
       } else {
-        targetClass.students.push(studentToSave);
+        throw new Error('Lưu thất bại');
       }
-
-      await AsyncStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(allClasses));
-
-      if (onSave) {
-        onSave(studentToSave);
-      }
-
-      // Ensure modal is shown before any navigation
-      setShowSuccessModal(true);
     } catch (error) {
-      console.error('Lỗi khi lưu học bạ:', error);
+      console.error('Lỗi lưu học bạ:', error);
       setShowErrorModal(true);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleConfirmSave = () => {
-    Alert.alert(
-      'Xác nhận',
-      `Bạn có chắc muốn lưu học bạ của ${editableStudent.name} vào lớp ${getHighestClass(editableStudent.classList)}?`,
-      [
-        { text: 'Hủy', style: 'cancel' },
-        { text: 'Đồng ý', onPress: saveStudentReport },
-      ]
-    );
-  };
+
 
   const handleSuccessClose = () => {
     setShowSuccessModal(false);
@@ -202,14 +404,19 @@ const StudentReportCard = ({
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      {/* Header */}
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={handleBackPress}>
           <FontAwesome name="arrow-left" size={24} color="#1E88E5" />
         </TouchableOpacity>
         <Text style={styles.header}>Thông tin học bạ</Text>
+        {!isEditMode && (
+          <Text style={styles.subHeader}>Lớp {className}</Text>
+        )}
         <View style={{ width: 24 }} />
       </View>
 
+      {/* Profile + ảnh học bạ */}
       <View style={styles.profileContainer}>
         <View style={styles.avatarContainer}>
           <View style={styles.avatarFrame}>
@@ -222,50 +429,85 @@ const StudentReportCard = ({
           )}
         </View>
 
+        {/* Thông tin sinh viên */}
         <View style={styles.infoContainer}>
-          <TextInput
-            style={styles.input}
-            value={editableStudent.name || ''}
-            onChangeText={(text) => updateStudentField('name', text)}
-            placeholder="Họ tên"
-            editable={isEditMode}
-          />
+          <TextInput style={styles.input} value={editableStudent.name || ''} onChangeText={(text) => updateStudentField('name', text)} placeholder="Họ tên" editable={isEditMode} />
           <View style={styles.line} />
-          <TextInput
-            style={styles.input}
-            value={editableStudent.gender || ''}
-            onChangeText={(text) => updateStudentField('gender', text)}
-            placeholder="Giới tính"
-            editable={isEditMode}
-          />
+          <TextInput style={styles.input} value={editableStudent.gender || ''} onChangeText={(text) => updateStudentField('gender', text)} placeholder="Giới tính" editable={isEditMode} />
           <View style={styles.line} />
-          <TextInput
-            style={styles.input}
-            value={editableStudent.dob || ''}
-            onChangeText={(text) => updateStudentField('dob', text)}
-            placeholder="Ngày sinh"
-            editable={isEditMode}
-          />
+          <TextInput style={styles.input} value={editableStudent.dob || ''} onChangeText={(text) => updateStudentField('dob', text)} placeholder="Ngày sinh" editable={isEditMode} />
           <View style={styles.line} />
-          <TextInput
-            style={styles.input}
-            value={editableStudent.school || ''}
-            onChangeText={(text) => updateStudentField('school', text)}
-            placeholder="Trường"
-            editable={isEditMode}
-          />
+          {isEditMode && (
+            <View style={{ marginBottom: 10 }}>
+              <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Chọn lớp</Text>
+              <ScrollView horizontal>
+                {teacherClasses.map(cls => (
+                  <TouchableOpacity
+                    key={cls.id}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: '#1E88E5',
+                      borderRadius: 10,
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
+                      marginRight: 10,
+                      backgroundColor: editableStudent.classList?.[0]?.class === cls.name ? '#1E88E5' : 'white',
+                    }}
+                    onPress={() => {
+                      updateStudentField('school', cls.school_name);
+                      setSelectedClassId(cls.id);
+                      setEditableStudent(prev => {
+                        const existing = prev.classList || [];
+
+                        // Kiểm tra xem lớp đã tồn tại chưa
+                        const found = existing.find(c => c.class === cls.name);
+
+                        let newClassList: ClassData[];
+
+                        if (found) {
+                          newClassList = existing;
+                        } else {
+                          newClassList = [...existing, { class: cls.name, subjects: [] }];
+                        }
+
+                        return {
+                          ...prev,
+                          classList: newClassList,
+                        };
+                      });
+                    }}
+
+                  >
+                    <Text style={{ color: editableStudent.classList?.[0]?.class === cls.name ? 'white' : '#1E88E5' }}>
+                      {cls.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+          <TextInput style={styles.input} value={editableStudent.school || ''} onChangeText={(text) => updateStudentField('school', text)} placeholder="Trường" editable={isEditMode} />
           <View style={styles.line} />
-          <TextInput
-            style={styles.input}
-            value={editableStudent.phone || ''}
-            onChangeText={(text) => updateStudentField('phone', text)}
-            placeholder="SĐT"
-            keyboardType="phone-pad"
-            editable={isEditMode}
-          />
+          <TextInput style={styles.input} value={editableStudent.phone || ''} onChangeText={(text) => updateStudentField('phone', text)} placeholder="SĐT" keyboardType="phone-pad" editable={isEditMode} />
         </View>
       </View>
 
+      {/* Nút chọn lớp */}
+      <View style={styles.gradeSwitchContainer}>
+        {['10', '11', '12'].map((grade) => (
+          <TouchableOpacity
+            key={grade}
+            style={[styles.gradeButton, selectedClass === grade && styles.selectedGradeButton]}
+            onPress={() => setSelectedClass(grade)}
+          >
+            <Text style={[styles.gradeButtonText, selectedClass === grade && styles.selectedGradeButtonText]}>
+              Lớp {grade}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Bảng điểm theo lớp đã chọn */}
       <View style={styles.table}>
         <View style={styles.tableRowHeader}>
           <Text style={styles.tableHeader}>Môn học</Text>
@@ -311,10 +553,11 @@ const StudentReportCard = ({
             </View>
           ))
         ) : (
-          <Text style={styles.emptyText}>Không có dữ liệu môn học</Text>
+          <Text style={styles.emptyText}>Chưa có dữ liệu môn học cho lớp {selectedClass}</Text>
         )}
       </View>
 
+      {/* Học lực và Hạnh kiểm */}
       <View style={styles.evaluation}>
         <TextInput
           style={styles.input}
@@ -332,46 +575,35 @@ const StudentReportCard = ({
         />
       </View>
 
+      {/* Nút Lưu */}
       {isEditMode && (
         <TouchableOpacity style={styles.button} onPress={handleConfirmSave} disabled={isSaving}>
-          <LinearGradient
-            colors={['#32ADE6', '#2138AA']}
-            style={styles.gradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            {isSaving ? (
-              <Text style={styles.saveText}>Đang lưu...</Text>
-            ) : (
-              <Text style={styles.saveText}>Lưu học bạ</Text>
-            )}
+          <LinearGradient colors={['#32ADE6', '#2138AA']} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+            <Text style={styles.saveText}>{isSaving ? 'Đang lưu...' : 'Lưu học bạ'}</Text>
           </LinearGradient>
         </TouchableOpacity>
       )}
 
-      <SuccessModal
-        visible={showSuccessModal}
-        onClose={handleSuccessClose}
-        message="Lưu học bạ thành công"
-      />
+      {/* Modal success/error */}
+      <SuccessModal visible={showSuccessModal} onClose={() => { setShowSuccessModal(false) }} message="Lưu học bạ thành công" />
+      <ErrorModal visible={showErrorModal} onClose={() => setShowErrorModal(false)} message="Không thành công" subMessage="Vui lòng thử lại" />
 
-      <ErrorModal
-        visible={showErrorModal}
-        onClose={handleErrorClose}
-        message="Không thành công"
-        subMessage="Vui lòng thử lại"
-      />
-
+      {/* Modal xem ảnh học bạ */}
       <Modal visible={showImagesModal} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Ảnh học bạ</Text>
             <FlatList
               data={images}
-              renderItem={renderImageItem}
-              keyExtractor={(item, index) => index.toString()}
-              numColumns={2}
-              contentContainerStyle={styles.imageList}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(_, index) => index.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.imageSlide}>
+                  <Image source={{ uri: item }} style={styles.fullImage} resizeMode="contain" />
+                </View>
+              )}
             />
             <TouchableOpacity style={styles.closeButton} onPress={() => setShowImagesModal(false)}>
               <Text style={styles.closeButtonText}>Đóng</Text>
@@ -379,11 +611,58 @@ const StudentReportCard = ({
           </View>
         </View>
       </Modal>
+
     </ScrollView>
   );
+
 };
 
 const styles = StyleSheet.create({
+  gradeSwitchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 20,
+    marginTop: 10,
+  },
+  subHeader: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
+  },
+  gradeButton: {
+    borderWidth: 1,
+    borderColor: '#1E88E5',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    marginHorizontal: 5,
+    backgroundColor: '#FFFFFF',
+  },
+
+  selectedGradeButton: {
+    backgroundColor: '#1E88E5',
+  },
+
+  gradeButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1E88E5',
+  },
+
+  selectedGradeButtonText: {
+    color: 'white',
+  },
+  imageSlide: {
+    width: Dimensions.get('window').width - 40,
+    height: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',

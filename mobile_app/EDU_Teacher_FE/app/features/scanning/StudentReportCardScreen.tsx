@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text } from 'react-native';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import StudentReportCardComponent from './studentReportCard';
@@ -31,7 +31,6 @@ interface StudentItem {
   transcript?: string;
 }
 
-// Định nghĩa RootStackParamList
 type RootStackParamList = {
   StudentReportCard: {
     student: string;
@@ -41,43 +40,53 @@ type RootStackParamList = {
   ClassListScreen: undefined;
 };
 
-// Sử dụng NavigationProp với RootStackParamList
 type StudentReportCardNavigationProp = NavigationProp<RootStackParamList, 'StudentReportCard'>;
 
 export default function StudentReportCardScreen() {
   const params = useLocalSearchParams();
-  const navigation = useNavigation<StudentReportCardNavigationProp>(); // Chỉ định kiểu cho navigation
+  const navigation = useNavigation<StudentReportCardNavigationProp>();
+  // const { student, className: passedClassName, isEditMode } = params;
+  const student = params['student'];
+  const passedClassName = params['className'];
+  const isEditMode = params['isEditMode'];
+  const reportCardId = params['reportCardId'];
 
-  const { student, className, isEditMode } = params;
 
-  // console.log('Params received:', params);
+  const [parsedStudent, setParsedStudent] = React.useState<StudentItem | null>(null);
+  const [resolvedClassName, setResolvedClassName] = React.useState<string>('');
 
-  if (!student || !className) {
-    console.error('Missing required params:', params);
-    navigation.goBack();
+  useEffect(() => {
+    if (!student) {
+      console.error('❌ Missing student param.');
+      navigation.goBack();
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(student as string) as StudentItem;
+      setParsedStudent(parsed);
+      setResolvedClassName((passedClassName as string) || (parsed.classList?.[0]?.class ?? ''));
+    } catch (error) {
+      console.error('❌ Error parsing student data:', error);
+      navigation.goBack();
+    }
+  }, [student, passedClassName]);
+
+  if (!parsedStudent || resolvedClassName === '') {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Lỗi: Thiếu dữ liệu cần thiết.</Text>
+        <Text>Đang tải dữ liệu học sinh...</Text>
       </View>
     );
   }
 
-  let studentData: StudentItem | undefined;
-  try {
-    studentData = JSON.parse(student as string) as StudentItem;
-    // console.log('Parsed studentData:', studentData);
-  } catch (error) {
-    console.error('Error parsing student data:', error);
-    navigation.goBack();
-    return null;
-  }
-
   return (
     <StudentReportCardComponent
-      studentData={studentData}
-      className={className as string}
+      studentData={parsedStudent}
+      className={resolvedClassName}
       isEditMode={isEditMode === 'true'}
-      navigation={navigation} // Truyền navigation với kiểu đã định nghĩa
+      reportCardId={reportCardId as string}
+      navigation={navigation}
       onSave={() => navigation.goBack()}
     />
   );

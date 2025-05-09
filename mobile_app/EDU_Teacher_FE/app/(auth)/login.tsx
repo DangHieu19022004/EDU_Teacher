@@ -7,13 +7,13 @@ import auth from "@react-native-firebase/auth";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useRouter } from "expo-router";
+import { BASE_URL } from "@/constants/Config";
 
 
 GoogleSignin.configure({
   webClientId: "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
 });
-const BASE_URL = "http://192.168.100.225:8000/auth";
 
 const LoginScreen = () => {
   const router = useRouter();
@@ -25,67 +25,63 @@ const LoginScreen = () => {
   const [user, setUser] = useState<auth.User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [isOTPMode, setIsOTPMode] = useState(false);       // bật/tắt chế độ OTP
-  const [phoneNumber, setPhoneNumber] = useState("");       // lưu số điện thoại
-  const [confirmation, setConfirmation] = useState(null);   // đối tượng xác minh
-  const [otpCode, setOtpCode] = useState("");               // mã OTP nhập từ người dùng
+  // const [isOTPMode, setIsOTPMode] = useState(false);       // bật/tắt chế độ OTP
+  // const [phoneNumber, setPhoneNumber] = useState("");       // lưu số điện thoại
+  // const [confirmation, setConfirmation] = useState(null);   // đối tượng xác minh
+  // const [otpCode, setOtpCode] = useState("");               // mã OTP nhập từ người dùng
 
-  const sendOTP = async () => {
-    try {
-      setIsLoading(true);
+  // const sendOTP = async () => {
+  //   try {
+  //     setIsLoading(true);
 
-      let input = ID.trim().replace(/\s+/g, "");
+  //     let input = ID.trim().replace(/\s+/g, "");
 
-      // Nếu người dùng nhập 032xxxxxxx → tự đổi thành +8432xxxxxxx
-      if (input.startsWith("0")) {
-        input = "+84" + input.slice(1);
-      }
+  //     // Nếu người dùng nhập 032xxxxxxx → tự đổi thành +8432xxxxxxx
+  //     if (input.startsWith("0")) {
+  //       input = "+84" + input.slice(1);
+  //     }
 
-      // Nếu không có +84 hoặc không đúng định dạng
-      const regex = /^\+84[1-9][0-9]{8}$/;
-      if (!regex.test(input)) {
-        Alert.alert("Lỗi", "Số điện thoại không hợp lệ. Vui lòng nhập đúng định dạng!");
-        setIsLoading(false);
-        return;
-      }
+  //     // Nếu không có +84 hoặc không đúng định dạng
+  //     const regex = /^\+84[1-9][0-9]{8}$/;
+  //     if (!regex.test(input)) {
+  //       Alert.alert("Lỗi", "Số điện thoại không hợp lệ. Vui lòng nhập đúng định dạng!");
+  //       setIsLoading(false);
+  //       return;
+  //     }
 
-      const confirm = await auth().signInWithPhoneNumber(input);
-      setConfirmation(confirm);
-      Alert.alert("Thông báo", "OTP đã được gửi về số điện thoại!");
-    } catch (error) {
-      Alert.alert("Lỗi gửi OTP", error.message);
-      console.error("OTP Error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //     const confirm = await auth().signInWithPhoneNumber(input);
+  //     setConfirmation(confirm);
+  //     Alert.alert("Thông báo", "OTP đã được gửi về số điện thoại!");
+  //   } catch (error) {
+  //     Alert.alert("Lỗi gửi OTP", error.message);
+  //     console.error("OTP Error:", error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
+  // const verifyOTP = async () => {
+  //   try {
+  //     setIsLoading(true);
+  //     await confirmation.confirm(otpCode);
 
+  //     const firebaseUser = auth().currentUser;
+  //     const token = await firebaseUser.getIdToken();
 
+  //     await AsyncStorage.setItem("access_token", token);
 
-
-  const verifyOTP = async () => {
-    try {
-      setIsLoading(true);
-      await confirmation.confirm(otpCode);
-
-      const firebaseUser = auth().currentUser;
-      const token = await firebaseUser.getIdToken();
-
-      await AsyncStorage.setItem("access_token", token);
-
-      const isFirstTime = await checkFirstTimeLogin(firebaseUser.uid);
-      if (isFirstTime) {
-        router.replace("/(auth)/intro");
-      } else {
-        router.replace("/(main)/home");
-      }
-    } catch (error) {
-      Alert.alert("Lỗi xác minh", "Mã OTP sai hoặc đã hết hạn.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //     const isFirstTime = await checkFirstTimeLogin(firebaseUser.uid);
+  //     if (isFirstTime) {
+  //       router.replace("/(auth)/intro");
+  //     } else {
+  //       router.replace("/(main)/home");
+  //     }
+  //   } catch (error) {
+  //     Alert.alert("Lỗi xác minh", "Mã OTP sai hoặc đã hết hạn.");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
 
 
@@ -115,7 +111,7 @@ const LoginScreen = () => {
     if (emailRegex.test(ID) || phoneRegex.test(ID)) {
       setIsLoading(true);
       try {
-        const response = await fetch(`${BASE_URL}/formlogin/`, {
+        const response = await fetch(`${BASE_URL}auth/formlogin/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: ID, password }),
@@ -170,7 +166,7 @@ const LoginScreen = () => {
         const firebaseIdToken = await firebaseUser.getIdToken();
         console.log("Firebase Token:", firebaseIdToken);
 
-        const response = await fetch(`${BASE_URL}/googlelogin/`, {
+        const response = await fetch(`${BASE_URL}auth/googlelogin/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token: firebaseIdToken }),
@@ -236,7 +232,7 @@ const LoginScreen = () => {
         photoURL: fbUserData.picture.data.url,
       };
 
-      const response = await fetch(`${BASE_URL}/facebooklogin/`, {
+      const response = await fetch(`${BASE_URL}auth/facebooklogin/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),
@@ -316,42 +312,12 @@ const LoginScreen = () => {
 
 
       {/* Chế độ OTP */}
-      <TouchableOpacity onPress={() => setIsOTPMode(!isOTPMode)}>
+      {/* <TouchableOpacity onPress={() => setIsOTPMode(!isOTPMode)}>
         <Text style={{ color: "#2F80ED", marginVertical: 10, fontWeight: "bold" }}>
           {isOTPMode ? "← Quay lại đăng nhập Email/SĐT" : "Đăng nhập bằng SĐT + OTP"}
         </Text>
-      </TouchableOpacity>
-      {isOTPMode ? (
-  <>
-    {!confirmation ? (
-      <TouchableOpacity style={styles.loginButton} onPress={sendOTP}>
-        <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient}>
-          <Text style={styles.loginText}>Gửi OTP</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-    ) : (
-      <>
-        <TextInput
-         placeholder="Nhập mã OTP"
-         value={otpCode}
-         onChangeText={setOtpCode}
-         keyboardType="number-pad"
-         style={styles.input}
-         blurOnSubmit={false}
-        />
-        <TouchableOpacity style={styles.loginButton} onPress={verifyOTP}>
-          <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient}>
-            <Text style={styles.loginText}>Xác minh OTP</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </>
-    )}
-  </>
-) : (
-  <>
-    {/* Form đăng nhập truyền thống đã có sẵn */}
-  </>
-)}
+      </TouchableOpacity> */}
+
 
 
 
@@ -393,7 +359,7 @@ const LoginScreen = () => {
   </TouchableOpacity>
 </View>
 
-{isOTPMode && confirmation && (
+{/* {isOTPMode && confirmation && (
   <View style={styles.inputContainer}>
     <Ionicons name="keypad-outline" size={20} color="#888" style={styles.icon} />
     <TextInput
@@ -405,7 +371,7 @@ const LoginScreen = () => {
       blurOnSubmit={false}
     />
   </View>
-)}
+)} */}
 
 
       <TouchableOpacity>
