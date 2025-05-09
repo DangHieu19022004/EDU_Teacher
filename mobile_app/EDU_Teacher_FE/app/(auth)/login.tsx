@@ -139,6 +139,7 @@ const LoginScreen = () => {
         setIsLoading(false);
       }
     } else {
+      router.replace('/(main)/home');
       Alert.alert("Lỗi", "Vui lòng nhập email hoặc số điện thoại hợp lệ!");
     }
   };
