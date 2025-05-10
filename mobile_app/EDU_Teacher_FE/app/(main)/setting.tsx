@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LoginManager } from 'react-native-fbsdk-next';
 import auth from "@react-native-firebase/auth";
 import ForgotPasswordModal from "../../components/ForgotPasswordModal";
+import MainHeader from '@/components/MainHeader';
 
 const SettingsScreen: React.FC = () => {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
@@ -40,9 +41,7 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Cài đặt</Text>
-      </View>
+      <MainHeader title="Cài đặt" />
 
       <ForgotPasswordModal
         visible={forgotPasswordVisible}

@@ -19,6 +19,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import sampleStudentData from '../test_data/studentData.json';
 import { useUser } from '../contexts/UserContext';
+import MainHeader from '@/components/MainHeader';
 
 const TeacherInfo: React.FC = () => {
   const router = useRouter();
@@ -95,11 +96,8 @@ const TeacherInfo: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <MainHeader title="Thông tin giáo viên" />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Thông tin giáo viên</Text>
-        </View>
-
         <View style={styles.avatarContainer}>
           <TouchableOpacity onPress={pickImage}>
             <View style={styles.avatar}>
@@ -275,6 +273,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   picker: {
+    marginRight: -20,
     flex: 1,
     color: '#555',
   },

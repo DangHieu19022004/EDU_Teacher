@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView } from 'rea
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useUser } from "../contexts/UserContext";
+import MainHeader from '@/components/MainHeader';
 
 const HomeScreen: React.FC = () => {
   const router = useRouter();
@@ -23,9 +24,7 @@ const HomeScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Trang chủ</Text>
-      </View>
+      <MainHeader title="Trang chủ" />
 
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
