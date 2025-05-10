@@ -7,7 +7,7 @@ import { useUser } from "../contexts/UserContext";
 const HomeScreen: React.FC = () => {
   const router = useRouter();
   const { user } = useUser();
-
+  console.log('User:', user);
   const handleScanPress = () => {
     router.push('../features/scanning/photoCapture');
   };

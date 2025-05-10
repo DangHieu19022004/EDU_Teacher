@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useRouter } from "expo-router";
 import { BASE_URL } from "@/constants/Config";
-
+import { useUser } from "../contexts/UserContext";
 
 GoogleSignin.configure({
   webClientId: "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
@@ -22,7 +22,7 @@ const LoginScreen = () => {
   const [ID, setID] = useState("");
   const [password, setPassword] = useState("");
   const [initializing, setInitializing] = useState(true);
-  const [user, setUser] = useState<auth.User | null>(null);
+  const { setUser } = useUser();
   const [isLoading, setIsLoading] = useState(false);
 
   // const [isOTPMode, setIsOTPMode] = useState(false);       // bật/tắt chế độ OTP
@@ -122,6 +122,14 @@ const LoginScreen = () => {
         if (response.ok && data.access_token) {
           await AsyncStorage.setItem("access_token", data.access_token);
 
+          setUser({
+            displayName: data.user.full_name || "",
+            email: data.user.email || "",
+            photoURL: data.user.avatar || "",
+            phone: data.user.phoneNumber || "",
+            uid: data.user.uid || "",
+          });
+
           const isFirstTime = await checkFirstTimeLogin(data.user.uid);
 
           if (isFirstTime) {
@@ -177,7 +185,13 @@ const LoginScreen = () => {
 
         if (data.access_token && response.ok) {
           await AsyncStorage.setItem("access_token", data.access_token);
-
+          setUser({
+            displayName: firebaseUser.displayName || "",
+            email: firebaseUser.email || "",
+            photoURL: firebaseUser.photoURL || "",
+            phone: firebaseUser.phoneNumber || "",
+            uid: firebaseUser.uid || "",
+          });
           // Kiểm tra lần đầu đăng nhập
           const isFirstTime = await checkFirstTimeLogin(firebaseUser.uid);
 
@@ -243,6 +257,14 @@ const LoginScreen = () => {
 
       if (response.ok && data.access_token) {
         await AsyncStorage.setItem("fb_uid", data.access_token);
+
+        setUser({
+          displayName: userData.displayName,
+          email: data.user.email || "",
+          photoURL: userData.photoURL,
+          phone: data.user.phoneNumber || "",
+          uid: userData.uid,
+        });
 
         // Kiểm tra lần đầu đăng nhập
         const isFirstTime = await checkFirstTimeLogin(userData.uid);

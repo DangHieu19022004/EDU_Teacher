@@ -1,5 +1,5 @@
 {
-  "query": "Hướng dẫn sử dụng",
+  "query": "Có những học sinh nào",
   "inputs": {},
   "response_mode": "blocking",
   "user": "Sg796NwjsVXNqTUT1VJ6ZlTeS8h1",
@@ -8,7 +8,7 @@
     {
       "type": "image",
       "transfer_method": "local_file",
-      "upload_file_id": "012c7af6-42cc-47f9-90de-4ba942fb5b32"
+      "upload_file_id": "79ffcf4f-808b-4675-8f24-7d62877e3817"
     }
   ]
 }

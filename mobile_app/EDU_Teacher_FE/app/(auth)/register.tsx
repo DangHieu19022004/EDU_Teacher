@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Modal
 } from "react-native";
+import { LoginManager, AccessToken } from 'react-native-fbsdk-next';
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Checkbox from "expo-checkbox";
@@ -17,6 +18,8 @@ import { useRouter } from "expo-router";
 import auth from "@react-native-firebase/auth";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {BASE_URL} from "@/constants/Config";
+import { useUser } from "../contexts/UserContext";
+
 
 GoogleSignin.configure({
   webClientId: "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
@@ -27,7 +30,7 @@ const RegisterScreen = () => {
   const router = useRouter();
   const [loggedIn, setLoggedIn] = useState(false);
   const [isChecked, setChecked] = useState(false);
-  const [user, setUser] = useState<auth.User | null>(null);
+  const { setUser } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
@@ -166,7 +169,14 @@ const RegisterScreen = () => {
 
         if (data.access_token && response.ok) {
           await AsyncStorage.setItem("access_token", data.access_token);
-          setUser(firebaseUser);
+          setUser({
+            displayName: data.user.full_name || "",
+            email: data.user.email || "",
+            photoURL: data.user.avatar || "",
+            phone: data.user.phoneNumber || "",
+            uid: data.user.uid || "",
+          });
+
           setLoggedIn(true);
         } else {
           Alert.alert("Login Failed", data.error || "Unknown error occurred.");
@@ -182,11 +192,93 @@ const RegisterScreen = () => {
     }
   }
 
-  useEffect(() => {
-    if (loggedIn && user) {
-      router.replace({ pathname: "/home", params: { user: JSON.stringify(user) } });
+  // Facebook Login
+  async function onFacebookButtonPress() {
+    await AsyncStorage.removeItem("fb_uid");
+    await AsyncStorage.removeItem("access_token");
+    try {
+      setIsLoading(true);
+      const result = await LoginManager.logInWithPermissions(["public_profile"]);
+      if (result.isCancelled) throw new Error("User cancelled the login process");
+
+      const fbData = await AccessToken.getCurrentAccessToken();
+      if (!fbData) throw new Error("Failed to get Facebook access token");
+
+      const fbResponse = await fetch(
+        `https://graph.facebook.com/me?fields=id,name,picture.type(large)&access_token=${fbData.accessToken}`
+      );
+      const fbUserData = await fbResponse.json();
+
+      console.log("✅ Facebook User Data:", fbUserData);
+
+      if (!fbUserData.id || !fbUserData.name || !fbUserData.picture?.data?.url) {
+        throw new Error("Incomplete user data received from Facebook");
+      }
+
+      const userData = {
+        uid: fbUserData.id,
+        displayName: fbUserData.name,
+        photoURL: fbUserData.picture.data.url,
+      };
+
+      const response = await fetch(`${BASE_URL}auth/facebooklogin/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.access_token) {
+        await AsyncStorage.setItem("fb_uid", data.access_token);
+
+        setUser({
+          displayName: userData.displayName,
+          email: data.user.email || "",
+          photoURL: userData.photoURL,
+          phone: data.user.phoneNumber || "",
+          uid: userData.uid,
+        });
+
+        // Kiểm tra lần đầu đăng nhập
+        const isFirstTime = await checkFirstTimeLogin(userData.uid);
+
+        setTimeout(() => {
+          if (isFirstTime) {
+            router.replace('/(auth)/intro');
+          } else {
+            router.replace({
+              pathname: "/(main)/home",
+              params: { user: JSON.stringify(userData) },
+            });
+          }
+        }, 500);
+      } else {
+        throw new Error(data.error || "Login failed.");
+      }
+    } catch (error) {
+      console.error("Facebook Sign-In Error:", error);
+      Alert.alert("Facebook Sign-In Failed", (error as Error).message);
     }
-  }, [loggedIn, user]);
+    setIsLoading(false);
+  }
+  // Kiểm tra xem đây có phải là lần đăng nhập đầu tiên không
+  const checkFirstTimeLogin = async (userId: string) => {
+    try {
+      const firstTimeKey = `firstTime_${userId}`;
+      const isFirstTime = await AsyncStorage.getItem(firstTimeKey);
+
+      if (isFirstTime === null) {
+        // Đây là lần đăng nhập đầu tiên
+        await AsyncStorage.setItem(firstTimeKey, 'false');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error checking first time login:", error);
+      return false;
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -322,7 +414,7 @@ const RegisterScreen = () => {
         {/* Đăng ký với mạng xã hội */}
         <View style={styles.socialIcons}>
           <Text style={styles.socialText}>Đăng ký với </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={onFacebookButtonPress}>
             <FontAwesome name="facebook" style={styles.socialIcon} size={30} color="#1877F2" />
           </TouchableOpacity>
           <TouchableOpacity onPress={onGoogleButtonPress}>
