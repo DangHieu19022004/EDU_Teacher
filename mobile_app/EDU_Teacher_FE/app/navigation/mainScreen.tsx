@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import HomeScreen from '../(main)/home';
-import Student from '../(main)/infostudent';
+import Student from '../(main)/teacherinfo';
 import SettingsScreen from '../(main)/setting';
 import Animated, {
   useSharedValue,
@@ -16,38 +16,38 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const MainScreen: React.FC = () => {
-  const [activeScreen, setActiveScreen] = useState<'home' | 'infostudent' | 'setting'>('home');
+  const [activeScreen, setActiveScreen] = useState<'home' | 'teacherinfo' | 'setting'>('home');
   const translateX = useSharedValue(0); // Giá trị dịch chuyển theo trục X
 
   // Pre-render các màn hình
   const screens = useMemo(() => ({
     home: <HomeScreen />,
-    infostudent: <Student />,
+    teacherinfo: <Student />,
     setting: <SettingsScreen />,
   }), []);
 
   // Xử lý vuốt sang trái
   const handleSwipeLeft = useCallback(() => {
     if (activeScreen === 'home') {
-      setActiveScreen('infostudent');
-    } else if (activeScreen === 'infostudent') {
+      setActiveScreen('teacherinfo');
+    } else if (activeScreen === 'teacherinfo') {
       setActiveScreen('setting');
     }
   }, [activeScreen]);
 
   // Xử lý vuốt sang phải
   const handleSwipeRight = useCallback(() => {
-    if (activeScreen === 'infostudent') {
+    if (activeScreen === 'teacherinfo') {
       setActiveScreen('home');
     } else if (activeScreen === 'setting') {
-      setActiveScreen('infostudent');
+      setActiveScreen('teacherinfo');
     }
   }, [activeScreen]);
 
   // Xử lý chuyển màn hình khi nhấn nút
-  const handleNavigationPress = useCallback((route: 'home' | 'infostudent' | 'setting') => {
+  const handleNavigationPress = useCallback((route: 'home' | 'teacherinfo' | 'setting') => {
     // Xác định hướng chuyển động dựa trên vị trí của màn hình mới
-    const screenOrder = ['home', 'infostudent', 'setting'];
+    const screenOrder = ['home', 'teacherinfo', 'setting'];
     const currentIndex = screenOrder.indexOf(activeScreen);
     const nextIndex = screenOrder.indexOf(route);
 
@@ -113,15 +113,15 @@ const MainScreen: React.FC = () => {
 
   // Xác định màn hình tiếp theo (khi vuốt sang trái)
   const getNextScreen = () => {
-    if (activeScreen === 'home') return 'infostudent';
-    if (activeScreen === 'infostudent') return 'setting';
+    if (activeScreen === 'home') return 'teacherinfo';
+    if (activeScreen === 'teacherinfo') return 'setting';
     return 'home';
   };
 
   // Xác định màn hình trước đó (khi vuốt sang phải)
   const getPreviousScreen = () => {
-    if (activeScreen === 'infostudent') return 'home';
-    if (activeScreen === 'setting') return 'infostudent';
+    if (activeScreen === 'teacherinfo') return 'home';
+    if (activeScreen === 'setting') return 'teacherinfo';
     return 'setting';
   };
 
@@ -149,7 +149,7 @@ const MainScreen: React.FC = () => {
         <View style={styles.bottomNav}>
           {[
             { icon: 'home', text: 'Trang chủ', route: 'home' },
-            { icon: 'user', text: 'Bản thân', route: 'infostudent' },
+            { icon: 'user', text: 'Bản thân', route: 'teacherinfo' },
             { icon: 'cog', text: 'Cài đặt', route: 'setting' },
           ].map((item, index) => (
             <TouchableOpacity

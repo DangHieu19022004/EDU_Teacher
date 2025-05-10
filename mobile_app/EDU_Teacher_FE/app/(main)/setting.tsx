@@ -5,9 +5,12 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LoginManager } from 'react-native-fbsdk-next';
 import auth from "@react-native-firebase/auth";
+import ForgotPasswordModal from "../../components/ForgotPasswordModal";
+import MainHeader from '@/components/MainHeader';
 
 const SettingsScreen: React.FC = () => {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
+  const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
   const router = useRouter();
 
   const toggleNotifications = () => setIsNotificationsEnabled(!isNotificationsEnabled);
@@ -25,14 +28,10 @@ const SettingsScreen: React.FC = () => {
         console.log("Logging out from social login (Google/Facebook)...");
         await AsyncStorage.removeItem("access_token");
       } else {
-        // Mặc định: đăng xuất tài khoản email/password
         console.log("Logging out from email/password...");
       }
 
-      // Firebase luôn phải signOut để xóa thông tin user
       await auth().signOut();
-
-      // Chuyển về màn hình login
       router.replace("../(auth)");
     } catch (error) {
       console.log("Sign-Out Error:", error);
@@ -40,16 +39,21 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-
   return (
     <View style={styles.container}>
-      <View style={styles.statusBar}>
-      </View>
+      <MainHeader title="Cài đặt" />
 
-      <Text style={styles.title}>Cài đặt</Text>
+      <ForgotPasswordModal
+        visible={forgotPasswordVisible}
+        onClose={() => setForgotPasswordVisible(false)}
+        headerText="Đổi mật khẩu"
+      />
+
       <View style={styles.logoContainer}>
         <Image source={require('../../assets/images/logo.png')} style={styles.logo} resizeMode="contain" />
       </View>
+
+      <View style={styles.optionContainer}>
       <View style={styles.optionRow}>
         <FontAwesome name="bell" size={20} color="#2F54EB" style={styles.icon} />
         <Text style={styles.optionText}>Thông báo</Text>
@@ -63,30 +67,43 @@ const SettingsScreen: React.FC = () => {
         </TouchableOpacity>
       ))}
       <Text style={styles.sectionTitle}>Khác</Text>
+      <TouchableOpacity style={styles.optionRowGeneral} onPress={() => setForgotPasswordVisible(true)}>
+        <FontAwesome name="lock" size={20} color="#2F54EB" style={styles.icon} />
+        <Text style={styles.optionText}>Đổi mật khẩu</Text>
+      </TouchableOpacity>
       <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
         <FontAwesome name="sign-out" size={20} color="white"/>
-        <Text style={styles.logoutText}> Đăng xuất</Text>
+        <Text style={styles.logoutText}>Đăng xuất</Text>
       </TouchableOpacity>
-
-
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingTop: 40, paddingHorizontal: 20 },
-  title: { fontSize: 30, fontWeight: 'bold', textAlign: 'center' },
+  container: { flex: 1, backgroundColor: '#fff',},
+  header: {
+    backgroundColor: '#0066CC',
+    padding: 20,
+    paddingTop: 50,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   logoContainer: { alignItems: 'center', marginVertical: 20 },
+  optionContainer: {marginHorizontal: 20},
   logo: { width: 300, height: 150 },
   optionRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 15, backgroundColor: 'white', marginBottom: 10, justifyContent: 'space-between', borderWidth: 1, borderColor: '#A0A0A0' },
-  optionRowGeneral: { flexDirection: 'row', alignItems: 'center', padding: 10, paddingVertical: 20 , borderRadius: 15, backgroundColor: 'white', marginBottom: 10, justifyContent: 'space-between', borderWidth: 1, borderColor: '#A0A0A0' },
+  optionRowGeneral: { flexDirection: 'row', alignItems: 'center', padding: 10, paddingVertical: 20, borderRadius: 15, backgroundColor: 'white', marginBottom: 10, justifyContent: 'space-between', borderWidth: 1, borderColor: '#A0A0A0' },
   icon: { marginRight: 10, color: '#1E88E5' },
   optionText: { fontSize: 16, flex: 1 },
   switch: { alignSelf: 'flex-end' },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
   logoutButton: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#D32F2F', padding: 15, borderRadius: 15 },
   logoutText: { fontSize: 16, color: 'white' },
-  statusBar: {height: 30, backgroundColor: 'white'},
 });
 
 export default SettingsScreen;

@@ -26,7 +26,7 @@ export default function MainLayout() {
             }}
             />
             <Tabs.Screen
-            name="infostudent"
+            name="teacherinfo"
             options={{
                 title: 'Bản thân',
                 tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
