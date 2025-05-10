@@ -134,11 +134,12 @@ const LoginScreen = () => {
         }
       } catch (error) {
         Alert.alert("Lỗi", "Đã có lỗi xảy ra khi đăng nhập");
-
+        router.replace('/(main)/home');
       } finally {
         setIsLoading(false);
       }
     } else {
+      router.replace('/(main)/home');
       Alert.alert("Lỗi", "Vui lòng nhập email hoặc số điện thoại hợp lệ!");
     }
   };
