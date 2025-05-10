@@ -12,4 +12,4 @@ class User(models.Model):
     last_sign_in_time = models.BigIntegerField(null=True, blank=True)
 
     def __str__(self):
-        return self.display_name
+        return self.full_name

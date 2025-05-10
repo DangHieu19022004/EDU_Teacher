@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, ScrollView, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useUser } from '../../contexts/UserContext';
+import { BASE_URL } from '@/constants/Config';
 
 interface ParentContact {
   id: string;
@@ -10,58 +12,138 @@ interface ParentContact {
   phone: string;
   studentName: string;
   studentClass: string;
-  relationship: string; // Mặc định là "Phụ huynh"
+  relationship: string;
+}
+
+interface ClassItem {
+  id: string;
+  name: string;
+  students: StudentItem[];
+}
+
+interface StudentItem {
+  id: string;
+  name: string;
+  dob: string;
+  gender: string;
+  phone: string;
+  school: string;
+  academicPerformance: string;
+  conduct: string;
 }
 
 const AddContactScreen: React.FC = () => {
   const router = useRouter();
+  const { user } = useUser();
   const [parentName, setParentName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [studentName, setStudentName] = useState('');
   const [studentClass, setStudentClass] = useState('');
   const [contacts, setContacts] = useState<ParentContact[]>([]);
-  const [classes, setClasses] = useState<string[]>([]);
 
-  // Load danh sách lớp từ API hoặc local storage
+  const [classList, setClassList] = useState<ClassItem[]>([]);
+  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<StudentItem | null>(null);
+
   useEffect(() => {
-    // Giả lập dữ liệu lớp học
-    const fetchClasses = async () => {
-      // Trong thực tế, bạn sẽ gọi API hoặc lấy từ context
-      const mockClasses = ['10A1', '10A2', '11A1', '11A2', '12A1'];
-      setClasses(mockClasses);
-    };
-
-    fetchClasses();
+    fetchClassrooms();
   }, []);
 
-  // Load danh sách liên hệ đã lưu
   useEffect(() => {
-    // Giả lập dữ liệu mẫu
-    const mockContacts: ParentContact[] = [
-      {
-        id: '1',
-        parentName: 'Nguyễn Văn A',
-        email: 'a.nguyen@example.com',
-        phone: '0912345678',
-        studentName: 'Nguyễn Thị B',
-        studentClass: '10A1',
-        relationship: 'Phụ huynh'
-      },
-      {
-        id: '2',
-        parentName: 'Trần Văn C',
-        email: 'c.tran@example.com',
-        phone: '0987654321',
-        studentName: 'Trần Thị D',
-        studentClass: '11A2',
-        relationship: 'Phụ huynh'
-      },
-    ];
-    setContacts(mockContacts);
+    fetchParentContacts();
   }, []);
+
+
+  const fetchClassrooms = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}classroom/get_classrooms/?teacher_id=${user?.uid}`, {
+        headers: { Authorization: `Bearer ${user?.uid}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        const formatted = data.map((cls: any) => ({
+          id: cls.id,
+          name: cls.name,
+          students: []
+        }));
+        setClassList(formatted);
+      }
+    } catch (err) {
+      console.error('Lỗi fetch lớp:', err);
+    }
+  };
+
+  const fetchStudentsInClass = async (classId: string) => {
+    try {
+      const response = await fetch(`${BASE_URL}classroom/get_students_by_class/?class_id=${classId}`, {
+        headers: { Authorization: `Bearer ${user?.uid}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        const selected = classList.find(cls => cls.id === classId);
+        if (selected) {
+          setSelectedClass({ ...selected, students: data });
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi fetch học sinh:', err);
+    }
+  };
+  const fetchParentContacts = async () => {
+    if (!user?.uid) return;
+    try {
+      const response = await fetch(`${BASE_URL}contact/get_parents/?teacher_id=${user?.uid}`, {
+        headers: {
+          Authorization: `Bearer ${user?.uid}`
+        }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setContacts(data); // Giả sử backend trả mảng ParentContact
+      } else {
+        console.error('Lỗi lấy danh sách phụ huynh:', data);
+      }
+    } catch (error) {
+      console.error('Lỗi fetch get_parents:', error);
+    }
+  };
+
+  const saveParentInfo = async (newContact: ParentContact) => {
+    try {
+      const response = await fetch(`${BASE_URL}contact/save_parent/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.uid}`
+        },
+        body: JSON.stringify({
+          teacher_id: user?.uid,
+          student_id: selectedStudent?.id,
+          full_name: newContact.parentName,
+          email: newContact.email,
+          phone: newContact.phone
+        })
+      });
+      const result = await response.json();
+      if (response.ok) {
+        Alert.alert('✅ Thành công', 'Đã lưu liên hệ phụ huynh');
+        fetchParentContacts(); // Refresh danh sách
+      } else {
+        Alert.alert('❌ Lỗi', result?.error || 'Không xác định');
+      }
+    } catch (err) {
+      console.error('Lỗi lưu phụ huynh:', err);
+      Alert.alert('❌ Lỗi kết nối tới máy chủ');
+    }
+  };
 
   const handleAddContact = () => {
+    if (!selectedStudent) {
+      Alert.alert('Lỗi', 'Vui lòng chọn học sinh');
+      return;
+    }
+
     if (!parentName || !email || !phone || !studentName || !studentClass) {
       Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
       return;
@@ -84,12 +166,12 @@ const AddContactScreen: React.FC = () => {
       phone,
       studentName,
       studentClass,
-      relationship: 'Phụ huynh' // Mặc định
+      relationship: 'Phụ huynh'
     };
 
-    setContacts([...contacts, newContact]);
+    saveParentInfo(newContact);
     resetForm();
-    Alert.alert('Thành công', 'Đã thêm liên hệ phụ huynh mới');
+
   };
 
   const resetForm = () => {
@@ -98,23 +180,21 @@ const AddContactScreen: React.FC = () => {
     setPhone('');
     setStudentName('');
     setStudentClass('');
+    setSelectedClass(null);
+    setSelectedStudent(null);
   };
 
   const handleDeleteContact = (id: string) => {
-    Alert.alert(
-      'Xác nhận',
-      'Bạn có chắc muốn xóa liên hệ này?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: () => {
-            setContacts(contacts.filter(contact => contact.id !== id));
-          }
+    Alert.alert('Xác nhận', 'Bạn có chắc muốn xóa liên hệ này?', [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: () => {
+          setContacts(contacts.filter(contact => contact.id !== id));
         }
-      ]
-    );
+      }
+    ]);
   };
 
   return (
@@ -156,21 +236,47 @@ const AddContactScreen: React.FC = () => {
 
         <Text style={styles.sectionTitle}>Thông tin học sinh</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Họ tên học sinh"
-          value={studentName}
-          onChangeText={setStudentName}
-        />
+        <ScrollView horizontal>
+          {classList.map(cls => (
+            <TouchableOpacity
+              key={cls.id}
+              onPress={() => fetchStudentsInClass(cls.id)}
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                backgroundColor: selectedClass?.id === cls.id ? '#0066CC' : '#EEE',
+                borderRadius: 8,
+                marginRight: 10
+              }}
+            >
+              <Text style={{ color: selectedClass?.id === cls.id ? '#FFF' : '#000' }}>{cls.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-        <View style={styles.classPickerContainer}>
-          <TextInput
-            style={[styles.input, { flex: 1 }]}
-            placeholder="Lớp"
-            value={studentClass}
-            onChangeText={setStudentClass}
-          />
-        </View>
+        {selectedClass && (
+          <ScrollView horizontal style={{ marginVertical: 10 }}>
+            {selectedClass.students.map(st => (
+              <TouchableOpacity
+                key={st.id}
+                onPress={() => {
+                  setSelectedStudent(st);
+                  setStudentName(st.name);
+                  setStudentClass(selectedClass.name);
+                }}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  backgroundColor: selectedStudent?.id === st.id ? '#1E88E5' : '#EEE',
+                  borderRadius: 8,
+                  marginRight: 10
+                }}
+              >
+                <Text style={{ color: selectedStudent?.id === st.id ? '#FFF' : '#000' }}>{st.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
 
         <TouchableOpacity style={styles.addButton} onPress={handleAddContact}>
           <Text style={styles.addButtonText}>Thêm liên hệ</Text>
@@ -188,10 +294,7 @@ const AddContactScreen: React.FC = () => {
               <Text style={styles.contactDetail}>Email: {item.email}</Text>
               <Text style={styles.contactDetail}>Điện thoại: {item.phone}</Text>
             </View>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => handleDeleteContact(item.id)}
-            >
+            <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteContact(item.id)}>
               <FontAwesome name="trash" size={20} color="#D92D20" />
             </TouchableOpacity>
           </View>
