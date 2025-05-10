@@ -20,6 +20,111 @@ logging.basicConfig(level=logging.INFO)
 SECRET_KEY = settings.SECRET_KEY
 
 @csrf_exempt
+def forgot_password_send_otp(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            phone = data.get("phone")
+
+            if not phone:
+                return JsonResponse({"error": "Số điện thoại không được để trống"}, status=400)
+
+            try:
+                user = User.objects.get(phone=phone)
+            except User.DoesNotExist:
+                return JsonResponse({"error": "Không tìm thấy người dùng với số điện thoại này"}, status=404)
+
+            otp_code = str(random.randint(100000, 999999))
+            cache.set(f"otp_reset:{phone}", otp_code, timeout=300)  # 5 phút
+
+            # Gửi OTP: demo bằng log
+            logger.info(f"OTP đặt lại mật khẩu cho {phone} là {otp_code}")
+
+            # Thực tế nên tích hợp SMS API như Twilio/Viettel/VnTelecom ở đây
+
+            return JsonResponse({"message": "Đã gửi mã OTP đến số điện thoại"})
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+    return JsonResponse({"error": "Phương thức không hợp lệ"}, status=405)
+
+@csrf_exempt
+def forgot_password_reset(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            phone = data.get("phone")
+            otp = data.get("otp")
+            new_password = data.get("new_password")
+
+            if not phone or not otp or not new_password:
+                return JsonResponse({"error": "Thiếu thông tin"}, status=400)
+
+            cached_otp = cache.get(f"otp_reset:{phone}")
+            if not cached_otp or cached_otp != otp:
+                return JsonResponse({"error": "Mã OTP không hợp lệ hoặc đã hết hạn"}, status=400)
+
+            try:
+                user = User.objects.get(phone=phone)
+            except User.DoesNotExist:
+                return JsonResponse({"error": "Không tìm thấy người dùng"}, status=404)
+
+            user.password_hash = new_password
+            user.save()
+            cache.delete(f"otp_reset:{phone}")
+
+            return JsonResponse({"message": "Đặt lại mật khẩu thành công"})
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+    return JsonResponse({"error": "Phương thức không hợp lệ"}, status=405)
+
+@csrf_exempt
+def change_password(request):
+    if request.method == "POST":
+        try:
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Bearer "):
+                return JsonResponse({"error": "Thiếu token hoặc định dạng sai"}, status=401)
+
+            token = auth_header.split(" ")[1]
+            try:
+                decoded_token = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+                user_id = decoded_token["user_id"]
+            except jwt.ExpiredSignatureError:
+                return JsonResponse({"error": "Token đã hết hạn"}, status=401)
+            except jwt.InvalidTokenError:
+                return JsonResponse({"error": "Token không hợp lệ"}, status=401)
+
+            data = json.loads(request.body)
+            old_password = data.get("old_password", "").strip()
+            new_password = data.get("new_password", "").strip()
+
+            if not old_password or not new_password:
+                return JsonResponse({"error": "Thiếu mật khẩu cũ hoặc mới"}, status=400)
+
+            # Tìm user trong database
+            try:
+                user = User.objects.get(uid=user_id)
+            except User.DoesNotExist:
+                return JsonResponse({"error": "Không tìm thấy người dùng"}, status=404)
+
+            # Kiểm tra mật khẩu cũ
+            if user.password_hash != old_password:
+                return JsonResponse({"error": "Mật khẩu cũ không đúng"}, status=401)
+
+            # Cập nhật mật khẩu mới
+            user.password_hash = new_password
+            user.save()
+
+            return JsonResponse({"message": "Đổi mật khẩu thành công"})
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Phương thức không hợp lệ"}, status=405)
+
+@csrf_exempt
 def send_otp(request):
     if request.method == "POST":
         try:
@@ -115,8 +220,6 @@ def verify_otp(request):
 
     return JsonResponse({"error": "Phương thức không hợp lệ"}, status=405)
 
-
-
 @csrf_exempt
 def facebook_login(request):
     if request.method == "POST":
@@ -169,9 +272,6 @@ def facebook_login(request):
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Invalid request"}, status=400)
-
-
-
 
 @csrf_exempt
 def google_login(request):
@@ -285,7 +385,6 @@ def form_register(request):
 
     return JsonResponse({"error": "Invalid request"}, status=400)
 
-
 @csrf_exempt
 def form_login(request):
     if request.method == "POST":
@@ -334,8 +433,6 @@ def form_login(request):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Invalid request"}, status=400)
-
-
 
 @csrf_exempt
 def verify_token(request):

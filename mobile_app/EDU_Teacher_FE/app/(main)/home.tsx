@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useUser } from "../contexts/UserContext";
@@ -14,6 +14,10 @@ const HomeScreen: React.FC = () => {
 
   const handleChatbotPress = () => {
     router.push('../features/chat_bot/ChatbotScreen');
+  };
+
+  const handleStatisticsPress = () => {
+    router.push('../features/statistics/StatisticsScreen');
   };
 
   return (

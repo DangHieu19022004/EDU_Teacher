@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.urls import include, path
 from regex import T
 
-from .views import google_login, verify_token, facebook_login, form_login, form_register, send_otp, verify_otp
+from .views import google_login, verify_token, facebook_login, form_login, form_register, send_otp, verify_otp, change_password
 
 urlpatterns = [
     path('googlelogin/', google_login, name='google_login'),
@@ -13,4 +13,5 @@ urlpatterns = [
     path('verify-token/', verify_token, name='verify_token'),
     path("send-otp/", send_otp, name="send_otp"),
     path("verify-otp/", verify_otp, name="verify_otp"),
+    path("change-password/", change_password, name="change_password"),
 ]
