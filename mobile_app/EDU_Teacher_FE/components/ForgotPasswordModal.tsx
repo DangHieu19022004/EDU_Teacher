@@ -7,9 +7,10 @@ import SuccessModal from "./SuccessModal";
 interface ForgotPasswordModalProps {
   visible: boolean;
   onClose: () => void;
+  headerText: string; // Thêm headerText vào props
 }
 
-const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ visible, onClose }) => {
+const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ visible, onClose, headerText }) => {
   const [step, setStep] = useState<1 | 2>(1);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [successModalVisible, setSuccessModalVisible] = useState(false);
@@ -43,6 +44,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ visible, onCl
               <PhoneInputStep
                 onSubmit={handlePhoneSubmit}
                 onClose={onClose}
+                headerText={headerText} // Truyền headerText xuống PhoneInputStep
               />
             ) : (
               <ResetPasswordStep

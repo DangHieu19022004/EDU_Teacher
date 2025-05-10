@@ -11,7 +11,6 @@ import { BASE_URL } from "@/constants/Config";
 import ForgotPasswordModal from "../../components/ForgotPasswordModal";
 import LoadingModal from "../../components/LoadingModal";
 
-
 GoogleSignin.configure({
   webClientId: "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
@@ -28,74 +27,12 @@ const LoginScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
 
-  // const [isOTPMode, setIsOTPMode] = useState(false);       // bật/tắt chế độ OTP
-  // const [phoneNumber, setPhoneNumber] = useState("");       // lưu số điện thoại
-  // const [confirmation, setConfirmation] = useState(null);   // đối tượng xác minh
-  // const [otpCode, setOtpCode] = useState("");               // mã OTP nhập từ người dùng
-
-  // const sendOTP = async () => {
-  //   try {
-  //     setIsLoading(true);
-
-  //     let input = ID.trim().replace(/\s+/g, "");
-
-  //     // Nếu người dùng nhập 032xxxxxxx → tự đổi thành +8432xxxxxxx
-  //     if (input.startsWith("0")) {
-  //       input = "+84" + input.slice(1);
-  //     }
-
-  //     // Nếu không có +84 hoặc không đúng định dạng
-  //     const regex = /^\+84[1-9][0-9]{8}$/;
-  //     if (!regex.test(input)) {
-  //       Alert.alert("Lỗi", "Số điện thoại không hợp lệ. Vui lòng nhập đúng định dạng!");
-  //       setIsLoading(false);
-  //       return;
-  //     }
-
-  //     const confirm = await auth().signInWithPhoneNumber(input);
-  //     setConfirmation(confirm);
-  //     Alert.alert("Thông báo", "OTP đã được gửi về số điện thoại!");
-  //   } catch (error) {
-  //     Alert.alert("Lỗi gửi OTP", error.message);
-  //     console.error("OTP Error:", error);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
-  // const verifyOTP = async () => {
-  //   try {
-  //     setIsLoading(true);
-  //     await confirmation.confirm(otpCode);
-
-  //     const firebaseUser = auth().currentUser;
-  //     const token = await firebaseUser.getIdToken();
-
-  //     await AsyncStorage.setItem("access_token", token);
-
-  //     const isFirstTime = await checkFirstTimeLogin(firebaseUser.uid);
-  //     if (isFirstTime) {
-  //       router.replace("/(auth)/intro");
-  //     } else {
-  //       router.replace("/(main)/home");
-  //     }
-  //   } catch (error) {
-  //     Alert.alert("Lỗi xác minh", "Mã OTP sai hoặc đã hết hạn.");
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
-
-
-  // Kiểm tra xem đây có phải là lần đăng nhập đầu tiên không
   const checkFirstTimeLogin = async (userId: string) => {
     try {
       const firstTimeKey = `firstTime_${userId}`;
       const isFirstTime = await AsyncStorage.getItem(firstTimeKey);
 
       if (isFirstTime === null) {
-        // Đây là lần đăng nhập đầu tiên
         await AsyncStorage.setItem(firstTimeKey, 'false');
         return true;
       }
@@ -106,7 +43,6 @@ const LoginScreen = () => {
     }
   };
 
-  // Validate ID (email or phone number)
   const validateID = async () => {
     const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
     const phoneRegex = /^(03|09)\d{8}$/;
@@ -141,13 +77,11 @@ const LoginScreen = () => {
         setIsLoading(false);
       }
     } else {
-      router.replace('/(main)/home');
+      // router.replace('/(main)/home');
       Alert.alert("Lỗi", "Vui lòng nhập email hoặc số điện thoại hợp lệ!");
     }
   };
 
-
-  // Google Sign-In
   async function onGoogleButtonPress() {
     await AsyncStorage.removeItem("fb_uid");
     await AsyncStorage.removeItem("access_token");
@@ -180,7 +114,6 @@ const LoginScreen = () => {
         if (data.access_token && response.ok) {
           await AsyncStorage.setItem("access_token", data.access_token);
 
-          // Kiểm tra lần đầu đăng nhập
           const isFirstTime = await checkFirstTimeLogin(firebaseUser.uid);
 
           if (isFirstTime) {
@@ -206,7 +139,6 @@ const LoginScreen = () => {
     }
   }
 
-  // Facebook Login
   async function onFacebookButtonPress() {
     await AsyncStorage.removeItem("fb_uid");
     await AsyncStorage.removeItem("access_token");
@@ -246,7 +178,6 @@ const LoginScreen = () => {
       if (response.ok && data.access_token) {
         await AsyncStorage.setItem("fb_uid", data.access_token);
 
-        // Kiểm tra lần đầu đăng nhập
         const isFirstTime = await checkFirstTimeLogin(userData.uid);
 
         setTimeout(() => {
@@ -269,7 +200,6 @@ const LoginScreen = () => {
     setIsLoading(false);
   }
 
-  // Handle auth state changes
   function onAuthStateChanged(user: any) {
     setUser(user);
     if (initializing) setInitializing(false);
@@ -277,132 +207,95 @@ const LoginScreen = () => {
 
   useEffect(() => {
     const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
-    return subscriber; // unsubscribe on unmount
+    return subscriber;
   }, []);
 
   return (
     <KeyboardAvoidingView
-    style={{ flex: 1 }}
-    behavior={Platform.OS === "ios" ? "padding" : undefined}
-  >
-    <ScrollView
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      {/* Forgot Password Modal */}
-
-      <ForgotPasswordModal
-        visible={forgotPasswordVisible}
-        onClose={() => setForgotPasswordVisible(false)}
-      />
-
-      <LoadingModal visible={isLoading} />
-
-      {/* Status Bar */}
-      <View style={styles.statusBar}></View>
-
-      {/* Logo */}
-      <Image source={require("../../assets/images/logo.png")} style={styles.logo} />
-      <Text style={styles.slogan}>
-        Số hóa học bạ, kết nối tri thức, nâng bước tương lai
-      </Text>
-
-
-      {/* Chế độ OTP */}
-      {/* <TouchableOpacity onPress={() => setIsOTPMode(!isOTPMode)}>
-        <Text style={{ color: "#2F80ED", marginVertical: 10, fontWeight: "bold" }}>
-          {isOTPMode ? "← Quay lại đăng nhập Email/SĐT" : "Đăng nhập bằng SĐT + OTP"}
-        </Text>
-      </TouchableOpacity> */}
-
-
-
-
-
-
-
-      {/* Form đăng nhập */}
-      <Text style={styles.title}>Đăng nhập</Text>
-
-      <View style={styles.inputContainer}>
-        <Ionicons name="mail-outline" size={20} color="#888" style={styles.icon} />
-        <TextInput
-          placeholder="Email / Số điện thoại"
-          style={styles.input}
-          value={ID}
-          keyboardType="email-address"
-          onChangeText={setID}
-          autoCapitalize="none"
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <ForgotPasswordModal
+          visible={forgotPasswordVisible}
+          onClose={() => setForgotPasswordVisible(false)}
+          headerText="Quên mật khẩu"
         />
-      </View>
 
-      <View style={styles.inputContainer}>
-  <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.icon} />
-  <TextInput
-    placeholder="Mật khẩu"
-    secureTextEntry={!showPassword}
-    style={styles.input}
-    value={password}
-    onChangeText={setPassword}
-    autoCapitalize="none"
-  />
-  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-    <Ionicons
-      name={showPassword ? "eye-outline" : "eye-off-outline"}
-      size={20}
-      color="#888"
-      style={styles.eyeIcon}
-    />
-  </TouchableOpacity>
-</View>
+        <LoadingModal visible={isLoading} />
 
-{/* {isOTPMode && confirmation && (
-  <View style={styles.inputContainer}>
-    <Ionicons name="keypad-outline" size={20} color="#888" style={styles.icon} />
-    <TextInput
-      placeholder="Nhập mã OTP"
-      value={otpCode}
-      onChangeText={setOtpCode}
-      keyboardType="number-pad"
-      style={styles.input}
-      blurOnSubmit={false}
-    />
-  </View>
-)} */}
+        <View style={styles.statusBar}></View>
 
+        <Image source={require("../../assets/images/logo.png")} style={styles.logo} />
+        <Text style={styles.slogan}>
+          Số hóa học bạ, kết nối tri thức, nâng bước tương lai
+        </Text>
 
-      <TouchableOpacity onPress={() => setForgotPasswordVisible(true)}>
-        <Text style={styles.forgotPassword}>Quên mật khẩu?</Text>
-      </TouchableOpacity>
+        <Text style={styles.title}>Đăng nhập</Text>
 
-      {/* Button Đăng nhập */}
-      <TouchableOpacity style={styles.loginButton} onPress={validateID}>
-        <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} >
-          <Text style={styles.loginText}>Đăng nhập</Text>
-        </LinearGradient>
-      </TouchableOpacity>
+        <View style={styles.inputContainer}>
+          <Ionicons name="mail-outline" size={20} color="#888" style={styles.icon} />
+          <TextInput
+            placeholder="Email / Số điện thoại"
+            style={styles.input}
+            value={ID}
+            keyboardType="email-address"
+            onChangeText={setID}
+            autoCapitalize="none"
+          />
+        </View>
 
-      {/* Đăng nhập bằng mạng xã hội */}
-      <View style={styles.socialContainer}>
-        <Text style={styles.orText}>Tiếp tục với</Text>
-        <TouchableOpacity onPress={onFacebookButtonPress}>
-          <FontAwesome name="facebook" size={30} color="#1877F2" />
+        <View style={styles.inputContainer}>
+          <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.icon} />
+          <TextInput
+            placeholder="Mật khẩu"
+            secureTextEntry={!showPassword}
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            autoCapitalize="none"
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons
+              name={showPassword ? "eye-outline" : "eye-off-outline"}
+              size={20}
+              color="#888"
+              style={styles.eyeIcon}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity onPress={() => setForgotPasswordVisible(true)}>
+          <Text style={styles.forgotPassword}>Quên mật khẩu?</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onGoogleButtonPress}>
-          <FontAwesome name="google" size={30} color="#DB4437" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <FontAwesome name="instagram" size={30} color="#C13584" />
-        </TouchableOpacity>
-      </View>
 
-      {/* Đường kẻ ngang trên nút "Đăng ký" */}
-      <View style={styles.line} />
+        <TouchableOpacity style={styles.loginButton} onPress={validateID}>
+          <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+            <Text style={styles.loginText}>Đăng nhập</Text>
+          </LinearGradient>
+        </TouchableOpacity>
 
-      {/* Đăng ký */}
-      <Text style={styles.registerText}>Hoặc <TouchableOpacity onPress={() => router.push('/(auth)/register')}><Text style={styles.registerLink}>Đăng ký</Text></TouchableOpacity> </Text>
+        <View style={styles.socialContainer}>
+          <Text style={styles.orText}>Tiếp tục với</Text>
+          <TouchableOpacity onPress={onFacebookButtonPress}>
+            <FontAwesome name="facebook" size={30} color="#1877F2" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onGoogleButtonPress}>
+            <FontAwesome name="google" size={30} color="#DB4437" />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <FontAwesome name="instagram" size={30} color="#C13584" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.line} />
+
+        <Text style={styles.registerText}>Hoặc <TouchableOpacity onPress={() => router.push('/(auth)/register')}><Text style={styles.registerLink}>Đăng ký</Text></TouchableOpacity> </Text>
       </ScrollView>
-  </KeyboardAvoidingView>
+    </KeyboardAvoidingView>
   );
 };
 

@@ -5,9 +5,10 @@ import { LinearGradient } from "expo-linear-gradient";
 interface PhoneInputStepProps {
   onSubmit: (phone: string) => void;
   onClose: () => void;
+  headerText: string; // Thêm prop headerText
 }
 
-const PhoneInputStep: React.FC<PhoneInputStepProps> = ({ onSubmit, onClose }) => {
+const PhoneInputStep: React.FC<PhoneInputStepProps> = ({ onSubmit, onClose, headerText }) => {
   const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,7 +34,7 @@ const PhoneInputStep: React.FC<PhoneInputStepProps> = ({ onSubmit, onClose }) =>
 
   return (
     <View style={styles.content}>
-      <Text style={styles.title}>Quên mật khẩu</Text>
+      <Text style={styles.title}>{headerText}</Text>
       <Text style={styles.subtitle}>Nhập số điện thoại để nhận mã xác nhận</Text>
 
       <View style={styles.inputContainer}>
@@ -47,23 +48,17 @@ const PhoneInputStep: React.FC<PhoneInputStepProps> = ({ onSubmit, onClose }) =>
         />
       </View>
 
-    <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} >
-      <TouchableOpacity
-        onPress={handleSubmit}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
+      <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+        <TouchableOpacity onPress={handleSubmit} disabled={isLoading}>
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
             <Text style={styles.submitButtonText}>Gửi mã xác nhận</Text>
-        )}
-      </TouchableOpacity>
-    </LinearGradient>
+          )}
+        </TouchableOpacity>
+      </LinearGradient>
 
-      <TouchableOpacity
-        style={styles.cancelButton}
-        onPress={onClose}
-      >
+      <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
         <Text style={styles.cancelButtonText}>Hủy bỏ</Text>
       </TouchableOpacity>
     </View>
