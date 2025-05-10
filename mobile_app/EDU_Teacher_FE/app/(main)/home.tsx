@@ -24,13 +24,7 @@ const HomeScreen: React.FC = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('../navigation/menu')}>
-          <FontAwesome name="bars" size={24} color="black" />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Trang chủ</Text>
-        <TouchableOpacity>
-          <Image source={{ uri: user?.photoURL }} style={styles.logo} />
-        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -96,6 +90,8 @@ const HomeScreen: React.FC = () => {
           </View>
         </View>
 
+        <View style={styles.empty}></View>
+
       </ScrollView>
 
       {/* Chatbot Button */}
@@ -109,33 +105,23 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F8F8' },
   header: {
-    height: 100,
-    flexDirection: 'row',
+    backgroundColor: '#0066CC',
+    padding: 20,
+    paddingTop: 50,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 40,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: 'white',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
-  headerTitle: { fontSize: 25, fontWeight: 'bold' },
-  logo: { width: 30, height: 30, borderRadius: 15 },
+  headerTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   featureSection: {
     backgroundColor: '#E8E8E8',
     marginRight: 40,
     borderBottomRightRadius: 20,
     borderTopRightRadius: 20,
     padding: 15,
-    marginTop: 120,
+    marginTop: 20,
     paddingVertical: 20,
   },
   sectionTitle: { fontSize: 25, fontWeight: 'bold', textAlign: 'center' },
@@ -161,7 +147,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignItems: 'center',
   },
-
   sideButtonText: { color: 'white', fontSize: 12, marginTop: 5 },
   chatbotButton: {
     position: 'absolute',
@@ -230,6 +215,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 10,
     alignItems: 'center',
+  },
+  empty:{
+    height:100,
   },
 });
 

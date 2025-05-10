@@ -40,13 +40,13 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-
   return (
     <View style={styles.container}>
-      <View style={styles.statusBar}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Cài đặt</Text>
       </View>
 
-      <Text style={styles.title}>Cài đặt</Text>
+      <View style={styles.optionContainer}>
       <View style={styles.logoContainer}>
         <Image source={require('../../assets/images/logo.png')} style={styles.logo} resizeMode="contain" />
       </View>
@@ -67,17 +67,27 @@ const SettingsScreen: React.FC = () => {
         <FontAwesome name="sign-out" size={20} color="white"/>
         <Text style={styles.logoutText}> Đăng xuất</Text>
       </TouchableOpacity>
-
-
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingTop: 40, paddingHorizontal: 20 },
-  title: { fontSize: 30, fontWeight: 'bold', textAlign: 'center' },
+  container: { flex: 1, backgroundColor: '#fff' },
+  header: {
+    backgroundColor: '#0066CC',
+    padding: 20,
+    paddingTop: 50,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   logoContainer: { alignItems: 'center', marginVertical: 20 },
   logo: { width: 300, height: 150 },
+  optionContainer: {marginHorizontal: 20},
   optionRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 15, backgroundColor: 'white', marginBottom: 10, justifyContent: 'space-between', borderWidth: 1, borderColor: '#A0A0A0' },
   optionRowGeneral: { flexDirection: 'row', alignItems: 'center', padding: 10, paddingVertical: 20 , borderRadius: 15, backgroundColor: 'white', marginBottom: 10, justifyContent: 'space-between', borderWidth: 1, borderColor: '#A0A0A0' },
   icon: { marginRight: 10, color: '#1E88E5' },
@@ -86,7 +96,6 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
   logoutButton: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#D32F2F', padding: 15, borderRadius: 15 },
   logoutText: { fontSize: 16, color: 'white' },
-  statusBar: {height: 30, backgroundColor: 'white'},
 });
 
 export default SettingsScreen;

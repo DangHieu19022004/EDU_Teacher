@@ -8,6 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useRouter } from "expo-router";
 import { BASE_URL } from "@/constants/Config";
+import ForgotPasswordModal from "../../components/ForgotPasswordModal";
+import LoadingModal from "../../components/LoadingModal";
 
 
 GoogleSignin.configure({
@@ -24,6 +26,7 @@ const LoginScreen = () => {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState<auth.User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
 
   // const [isOTPMode, setIsOTPMode] = useState(false);       // bật/tắt chế độ OTP
   // const [phoneNumber, setPhoneNumber] = useState("");       // lưu số điện thoại
@@ -134,7 +137,6 @@ const LoginScreen = () => {
         }
       } catch (error) {
         Alert.alert("Lỗi", "Đã có lỗi xảy ra khi đăng nhập");
-        router.replace('/(main)/home');
       } finally {
         setIsLoading(false);
       }
@@ -287,20 +289,14 @@ const LoginScreen = () => {
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
-      {/* Loading Modal */}
-      <Modal
-        transparent
-        animationType="fade"
-        visible={isLoading}
-        onRequestClose={() => setIsLoading(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <ActivityIndicator size="large" color="#32ADE6" />
-            <Text style={styles.loadingText}>Đang xử lý...</Text>
-          </View>
-        </View>
-      </Modal>
+      {/* Forgot Password Modal */}
+
+      <ForgotPasswordModal
+        visible={forgotPasswordVisible}
+        onClose={() => setForgotPasswordVisible(false)}
+      />
+
+      <LoadingModal visible={isLoading} />
 
       {/* Status Bar */}
       <View style={styles.statusBar}></View>
@@ -375,7 +371,7 @@ const LoginScreen = () => {
 )} */}
 
 
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => setForgotPasswordVisible(true)}>
         <Text style={styles.forgotPassword}>Quên mật khẩu?</Text>
       </TouchableOpacity>
 
@@ -509,24 +505,6 @@ const styles = StyleSheet.create({
     marginBottom: -4,
     color: "#2F80ED",
     textDecorationLine: "underline",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#32ADE6",
-    fontWeight: "bold",
   },
 });
 
