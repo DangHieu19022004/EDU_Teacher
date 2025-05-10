@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, FlatList, Alert, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, FlatList, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import sampleStudentData from '../../test_data/studentData.json';
 import { BASE_URL } from '@/constants/Config';
+import LoadingModal from '../../../components/LoadingModal';
 
 interface StudentItem {
   id: string;
@@ -245,13 +246,7 @@ const PhotoCaptureScreen: React.FC = () => {
         <Text style={styles.nextButtonText}>Xem bảng điểm</Text>
       </TouchableOpacity>
 
-      {isProcessing && (
-        <Modal transparent animationType="fade" visible={isProcessing}>
-          <View style={styles.modalOverlay}>
-            <ActivityIndicator size="large" color="#32ADE6" />
-          </View>
-        </Modal>
-      )}
+      <LoadingModal visible={isProcessing} />
     </View>
   );
 };
@@ -269,7 +264,6 @@ const styles = StyleSheet.create({
   deleteButton: { position: 'absolute', top: 5, right: 5, backgroundColor: 'red', borderRadius: 20, padding: 5 },
   typeSwitchContainer: { alignItems: 'center', marginTop: 5 },
   typeSwitchText: { color: '#1E88E5', fontWeight: 'bold' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
 });
 
 export default PhotoCaptureScreen;
