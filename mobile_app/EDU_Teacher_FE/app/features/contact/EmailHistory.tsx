@@ -2,42 +2,56 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { BASE_URL } from "@/constants/Config";
+import { useUser } from "../../contexts/UserContext";
+import { useEffect } from "react";
 
-interface EmailHistory {
+interface ScheduledEmail {
   id: string;
   subject: string;
   recipients: string;
-  date: string;
-  status: 'success' | 'failed';
+  message: string;
+  scheduledDate: Date;
+  status: "pending" | "sent";
 }
 
 const EmailHistoryScreen: React.FC = () => {
   const router = useRouter();
+  const { user } = useUser();
+  const [emails, setEmails] = React.useState<ScheduledEmail[]>([]);
 
-  const emailHistory: EmailHistory[] = [
-    {
-      id: '1',
-      subject: 'Thông báo họp phụ huynh',
-      recipients: 'a.nguyen@example.com, b.tran@example.com',
-      date: '15/06/2023 14:05',
-      status: 'success',
-    },
-    {
-      id: '2',
-      subject: 'Kết quả học tập học kỳ I',
-      recipients: 'parents@example.com',
-      date: '20/06/2023 09:02',
-      status: 'success',
-    },
-    {
-      id: '3',
-      subject: 'Thông báo nghỉ học',
-      recipients: 'invalid@example.com',
-      date: '22/06/2023 08:30',
-      status: 'failed',
-    },
-  ];
+  useEffect(() => {
+      if (!user?.uid) return;
+      fetchScheduledEmails();
+    }, []);
 
+  const fetchScheduledEmails = () => {
+      fetch(`${BASE_URL}contact/get_scheduled_emails/?teacher_id=${user?.uid}`, {
+        headers: { Authorization: `Bearer ${user?.uid}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          const formatted: ScheduledEmail[] = data.map((item: any) => ({
+            id: item.id,
+            subject: item.subject,
+            recipients: item.recipients,
+            message: item.message,
+            scheduledDate: new Date(item.scheduledDate),
+            status: item.status,
+          }));
+          setEmails(formatted);
+        })
+        .catch((err) => console.error("Lỗi lấy lịch email:", err));
+    };
+  const formatDate = (date: Date) => {
+    return date.toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -49,21 +63,21 @@ const EmailHistoryScreen: React.FC = () => {
       </View>
 
       <FlatList
-        data={emailHistory}
+        data={emails}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.emailItem}>
             <View style={styles.emailHeader}>
               <Text style={styles.emailSubject}>{item.subject}</Text>
               <FontAwesome
-                name={item.status === 'success' ? 'check-circle' : 'times-circle'}
+                name={item.status === 'sent' ? 'check-circle' : 'times-circle'}
                 size={20}
-                color={item.status === 'success' ? '#38A169' : '#D92D20'}
+                color={item.status === 'sent' ? '#38A169' : '#D92D20'}
               />
             </View>
             <Text style={styles.emailRecipients}>{item.recipients}</Text>
-            <Text style={styles.emailDate}>{item.date}</Text>
-            {item.status === 'failed' && (
+            <Text style={styles.emailDate}>{formatDate(item.scheduledDate)}</Text>
+            {item.status === 'pending' && (
               <TouchableOpacity style={styles.retryButton}>
                 <Text style={styles.retryButtonText}>Thử gửi lại</Text>
               </TouchableOpacity>

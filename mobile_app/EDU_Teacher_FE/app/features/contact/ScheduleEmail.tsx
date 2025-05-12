@@ -232,6 +232,7 @@ const ScheduleEmailScreen: React.FC = () => {
     setDate(new Date());
     setEditingEmail(null);
   };
+
   const formatDate = (date: Date) => {
     return date.toLocaleString("vi-VN", {
       day: "2-digit",
