@@ -10,6 +10,9 @@ from Contact.models import EmailSchedule
 from django.utils import timezone
 from bson import ObjectId
 
+@api_view(['GET'])
+def get_template(request):
+    return "hello"
 
 @api_view(['POST'])
 def delete_email_schedule(request):
