@@ -5,12 +5,13 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LoginManager } from 'react-native-fbsdk-next';
 import auth from "@react-native-firebase/auth";
-import ForgotPasswordModal from "../../components/ForgotPasswordModal";
+import ChangePasswordModal from "../../components/ChangePasswordModal";
 import MainHeader from '@/components/MainHeader';
+import SuccessModal from '@/components/SuccessModal';
 
 const SettingsScreen: React.FC = () => {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
-  const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
+  const [changePasswordVisible, setChangePasswordVisible] = useState(false);
   const router = useRouter();
 
   const toggleNotifications = () => setIsNotificationsEnabled(!isNotificationsEnabled);
@@ -43,10 +44,10 @@ const SettingsScreen: React.FC = () => {
     <View style={styles.container}>
       <MainHeader title="Cài đặt" />
 
-      <ForgotPasswordModal
-        visible={forgotPasswordVisible}
-        onClose={() => setForgotPasswordVisible(false)}
-        headerText="Đổi mật khẩu"
+      <ChangePasswordModal
+        visible={changePasswordVisible}
+        onClose={() => setChangePasswordVisible(false)}
+        headerText="Thay đổi mật khẩu"
       />
 
       <View style={styles.logoContainer}>
@@ -54,27 +55,27 @@ const SettingsScreen: React.FC = () => {
       </View>
 
       <View style={styles.optionContainer}>
-      <View style={styles.optionRow}>
-        <FontAwesome name="bell" size={20} color="#2F54EB" style={styles.icon} />
-        <Text style={styles.optionText}>Thông báo</Text>
-        <Switch value={isNotificationsEnabled} onValueChange={toggleNotifications} style={styles.switch} />
-      </View>
-      <Text style={styles.sectionTitle}>Chung</Text>
-      {[{ icon: 'globe', text: 'Ngôn ngữ' }, { icon: 'info-circle', text: 'Thông tin ứng dụng' }].map((item, i) => (
-        <TouchableOpacity key={i} style={styles.optionRowGeneral}>
-          <FontAwesome name={item.icon as any} size={20} color="#2F54EB" style={styles.icon} />
-          <Text style={styles.optionText}>{item.text}</Text>
+        <View style={styles.optionRow}>
+          <FontAwesome name="bell" size={20} color="#2F54EB" style={styles.icon} />
+          <Text style={styles.optionText}>Thông báo</Text>
+          <Switch value={isNotificationsEnabled} onValueChange={toggleNotifications} style={styles.switch} />
+        </View>
+        <Text style={styles.sectionTitle}>Chung</Text>
+        {[{ icon: 'globe', text: 'Ngôn ngữ' }, { icon: 'info-circle', text: 'Thông tin ứng dụng' }].map((item, i) => (
+          <TouchableOpacity key={i} style={styles.optionRowGeneral}>
+            <FontAwesome name={item.icon as any} size={20} color="#2F54EB" style={styles.icon} />
+            <Text style={styles.optionText}>{item.text}</Text>
+          </TouchableOpacity>
+        ))}
+        <Text style={styles.sectionTitle}>Khác</Text>
+        <TouchableOpacity style={styles.optionRowGeneral} onPress={() => setChangePasswordVisible(true)}>
+          <FontAwesome name="lock" size={20} color="#2F54EB" style={styles.icon} />
+          <Text style={styles.optionText}>Thay đổi mật khẩu</Text>
         </TouchableOpacity>
-      ))}
-      <Text style={styles.sectionTitle}>Khác</Text>
-      <TouchableOpacity style={styles.optionRowGeneral} onPress={() => setForgotPasswordVisible(true)}>
-        <FontAwesome name="lock" size={20} color="#2F54EB" style={styles.icon} />
-        <Text style={styles.optionText}>Đổi mật khẩu</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
-        <FontAwesome name="sign-out" size={20} color="white"/>
-        <Text style={styles.logoutText}>Đăng xuất</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
+          <FontAwesome name="sign-out" size={20} color="white"/>
+          <Text style={styles.logoutText}>Đăng xuất</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

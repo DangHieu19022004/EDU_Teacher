@@ -38,8 +38,12 @@ const ScheduleEmailScreen: React.FC = () => {
   const [subject, setSubject] = useState("");
   const [recipients, setRecipients] = useState("");
   const [message, setMessage] = useState("");
+
   const [date, setDate] = useState(new Date());
+  const [time, setTime] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
   const [emails, setEmails] = useState<ScheduledEmail[]>([]);
   const [editingEmail, setEditingEmail] = useState<ScheduledEmail | null>(null);
 
@@ -82,8 +86,21 @@ const ScheduleEmailScreen: React.FC = () => {
   const handleScheduleEmail = () => {
     if (!subject || !recipients || !message) {
       Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin");
+      console.log("Subject:", subject);
+      console.log("Recipients:", recipients);
+      console.log("Message:", message);
+      console.log("Date:", date);
+      console.log("Time:", time);
       return;
     }
+
+    const scheduledDateTime = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      time.getHours(),
+      time.getMinutes()
+    );
 
     if (editingEmail) {
       const payload = {
@@ -91,7 +108,7 @@ const ScheduleEmailScreen: React.FC = () => {
         subject,
         recipients,
         message,
-        scheduled_date: date.toISOString(),
+        scheduled_date: scheduledDateTime.toISOString(),
         status: editingEmail.status,
       };
 
@@ -123,7 +140,7 @@ const ScheduleEmailScreen: React.FC = () => {
         subject,
         recipient: recipients,
         message,
-        scheduled_time: date.toISOString(),
+        scheduled_time: scheduledDateTime.toISOString(),
         teacher_id: user?.uid,
       };
 
@@ -145,7 +162,7 @@ const ScheduleEmailScreen: React.FC = () => {
               subject,
               recipients,
               message,
-              scheduledDate: date,
+              scheduledDate: scheduledDateTime,
               status: "pending",
             };
             setEmails([...emails, newEmail]);
@@ -212,16 +229,24 @@ const ScheduleEmailScreen: React.FC = () => {
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === "android") {
-      if (event?.type === "dismissed") {
-        setShowDatePicker(false);
-        return;
-      }
+    if (event.type === "dismissed") {
       setShowDatePicker(false);
+      return;
     }
-
     if (selectedDate) {
+      setShowDatePicker(false);
       setDate(selectedDate);
+    }
+  };
+
+  const handleTimeChange = (event: any, selectedTime?: Date) => {
+    if (event.type === "dismissed") {
+      setShowTimePicker(false);
+      return;
+    }
+    if (selectedTime) {
+      setShowTimePicker(false);
+      setTime(selectedTime);
     }
   };
 
@@ -301,8 +326,17 @@ const ScheduleEmailScreen: React.FC = () => {
           onPress={() => setShowDatePicker(true)}
         >
           <FontAwesome name="calendar" size={20} color="#1E88E5" />
-          <Text style={styles.dateText}>{formatDate(date)}</Text>
+          <Text style={styles.dateText}>Ngày: {date.toLocaleDateString()}</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowTimePicker(true)}
+        >
+          <FontAwesome name="clock-o" size={20} color="#1E88E5" />
+          <Text style={styles.dateText}>Giờ: {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+        </TouchableOpacity>
+
 
         <View style={styles.buttonGroup}>
           {editingEmail && (
@@ -422,32 +456,21 @@ const ScheduleEmailScreen: React.FC = () => {
         }
       />
 
-      {Platform.OS === "ios" && showDatePicker && (
-        <Modal transparent={true} animationType="slide">
-          <View style={styles.datePickerContainer}>
-            <DateTimePicker
-              value={date}
-              mode="datetime"
-              display="spinner"
-              onChange={handleDateChange}
-              minimumDate={new Date()}
-            />
-            <TouchableOpacity
-              style={styles.datePickerClose}
-              onPress={() => setShowDatePicker(false)}
-            >
-              <Text style={styles.datePickerCloseText}>Đóng</Text>
-            </TouchableOpacity>
-          </View>
-        </Modal>
-      )}
       {Platform.OS === "android" && showDatePicker && (
+      <DateTimePicker
+        value={date}
+        mode="date"
+        display="default"
+        onChange={handleDateChange}
+        minimumDate={new Date()}
+      />
+      )}
+      {Platform.OS === "android" && showTimePicker && (
         <DateTimePicker
-          value={date}
-          mode="datetime"
+          value={time}
+          mode="time"
           display="default"
-          onChange={handleDateChange}
-          minimumDate={new Date()}
+          onChange={handleTimeChange}
         />
       )}
     </View>

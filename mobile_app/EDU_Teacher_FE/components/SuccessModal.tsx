@@ -47,6 +47,7 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   text: {
+    textAlign: "center",
     marginTop: 10,
     fontSize: 20,
     fontWeight: "bold",
