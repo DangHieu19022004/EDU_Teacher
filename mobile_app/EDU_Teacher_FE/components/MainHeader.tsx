@@ -36,10 +36,9 @@ const MainHeader: React.FC<MainHeaderProps> = ({ title }) => {
 
 const styles = StyleSheet.create({
   header: {
-    marginTop: 50,
     backgroundColor: '#0066CC',
     padding: 15,
-    paddingTop: 20,
+    paddingTop: 70,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
