@@ -17,3 +17,22 @@ class Parent(models.Model):
     def __str__(self):
         return f"{self.full_name} - {self.email} - {self.phone}"
 
+class EmailSchedule(models.Model):
+    _id = models.ObjectIdField(default=ObjectId, editable=False)
+
+    subject = models.CharField(max_length=255)
+    recipients = models.TextField()  # nhiều email, cách nhau bởi dấu phẩy
+    message = models.TextField()
+
+    scheduled_date = models.DateTimeField()
+    status = models.CharField(
+        max_length=20,
+        choices=[('pending', 'Pending'), ('sent', 'Sent')],
+        default='pending'
+    )
+
+    teacher_id = models.CharField(max_length=36)  # để lọc email theo giáo viên
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.subject} -> {self.recipients} ({self.status})"
