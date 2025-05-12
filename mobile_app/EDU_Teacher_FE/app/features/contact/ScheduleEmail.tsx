@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,21 +7,23 @@ import {
   StyleSheet,
   FlatList,
   Alert,
-  Modal,
+  Platform,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useEffect } from "react";
+import CheckBox from "@react-native-community/checkbox";
+import { Picker } from "@react-native-picker/picker";
 import { BASE_URL } from "@/constants/Config";
 import { useUser } from "../../contexts/UserContext";
-import { Platform } from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
 
 interface ParentReceiver {
   id: string;
   parentName: string;
   email: string;
   studentName: string;
+  className?: string;
 }
 
 interface ScheduledEmail {
@@ -35,20 +37,20 @@ interface ScheduledEmail {
 
 const ScheduleEmailScreen: React.FC = () => {
   const router = useRouter();
+  const { user } = useUser();
   const [subject, setSubject] = useState("");
-  const [recipients, setRecipients] = useState("");
+  const [recipients, setRecipients] = useState<string[]>([]);
   const [message, setMessage] = useState("");
-
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-
   const [emails, setEmails] = useState<ScheduledEmail[]>([]);
   const [editingEmail, setEditingEmail] = useState<ScheduledEmail | null>(null);
-
   const [parentList, setParentList] = useState<ParentReceiver[]>([]);
-  const { user } = useUser();
+  const [classList, setClassList] = useState<string[]>([]);
+  const [selectedClass, setSelectedClass] = useState<string | null>(null);
+  const [selectedEmailType, setSelectedEmailType] = useState<string>("báo cáo điểm");
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -56,7 +58,14 @@ const ScheduleEmailScreen: React.FC = () => {
       headers: { Authorization: `Bearer ${user.uid}` },
     })
       .then((res) => res.json())
-      .then((data) => setParentList(data))
+      .then((data: ParentReceiver[]) => {
+        setParentList(data);
+        const classes = Array.from(
+          new Set(data.map(item => item.className).filter(className => className != null))
+        ) as string[];
+        setClassList(classes);
+        if (classes.length > 0) setSelectedClass(classes[0]);
+      })
       .catch((err) => console.error("Lỗi lấy danh sách phụ huynh:", err));
   }, []);
 
@@ -64,6 +73,7 @@ const ScheduleEmailScreen: React.FC = () => {
     if (!user?.uid) return;
     fetchScheduledEmails();
   }, []);
+
   const fetchScheduledEmails = () => {
     fetch(`${BASE_URL}contact/get_scheduled_emails/?teacher_id=${user?.uid}`, {
       headers: { Authorization: `Bearer ${user?.uid}` },
@@ -84,13 +94,8 @@ const ScheduleEmailScreen: React.FC = () => {
   };
 
   const handleScheduleEmail = () => {
-    if (!subject || !recipients || !message) {
+    if (!subject || recipients.length === 0 || !message) {
       Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin");
-      console.log("Subject:", subject);
-      console.log("Recipients:", recipients);
-      console.log("Message:", message);
-      console.log("Date:", date);
-      console.log("Time:", time);
       return;
     }
 
@@ -106,7 +111,7 @@ const ScheduleEmailScreen: React.FC = () => {
       const payload = {
         id: editingEmail.id,
         subject,
-        recipients,
+        recipients: recipients.join(', '),
         message,
         scheduled_date: scheduledDateTime.toISOString(),
         status: editingEmail.status,
@@ -126,7 +131,7 @@ const ScheduleEmailScreen: React.FC = () => {
             Alert.alert("Lỗi", data.error);
           } else {
             Alert.alert("Thành công", "Đã cập nhật email");
-            fetchScheduledEmails(); // Load lại danh sách
+            fetchScheduledEmails();
             setEditingEmail(null);
             resetForm();
           }
@@ -138,7 +143,7 @@ const ScheduleEmailScreen: React.FC = () => {
     } else {
       const payload = {
         subject,
-        recipient: recipients,
+        recipient: recipients.join(', '),
         message,
         scheduled_time: scheduledDateTime.toISOString(),
         teacher_id: user?.uid,
@@ -158,9 +163,9 @@ const ScheduleEmailScreen: React.FC = () => {
             Alert.alert("Lỗi", data.error);
           } else {
             const newEmail: ScheduledEmail = {
-              id: data.email_id || Date.now().toString(), // _id trả về từ backend
+              id: data.email_id || Date.now().toString(),
               subject,
-              recipients,
+              recipients: recipients.join(', '),
               message,
               scheduledDate: scheduledDateTime,
               status: "pending",
@@ -175,7 +180,6 @@ const ScheduleEmailScreen: React.FC = () => {
           Alert.alert("Lỗi", "Không kết nối được máy chủ");
         });
     }
-    fetchScheduledEmails();
   };
 
   const handleEditEmail = (email: ScheduledEmail) => {
@@ -186,9 +190,10 @@ const ScheduleEmailScreen: React.FC = () => {
 
     setEditingEmail(email);
     setSubject(email.subject);
-    setRecipients(email.recipients);
+    setRecipients(email.recipients.split(', ').filter(email => email));
     setMessage(email.message);
     setDate(email.scheduledDate);
+    setTime(email.scheduledDate);
   };
 
   const handleDeleteEmail = (id: string) => {
@@ -211,7 +216,7 @@ const ScheduleEmailScreen: React.FC = () => {
               if (data.error) {
                 Alert.alert("Lỗi", data.error);
               } else {
-                Alert.alert("Thành công", "Đã xoá email");
+                Alert.alert("Thành công", "Đã xóa email");
                 setEmails((prev) => prev.filter((email) => email.id !== id));
                 if (editingEmail?.id === id) {
                   setEditingEmail(null);
@@ -220,12 +225,57 @@ const ScheduleEmailScreen: React.FC = () => {
               }
             })
             .catch((err) => {
-              console.error("Lỗi xoá email:", err);
-              Alert.alert("Lỗi kết nối máy chủ");
+              console.error("Lỗi xóa email:", err);
+              Alert.alert("Lỗi", "Không kết nối được máy chủ");
             });
         },
       },
     ]);
+  };
+
+  const handleSendNow = () => {
+    if (!subject || recipients.length === 0 || !message) {
+      Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+
+    const payload = {
+      subject,
+      recipient: recipients.join(', '),
+      message,
+      teacher_id: user?.uid,
+    };
+
+    fetch(`${BASE_URL}contact/send_email_now/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${user?.uid}`,
+      },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.error) {
+          Alert.alert("Lỗi", data.error);
+        } else {
+          Alert.alert("Thành công", "Đã gửi email ngay");
+          const newEmail: ScheduledEmail = {
+            id: Date.now().toString(),
+            subject,
+            recipients: recipients.join(', '),
+            message,
+            scheduledDate: new Date(),
+            status: "sent",
+          };
+          setEmails([...emails, newEmail]);
+          resetForm();
+        }
+      })
+      .catch((err) => {
+        console.error("Lỗi gửi email ngay:", err);
+        Alert.alert("Lỗi", "Không kết nối được máy chủ");
+      });
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -252,10 +302,12 @@ const ScheduleEmailScreen: React.FC = () => {
 
   const resetForm = () => {
     setSubject("");
-    setRecipients("");
+    setRecipients([]);
     setMessage("");
     setDate(new Date());
+    setTime(new Date());
     setEditingEmail(null);
+    setSelectedEmailType("báo cáo điểm");
   };
 
   const formatDate = (date: Date) => {
@@ -267,6 +319,11 @@ const ScheduleEmailScreen: React.FC = () => {
       minute: "2-digit",
     });
   };
+
+  // Lọc danh sách học sinh theo lớp được chọn
+  const filteredParentList = selectedClass
+    ? parentList.filter(parent => parent.className === selectedClass)
+    : parentList;
 
   return (
     <View style={styles.container}>
@@ -280,47 +337,10 @@ const ScheduleEmailScreen: React.FC = () => {
         <View style={{ width: 24 }} />
       </View>
 
+      <ScrollView>
+
       <View style={styles.formContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Tiêu đề"
-          value={subject}
-          onChangeText={setSubject}
-        />
-        <Text style={{ fontWeight: "bold", marginBottom: 5 }}>Người nhận</Text>
-        <FlatList
-          horizontal
-          data={parentList}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                backgroundColor: recipients === item.email ? "#1E88E5" : "#EEE",
-                borderRadius: 8,
-                marginRight: 10,
-              }}
-              onPress={() => setRecipients(item.email)}
-            >
-              <Text
-                style={{ color: recipients === item.email ? "#FFF" : "#000" }}
-              >
-                {item.parentName} ({item.studentName})
-              </Text>
-            </TouchableOpacity>
-          )}
-          contentContainerStyle={{ marginBottom: 10 }}
-        />
-
-        <TextInput
-          style={[styles.input, styles.messageInput]}
-          placeholder="Nội dung"
-          value={message}
-          onChangeText={setMessage}
-          multiline
-        />
-
+        {/* Date and Time Picker */}
         <TouchableOpacity
           style={styles.dateButton}
           onPress={() => setShowDatePicker(true)}
@@ -334,25 +354,106 @@ const ScheduleEmailScreen: React.FC = () => {
           onPress={() => setShowTimePicker(true)}
         >
           <FontAwesome name="clock-o" size={20} color="#1E88E5" />
-          <Text style={styles.dateText}>Giờ: {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+          <Text style={styles.dateText}>Giờ: {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
         </TouchableOpacity>
 
+        {/* Chọn lớp học */}
+        <Text style={styles.label}>Chọn lớp học</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={selectedClass}
+            onValueChange={(itemValue) => setSelectedClass(itemValue)}
+            style={styles.picker}
+          >
+            {classList.map((className) => (
+              <Picker.Item key={className} label={className} value={className} />
+            ))}
+          </Picker>
+        </View>
 
+        {/* Danh sách học sinh */}
+        <Text style={styles.label}>Danh sách học sinh</Text>
+        <View style={styles.studentListContainer}>
+          <FlatList
+            data={filteredParentList}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.studentRow}>
+                <CheckBox
+                  value={recipients.includes(item.email)}
+                  onValueChange={(newValue) => {
+                    if (newValue) {
+                      setRecipients([...recipients, item.email]);
+                    } else {
+                      setRecipients(recipients.filter(email => email !== item.email));
+                    }
+                  }}
+                  tintColors={{ true: "#1E88E5", false: "#000" }}
+                  style={styles.checkbox}
+                />
+                <Text style={[styles.studentCell, { flex: 2 }]}>{item.studentName}</Text>
+                <Text style={[styles.studentCell, { flex: 3 }]}>{item.email}</Text>
+              </View>
+            )}
+            contentContainerStyle={styles.studentListContent}
+          />
+        </View>
+
+        {/* Chọn loại email */}
+        <Text style={styles.label}>Loại email</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={selectedEmailType}
+            onValueChange={(itemValue) => setSelectedEmailType(itemValue)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Báo cáo điểm" value="báo cáo điểm" />
+            <Picker.Item label="Thông báo lịch thi" value="thông báo lịch thi" />
+            <Picker.Item label="Thông tin sự kiện" value="thông tin sự kiện" />
+            <Picker.Item label="Tin nhắn riêng" value="tin nhắn riêng" />
+            <Picker.Item label="Khác" value="khác" />
+          </Picker>
+        </View>
+
+        {/* Tiêu đề email */}
+        <Text style={styles.label}>Tiêu đề</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Nhập tiêu đề email"
+          value={subject}
+          onChangeText={setSubject}
+        />
+
+        {/* Nội dung email */}
+        <Text style={styles.label}>Nội dung</Text>
+        <TextInput
+          style={[styles.input, styles.messageInput]}
+          placeholder="Nhập nội dung email"
+          value={message}
+          onChangeText={setMessage}
+          multiline
+        />
+
+        {/* Nút hành động */}
         <View style={styles.buttonGroup}>
-          {editingEmail && (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.cancelButton]}
-              onPress={resetForm}
-            >
-              <Text style={styles.buttonText}>Hủy</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={[styles.actionButton, styles.cancelButton]}
+            onPress={resetForm}
+          >
+            <Text style={styles.buttonText}>Hủy</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.sendNowButton]}
+            onPress={handleSendNow}
+          >
+            <Text style={styles.buttonText}>Gửi ngay</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.submitButton]}
             onPress={handleScheduleEmail}
           >
             <Text style={styles.buttonText}>
-              {editingEmail ? "Cập nhật" : "Lên lịch gửi"}
+              {editingEmail ? "Cập nhật" : "Lưu lịch"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -376,10 +477,7 @@ const ScheduleEmailScreen: React.FC = () => {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.deleteButton}
-                      onPress={() => {
-                        console.log("Xóa email:", item.id);
-                        handleDeleteEmail(item.id);
-                      }}
+                      onPress={() => handleDeleteEmail(item.id)}
                     >
                       <FontAwesome name="trash" size={16} color="#D92D20" />
                     </TouchableOpacity>
@@ -439,7 +537,7 @@ const ScheduleEmailScreen: React.FC = () => {
                     })
                     .catch((err) => {
                       console.error("Lỗi gửi email ngay:", err);
-                      Alert.alert("Lỗi kết nối máy chủ");
+                      Alert.alert("Lỗi", "Không kết nối được máy chủ");
                     });
                 }}
               >
@@ -457,13 +555,13 @@ const ScheduleEmailScreen: React.FC = () => {
       />
 
       {Platform.OS === "android" && showDatePicker && (
-      <DateTimePicker
-        value={date}
-        mode="date"
-        display="default"
-        onChange={handleDateChange}
-        minimumDate={new Date()}
-      />
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+          minimumDate={new Date()}
+        />
       )}
       {Platform.OS === "android" && showTimePicker && (
         <DateTimePicker
@@ -473,6 +571,7 @@ const ScheduleEmailScreen: React.FC = () => {
           onChange={handleTimeChange}
         />
       )}
+      </ScrollView>
     </View>
   );
 };
@@ -503,6 +602,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     elevation: 2,
   },
+  label: {
+    fontWeight: "bold",
+    marginBottom: 5,
+    color: "#333",
+  },
   input: {
     height: 40,
     borderColor: "#DDD",
@@ -528,6 +632,42 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     color: "#333",
   },
+  pickerContainer: {
+
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 5,
+    marginBottom: 15,
+  },
+  picker: {
+    height: 55,
+    color: "#333",
+  },
+  studentListContainer: {
+    height: 150, // Kích thước cố định cho danh sách
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 5,
+    marginBottom: 15,
+  },
+  studentListContent: {
+    paddingVertical: 5,
+  },
+  studentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEE",
+  },
+  checkbox: {
+    marginRight: 10,
+  },
+  studentCell: {
+    fontSize: 14,
+    color: "#333",
+  },
   buttonGroup: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -541,6 +681,9 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: "#E0E0E0",
+  },
+  sendNowButton: {
+    backgroundColor: "#38A169",
   },
   submitButton: {
     backgroundColor: "#1E88E5",
@@ -600,33 +743,9 @@ const styles = StyleSheet.create({
   sentStatus: {
     color: "#38A169",
   },
-  sendNowButton: {
-    alignSelf: "flex-end",
-    marginTop: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    backgroundColor: "#38A169",
-    borderRadius: 5,
-  },
   sendNowText: {
     color: "white",
     fontSize: 12,
-  },
-  datePickerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  datePickerClose: {
-    backgroundColor: "white",
-    padding: 15,
-    borderRadius: 5,
-    marginTop: 20,
-  },
-  datePickerCloseText: {
-    color: "#1E88E5",
-    fontWeight: "bold",
   },
 });
 
