@@ -18,7 +18,6 @@ env/
 *.p8
 *.p12
 *.key
-*.pem
 *.mobileprovision
 
 # Metro
@@ -44,11 +43,11 @@ app-example/
 
 # iOS & Android native folders (too heavy to push)
 ios/
-android/
 
-# Firebase config
-google-services.json
-
-# 🔥 EXCEPTION: Keep the shared keystore
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+!android/app/google-services.json
 !keystore/
 !keystore/debug.keystore
