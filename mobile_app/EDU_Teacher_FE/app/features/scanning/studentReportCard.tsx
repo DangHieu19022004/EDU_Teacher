@@ -20,6 +20,7 @@ import SuccessModal from '../../../components/SuccessModal';
 import ErrorModal from '../../../components/ErrorModal';
 import { useUser } from "../../contexts/UserContext";
 import { BASE_URL } from '@/constants/Config';
+import { withDelay } from 'react-native-reanimated';
 
 const CLASS_STORAGE_KEY = '@student_classes';
 
@@ -372,6 +373,9 @@ const StudentReportCard = ({
 
       if (response.ok) {
         setShowSuccessModal(true);
+        setTimeout(() => {
+          navigation.goBack();
+        }, 1000);
       } else {
         throw new Error('Lưu thất bại');
       }
@@ -785,6 +789,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     marginTop: 10,
+    marginBottom: 10,
   },
   gradient: {
     paddingVertical: 12,

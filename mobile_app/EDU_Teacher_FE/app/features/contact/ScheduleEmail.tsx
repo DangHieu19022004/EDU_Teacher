@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,11 +12,24 @@ import {
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import CheckBox from "@react-native-community/checkbox";
+import Checkbox from "expo-checkbox"
 import { Picker } from "@react-native-picker/picker";
 import { BASE_URL } from "@/constants/Config";
 import { useUser } from "../../contexts/UserContext";
 import { ScrollView } from "react-native-gesture-handler";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+interface ClassItem {
+  id: string;
+  name: string;
+  students: StudentItem[];
+}
+
+interface StudentItem {
+  id: string;
+  name: string;
+  email: string;
+}
 
 interface ParentReceiver {
   id: string;
@@ -24,6 +37,7 @@ interface ParentReceiver {
   email: string;
   studentName: string;
   className?: string;
+  studentId: string;
 }
 
 interface ScheduledEmail {
@@ -33,20 +47,6 @@ interface ScheduledEmail {
   message: string;
   scheduledDate: Date;
   status: "pending" | "sent";
-}
-
-interface ClassItem {
-  id: string;
-  name: string;
-  school_name: string;
-  class_year: string;
-}
-
-interface StudentItem {
-  id: string;
-  full_name: string;
-  parents_email: string;
-  className?: string; // option để hiển thị phụ
 }
 
 const ScheduleEmailScreen: React.FC = () => {
@@ -63,78 +63,89 @@ const ScheduleEmailScreen: React.FC = () => {
   const [editingEmail, setEditingEmail] = useState<ScheduledEmail | null>(null);
   const [parentList, setParentList] = useState<ParentReceiver[]>([]);
   const [classList, setClassList] = useState<ClassItem[]>([]);
-  const [selectedClass, setSelectedClass] = useState<string | null>(null);
-  const [selectedEmailType, setSelectedEmailType] =
-    useState<string>("báo cáo điểm");
+  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
+  const [selectedEmailType, setSelectedEmailType] = useState<string>("báo cáo điểm");
+  const [selectAll, setSelectAll] = useState(false);
 
-  const fetchStudentsByClass = async (classId: string) => {
-    try {
-      const res = await fetch(`${BASE_URL}classroom/get_students_by_class/?class_id=${classId}`, {
-        headers: { Authorization: `Bearer ${user?.uid}` },
-      });
-      const students = await res.json();
+  useEffect(() => {
+    if (!user?.uid) return;
 
-      const resParent = await fetch(`${BASE_URL}contact/get_parents/?teacher_id=${user?.uid}`, {
-        headers: { Authorization: `Bearer ${user?.uid}` },
-      });
-      const parents = await resParent.json();
-      console.log("Phụ huynh:", parents);
-      const merged: ParentReceiver[] = students.map((student: any) => {
-        const matchedParent = parents.find(
-          (p: any) => p.studentId === student.id
-        );
-        return {
-          id: student.id,
-          studentName: student.name,
-          email: matchedParent?.email || "Không có email",
-          parentName: matchedParent?.full_name || "",
-          className: `${student.class_name || ""} (${student.class_year || ""})`,
-        };
-      });
+    const fetchClassrooms = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}classroom/get_classrooms/?teacher_id=${user.uid}`, {
+          headers: { Authorization: `Bearer ${user.uid}` }
+        });
+        const data = await response.json();
+        if (response.ok) {
+          const formatted = data.map((cls: any) => ({
+            id: cls.id,
+            name: cls.name,
+            students: []
+          }));
+          setClassList(formatted);
+        }
+      } catch (err) {
+        console.error('Lỗi fetch lớp:', err);
+      }
+    };
+    fetchClassrooms();
+  }, [user?.uid]);
 
-      setParentList(merged);
-    } catch (err) {
-      console.error("Lỗi khi lấy học sinh + phụ huynh:", err);
-    }
-  };
+  useEffect(() => {
+    if (!user?.uid) return;
+    const fetchParents = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}contact/get_parents/?teacher_id=${user.uid}`, {
+          headers: {
+            Authorization: `Bearer ${user.uid}`,
+          },
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setParentList(data);
+        }
+      } catch (err) {
+        console.error("Lỗi fetch phụ huynh:", err);
+      }
+    };
+
+    fetchParents();
+  }, [user?.uid]);
 
 
   useEffect(() => {
     if (!user?.uid) return;
-    // fetch(`${BASE_URL}contact/get_parents/?teacher_id=${user.uid}`, {
-    //   headers: { Authorization: `Bearer ${user.uid}` },
-    // })
-    //   .then((res) => res.json())
-    //   .then((data: ParentReceiver[]) => {
-    //     setParentList(data);
-    //     const classes = Array.from(
-    //       new Set(
-    //         data
-    //           .map((item) => item.className)
-    //           .filter((className) => className != null)
-    //       )
-    //     ) as string[];
-    //     setClassList(classes);
-    //     if (classes.length > 0) setSelectedClass(classes[0]);
-    //   })
-    //   .catch((err) => console.error("Lỗi lấy danh sách phụ huynh:", err));
-
-    fetch(`${BASE_URL}classroom/get_classrooms/?teacher_id=${user.uid}`, {
-      headers: { Authorization: `Bearer ${user.uid}` },
-    })
-      .then((res) => res.json())
-      .then((data: ClassItem[]) => {
-        setClassList(data);
-        if (data.length > 0) {
-          const firstClassId = data[0].id;
-          setSelectedClass(firstClassId);
-          fetchStudentsByClass(firstClassId);
-        }
-      })
-      .catch((err) => console.error("Lỗi lấy danh sách lớp:", err));
-
     fetchScheduledEmails();
-  }, []);
+  }, [user?.uid]);
+
+  const fetchStudentsInClass = async (classId: string) => {
+    try {
+      const response = await fetch(`${BASE_URL}classroom/get_students_by_class/?class_id=${classId}`, {
+        headers: { Authorization: `Bearer ${user?.uid}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        const selected = classList.find(cls => cls.id === classId);
+        if (selected) {
+          const formattedStudents = data.map((student: any) => {
+            const matchedParent = parentList.find(p => p.studentId === student.id);
+            return {
+              id: student.id,
+              name: student.name,
+              email: matchedParent?.email || "",
+            };
+          });
+          setSelectedClass({ ...selected, students: formattedStudents });
+          // Reset recipients and checkAll when class changes
+          setRecipients([]);
+          handleCheckAll(false);
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi fetch học sinh:', err);
+      Alert.alert("Lỗi", "Không thể lấy danh sách học sinh");
+    }
+  };
 
   const fetchScheduledEmails = () => {
     fetch(`${BASE_URL}contact/get_scheduled_emails/?teacher_id=${user?.uid}`, {
@@ -155,6 +166,26 @@ const ScheduleEmailScreen: React.FC = () => {
       .catch((err) => console.error("Lỗi lấy lịch email:", err));
   };
 
+  const handleCheckboxChange = (email: string, checked: boolean) => {
+    setRecipients(prev => {
+      if (checked) {
+        return [...prev, email];
+      } else {
+        return prev.filter(e => e !== email);
+      }
+    });
+  };
+
+  const handleCheckAll = (checked: boolean) => {
+    setSelectAll(checked);
+    if (checked && selectedClass?.students) {
+      const allEmails = selectedClass.students.map((s: any) => s.email);
+      setRecipients(allEmails);
+    } else {
+      setRecipients([]);
+    }
+  };
+
   const handleScheduleEmail = () => {
     if (!subject || recipients.length === 0 || !message) {
       Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin");
@@ -173,7 +204,7 @@ const ScheduleEmailScreen: React.FC = () => {
       const payload = {
         id: editingEmail.id,
         subject,
-        recipients: recipients.join(", "),
+        recipients: recipients.filter(email => email.trim() !== '').join(', '),
         message,
         scheduled_date: scheduledDateTime.toISOString(),
         status: editingEmail.status,
@@ -205,7 +236,7 @@ const ScheduleEmailScreen: React.FC = () => {
     } else {
       const payload = {
         subject,
-        recipient: recipients.join(", "),
+        recipient: recipients.join(', '),
         message,
         scheduled_time: scheduledDateTime.toISOString(),
         teacher_id: user?.uid,
@@ -227,7 +258,7 @@ const ScheduleEmailScreen: React.FC = () => {
             const newEmail: ScheduledEmail = {
               id: data.email_id || Date.now().toString(),
               subject,
-              recipients: recipients.join(", "),
+              recipients: recipients.join(', '),
               message,
               scheduledDate: scheduledDateTime,
               status: "pending",
@@ -252,7 +283,7 @@ const ScheduleEmailScreen: React.FC = () => {
 
     setEditingEmail(email);
     setSubject(email.subject);
-    setRecipients(email.recipients.split(", ").filter((email) => email));
+    setRecipients(email.recipients.split(', ').filter(email => email));
     setMessage(email.message);
     setDate(email.scheduledDate);
     setTime(email.scheduledDate);
@@ -303,7 +334,7 @@ const ScheduleEmailScreen: React.FC = () => {
 
     const payload = {
       subject,
-      recipient: recipients.join(", "),
+      recipient: recipients.join(', '),
       message,
       teacher_id: user?.uid,
     };
@@ -325,7 +356,7 @@ const ScheduleEmailScreen: React.FC = () => {
           const newEmail: ScheduledEmail = {
             id: Date.now().toString(),
             subject,
-            recipients: recipients.join(", "),
+            recipients: recipients.join(', '),
             message,
             scheduledDate: new Date(),
             status: "sent",
@@ -370,6 +401,7 @@ const ScheduleEmailScreen: React.FC = () => {
     setTime(new Date());
     setEditingEmail(null);
     setSelectedEmailType("báo cáo điểm");
+    handleCheckAll(false);
   };
 
   const formatDate = (date: Date) => {
@@ -382,10 +414,8 @@ const ScheduleEmailScreen: React.FC = () => {
     });
   };
 
-  const filteredParentList = parentList;
-
-
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -405,9 +435,7 @@ const ScheduleEmailScreen: React.FC = () => {
             onPress={() => setShowDatePicker(true)}
           >
             <FontAwesome name="calendar" size={20} color="#1E88E5" />
-            <Text style={styles.dateText}>
-              Ngày: {date.toLocaleDateString()}
-            </Text>
+            <Text style={styles.dateText}>Ngày: {date.toLocaleDateString()}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -415,32 +443,24 @@ const ScheduleEmailScreen: React.FC = () => {
             onPress={() => setShowTimePicker(true)}
           >
             <FontAwesome name="clock-o" size={20} color="#1E88E5" />
-            <Text style={styles.dateText}>
-              Giờ:{" "}
-              {time.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </Text>
+            <Text style={styles.dateText}>Giờ: {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Text>
           </TouchableOpacity>
 
           {/* Chọn lớp học */}
           <Text style={styles.label}>Chọn lớp học</Text>
           <View style={styles.pickerContainer}>
             <Picker
-              selectedValue={selectedClass}
+              selectedValue={selectedClass?.id}
               onValueChange={(itemValue) => {
-                setSelectedClass(itemValue);
-                fetchStudentsByClass(itemValue);
+                const selected = classList.find(cls => cls.id === itemValue);
+                setSelectedClass(selected || null);
+                if (selected) fetchStudentsInClass(selected.id);
               }}
               style={styles.picker}
             >
+              <Picker.Item label="Chọn lớp..." value={null} />
               {classList.map((cls) => (
-                <Picker.Item
-                  key={cls.id}
-                  label={`${cls.name} (${cls.class_year})`}
-                  value={cls.id}
-                />
+                <Picker.Item key={cls.id} label={cls.name} value={cls.id} />
               ))}
             </Picker>
           </View>
@@ -448,37 +468,35 @@ const ScheduleEmailScreen: React.FC = () => {
           {/* Danh sách học sinh */}
           <Text style={styles.label}>Danh sách học sinh</Text>
           <View style={styles.studentListContainer}>
-            <FlatList
-              data={filteredParentList}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <View style={styles.studentRow}>
-                  <CheckBox
-                    value={recipients.includes(item.email || "")}
-                    onValueChange={(newValue) => {
-                      const email = item.email || "";
-                      if (!email || email === "Không có email") return; // tránh lỗi và không lưu email rỗng
-                      if (newValue) {
-                        setRecipients((prev) => [...prev, email]);
-                      } else {
-                        setRecipients((prev) => prev.filter((e) => e !== email));
-                      }
-                    }}
-                    tintColors={{ true: "#1E88E5", false: "#000" }}
-                    style={styles.checkbox}
-                  />
-
-                  <Text style={[styles.studentCell, { flex: 2 }]}>
-                    {item.studentName}
-                  </Text>
-                  <Text style={[styles.studentCell, { flex: 3 }]}>
-                    {item.email}
-                  </Text>
-                </View>
-              )}
-              contentContainerStyle={styles.studentListContent}
+          <View style={styles.headerRow}>
+            <Checkbox
+              value={selectAll}
+              onValueChange={handleCheckAll}
+              color={selectAll ? "#1E88E5" : undefined}
+              style={styles.checkbox}
             />
+            <Text style={[styles.headerCell, { flex: 2 }]}>Tên HS</Text>
+            <Text style={[styles.headerCell, { flex: 3 }]}>Email PHHS</Text>
           </View>
+          <FlatList
+            data={selectedClass?.students || []}
+            keyExtractor={(item) => item.id}
+            nestedScrollEnabled={true}
+            renderItem={({ item }) => (
+              <View style={styles.studentRow}>
+                <Checkbox
+                  value={recipients.includes(item.email)}
+                  onValueChange={(newValue) => handleCheckboxChange(item.email, newValue)}
+                  color={recipients.includes(item.email) ? "#1E88E5" : undefined}
+                  style={styles.checkbox}
+                />
+                <Text style={[styles.studentCell, { flex: 2 }]}>{item.name}</Text>
+                <Text style={[styles.studentCell, { flex: 3 }]}>{item.email}</Text>
+              </View>
+            )}
+            contentContainerStyle={styles.studentListContent}
+          />
+        </View>
 
           {/* Chọn loại email */}
           <Text style={styles.label}>Loại email</Text>
@@ -489,14 +507,8 @@ const ScheduleEmailScreen: React.FC = () => {
               style={styles.picker}
             >
               <Picker.Item label="Báo cáo điểm" value="báo cáo điểm" />
-              <Picker.Item
-                label="Thông báo lịch thi"
-                value="thông báo lịch thi"
-              />
-              <Picker.Item
-                label="Thông tin sự kiện"
-                value="thông tin sự kiện"
-              />
+              <Picker.Item label="Thông báo lịch thi" value="thông báo lịch thi" />
+              <Picker.Item label="Thông tin sự kiện" value="thông tin sự kiện" />
               <Picker.Item label="Tin nhắn riêng" value="tin nhắn riêng" />
               <Picker.Item label="Khác" value="khác" />
             </Picker>
@@ -660,6 +672,7 @@ const ScheduleEmailScreen: React.FC = () => {
         )}
       </ScrollView>
     </View>
+    </GestureHandlerRootView>
   );
 };
 
@@ -730,7 +743,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   studentListContainer: {
-    height: 150, // Kích thước cố định cho danh sách
+    maxHeight: 150,
     borderWidth: 1,
     borderColor: "#DDD",
     borderRadius: 5,
@@ -738,6 +751,20 @@ const styles = StyleSheet.create({
   },
   studentListContent: {
     paddingVertical: 5,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEE",
+    backgroundColor: "#F0F0F0",
+  },
+  headerCell: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
   },
   studentRow: {
     flexDirection: "row",

@@ -204,25 +204,26 @@ const PhotoCaptureScreen: React.FC = () => {
   };
 
   const renderImageItem = ({ item, index }: { item: ImageItem; index: number }) => (
-    <View style={styles.imageContainer}>
+    <View style={styles.imageCard}>
       <Image source={{ uri: item.uri }} style={styles.thumbnail} />
       <TouchableOpacity style={styles.deleteButton} onPress={() => deleteImage(index)}>
         <FontAwesome name="trash" size={20} color="white" />
       </TouchableOpacity>
-      <View style={styles.typeSwitchContainer}>
-        <TouchableOpacity onPress={() => toggleType(index)}>
-          <Text style={styles.typeSwitchText}>
+      <View style={styles.buttonGroup}>
+        <TouchableOpacity style={styles.typeSwitchButton} onPress={() => toggleType(index)}>
+          <Text style={styles.typeSwitchButtonText}>
             {item.type === 'report_card' ? '📄 Học bạ' : '🧍 Thông tin'}
           </Text>
         </TouchableOpacity>
         {item.type === 'report_card' && (
-          <TouchableOpacity onPress={() => toggleGrade(index)}>
-            <Text style={styles.typeSwitchText}>🎓 Lớp {item.grade}</Text>
+          <TouchableOpacity style={styles.typeSwitchButton} onPress={() => toggleGrade(index)}>
+            <Text style={styles.typeSwitchButtonText}>🎓 Lớp {item.grade}</Text>
           </TouchableOpacity>
         )}
       </View>
     </View>
   );
+
 
   return (
     <View style={styles.container}>
@@ -253,7 +254,7 @@ const PhotoCaptureScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F8F8', padding: 10 },
-  captureButton: { backgroundColor: '#1E88E5', padding: 15, borderRadius: 10, alignItems: 'center', marginVertical: 10, flexDirection: 'row', justifyContent: 'center' },
+  captureButton: { backgroundColor: '#1E88E5', padding: 15, borderRadius: 10, alignItems: 'center', marginVertical: 10, flexDirection: 'row', justifyContent: 'center', marginTop: 40, },
   captureButtonText: { color: 'white', marginLeft: 10, fontWeight: 'bold' },
   galleryButton: { backgroundColor: '#6A1B9A', padding: 15, borderRadius: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
   galleryButtonText: { color: 'white', marginLeft: 10, fontWeight: 'bold' },
@@ -263,7 +264,36 @@ const styles = StyleSheet.create({
   imageContainer: { flex: 1, marginVertical: 10 },
   deleteButton: { position: 'absolute', top: 5, right: 5, backgroundColor: 'red', borderRadius: 20, padding: 5 },
   typeSwitchContainer: { alignItems: 'center', marginTop: 5 },
-  typeSwitchText: { color: '#1E88E5', fontWeight: 'bold' },
+
+  typeSwitchButton: {
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginVertical: 4,
+    borderWidth: 1,
+    borderColor: '#1E88E5',
+  },
+  typeSwitchButtonText: {
+    color: '#1E88E5',
+    fontWeight: 'bold',
+  },
+  imageCard: {
+    backgroundColor: '#dcdcdc',
+    borderRadius: 10,
+    padding: 10,
+    marginVertical: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 10,
+  },
 });
 
 export default PhotoCaptureScreen;
