@@ -10,12 +10,15 @@ web-build/
 expo-env.d.ts
 env/
 
-# Native
+# Native build outputs & signing
 *.orig.*
+*.apk
+*.aab
 *.jks
 *.p8
 *.p12
 *.key
+*.pem
 *.mobileprovision
 
 # Metro
@@ -36,8 +39,16 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-app-example
+# Example folder
+app-example/
 
-/ios
-/android
-./google-services.json
+# iOS & Android native folders (too heavy to push)
+ios/
+android/
+
+# Firebase config
+google-services.json
+
+# 🔥 EXCEPTION: Keep the shared keystore
+!keystore/
+!keystore/debug.keystore
