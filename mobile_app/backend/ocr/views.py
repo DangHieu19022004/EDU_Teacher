@@ -23,8 +23,8 @@ from uuid import UUID
 import base64
 import os, time
 
-yolo_model = YOLO("E:/ORC_mobile_app/mobile_app/backend/ocr/runs/detect/train10/weights/best.pt")
-yolo_infor = YOLO("E:/ORC_mobile_app/mobile_app/backend/ocr/runs/detect/train5/weights/best.pt")
+yolo_model = YOLO("./runs/detect/train10/weights/best.pt")
+yolo_infor = YOLO("./runs/detect/train5/weights/best.pt")
 ocr_model = PaddleOCR(use_gpu=False, lang='vi')
 genai.configure(api_key="AIzaSyCiludt5vTQLBn38xAQI4F1Awleq2P6Mi0")
 gemini_model = genai.GenerativeModel("models/gemini-2.0-flash")
