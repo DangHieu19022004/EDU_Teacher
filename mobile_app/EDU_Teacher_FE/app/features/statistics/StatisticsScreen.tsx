@@ -114,13 +114,13 @@ const StatisticsScreen: React.FC = () => {
   }, [selectedClassId, selectedGrade]);
 
   const sanitizeSubjectName = (name: string) => {
-    if (!name) return '';
-    const cleanedName = name.includes(':') ? name.split(':')[0].trim() : name.trim();
-    return cleanedName
-      .replace(/\./g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  };
+  if (!name) return '';
+  const cleanedName = name.includes(':') ? name.split(':')[0].trim() : name.trim();
+  return cleanedName
+    .replace(/\./g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
 
   const fetchStudentsData = async (classId: string) => {
     setLoading(true);
@@ -250,8 +250,8 @@ const StatisticsScreen: React.FC = () => {
   };
 
   const calculateStudentScoresData = () => {
-    if (!subject || !studentsData.length) {
-      console.log('No subject or students data available');
+    if (!subject || !studentsData.length || isPassFailSubject(subject)) {
+      console.log('No subject, students data, or pass/fail subject selected');
       return {
         labels: [],
         datasets: [
@@ -264,7 +264,6 @@ const StatisticsScreen: React.FC = () => {
     const labels = studentsData.map((student) => student.name);
     const scores = studentsData.map((student) => {
       const subjectData = student.subjects?.find((s) => {
-        // So sánh tên môn học đã được chuẩn hóa
         const studentSubject = sanitizeSubjectName(s.name);
         const selectedSubject = sanitizeSubjectName(subject || '');
         return studentSubject === selectedSubject;
@@ -279,7 +278,6 @@ const StatisticsScreen: React.FC = () => {
                       semester === '2' ? subjectData.hk2 :
                       subjectData.cn;
 
-      // Xử lý trường hợp điểm là chuỗi rỗng
       if (scoreStr === '' || scoreStr === null || scoreStr === undefined) {
         console.warn(`Empty score for ${student.name}, subject ${subject}`);
         return 0;
@@ -313,18 +311,18 @@ const StatisticsScreen: React.FC = () => {
     };
   };
 
+
   const calculateWeaknessAnalysis = () => {
     const averages: { [key: string]: number } = {};
-    const failedStudents: { [key: string]: string[] } = {}; // Lưu danh sách học sinh không đạt
+    const failedStudents: { [key: string]: string[] } = {};
 
     subjects.forEach((subj) => {
       if (isPassFailSubject(subj)) {
-        // Xử lý môn chỉ có Đạt/Không đạt
         studentsData.forEach((student) => {
           const subjectData = student.subjects?.find((s) => s.name === subj);
           if (subjectData) {
-            const scoreStr = subjectData.cn; // Xem điểm cả năm
-            if (scoreStr === '0' || scoreStr.toLowerCase() === 'không đạt') {
+            const scoreStr = subjectData.cn || subjectData.hk1 || subjectData.hk2;
+            if (scoreStr && scoreStr.toLowerCase() !== 'đạt' && scoreStr.toLowerCase() !== 'dat') {
               if (!failedStudents[subj]) {
                 failedStudents[subj] = [];
               }
@@ -332,7 +330,7 @@ const StatisticsScreen: React.FC = () => {
             }
           }
         });
-        return; // Bỏ qua không tính điểm trung bình
+        return;
       }
 
       let total = 0;
@@ -352,10 +350,7 @@ const StatisticsScreen: React.FC = () => {
       averages[subj] = count > 0 ? Number((total / count).toFixed(1)) : 0;
     });
 
-    // Tạo kết quả phân tích
     const result = [];
-
-    // Thêm các môn bình thường cần cải thiện
     result.push(
       ...subjects
         .filter((subj) => !isPassFailSubject(subj) && averages[subj] < 5.5)
@@ -429,11 +424,11 @@ const StatisticsScreen: React.FC = () => {
   };
 
   const isPassFailSubject = (subjectName: string) => {
-    const passFailSubjects = ['Thể dục'];
+    const passFailSubjects = ['Thể dục', 'The duc'];
     return passFailSubjects.some(name =>
       subjectName.toLowerCase().includes(name.toLowerCase())
     );
-  };
+  }
 
   const renderScoreStatistics = () => (
     <View style={styles.tabContent}>
@@ -526,7 +521,6 @@ const StatisticsScreen: React.FC = () => {
           <Text style={styles.resultTitle}>Kết quả thống kê:</Text>
 
           {isPassFailSubject(subject) ? (
-            // Hiển thị thống kê cho môn Đạt/Không đạt
             <>
               <Text style={styles.resultText}>
                 Môn {subject} (Đạt/Không đạt):
@@ -538,8 +532,8 @@ const StatisticsScreen: React.FC = () => {
                     {
                       studentsData.filter(student => {
                         const subjectData = student.subjects?.find(s => s.name === subject);
-                        const score = subjectData?.cn;
-                        return score && score !== '0' && !score.toLowerCase().includes('không đạt');
+                        const score = subjectData?.cn || subjectData?.hk1 || subjectData?.hk2;
+                        return score && (score.toLowerCase() === 'đạt' || score.toLowerCase() === 'dat');
                       }).length
                     }/{studentsData.length}
                   </Text>
@@ -550,26 +544,26 @@ const StatisticsScreen: React.FC = () => {
                     {
                       studentsData.filter(student => {
                         const subjectData = student.subjects?.find(s => s.name === subject);
-                        const score = subjectData?.cn;
-                        return score && (score === '0' || score.toLowerCase().includes('không đạt'));
+                        const score = subjectData?.cn || subjectData?.hk1 || subjectData?.hk2;
+                        return score && (score.toLowerCase() !== 'đạt' && score.toLowerCase() !== 'dat');
                       }).length
-                    }
+                    }/{studentsData.length}
                   </Text>
                 </View>
               </View>
 
               {studentsData.some(student => {
                 const subjectData = student.subjects?.find(s => s.name === subject);
-                const score = subjectData?.cn;
-                return score && (score === '0' || score.toLowerCase().includes('không đạt'));
+                const score = subjectData?.cn || subjectData?.hk1 || subjectData?.hk2;
+                return score && (score.toLowerCase() !== 'đạt' && score.toLowerCase() !== 'dat');
               }) && (
                 <View style={styles.failListContainer}>
                   <Text style={styles.failListTitle}>Học sinh không đạt:</Text>
                   {studentsData
                     .filter(student => {
                       const subjectData = student.subjects?.find(s => s.name === subject);
-                      const score = subjectData?.cn;
-                      return score && (score === '0' || score.toLowerCase().includes('không đạt'));
+                      const score = subjectData?.cn || subjectData?.hk1 || subjectData?.hk2;
+                      return score && (score.toLowerCase() !== 'đạt' && score.toLowerCase() !== 'dat');
                     })
                     .map((student, index) => (
                       <Text key={index} style={styles.failListItem}>
@@ -580,7 +574,6 @@ const StatisticsScreen: React.FC = () => {
               )}
             </>
           ) : (
-            // Hiển thị thống kê cho môn thường
             <>
               <Text style={styles.resultText}>
                 Điểm trung bình môn {subject} {semester === '1' ? 'học kỳ 1' : semester === '2' ? 'học kỳ 2' : 'cả năm'} lớp {className}:
