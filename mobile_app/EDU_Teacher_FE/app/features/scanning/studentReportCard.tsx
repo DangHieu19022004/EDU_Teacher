@@ -88,6 +88,21 @@ const StudentReportCard = ({
   const [teacherClasses, setTeacherClasses] = useState<{ id: string; name: string; school_name: string }[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const { user } = useUser();
+  const updateStudentField = (field: keyof StudentItem, value: string) => {
+    setEditableStudent((prev) => ({ ...prev, [field]: value }));
+  };
+const getHighestClass = (classList: ClassData[] | undefined): string => {
+    if (!classList || classList.length === 0) return 'Unknown';
+
+    const classNumbers = classList.map((cls) => {
+      const match = cls.class.match(/\d+/);
+      return match ? parseInt(match[0], 10) : 0;
+    });
+
+    const maxClassNum = Math.max(...classNumbers);
+    const highestClass = classList.find((cls) => cls.class.includes(maxClassNum.toString()));
+    return highestClass ? highestClass.class : classList[0].class;
+  };
 
   useEffect(() => {
     if (studentData) {
@@ -119,26 +134,37 @@ const StudentReportCard = ({
             },
           });
           const data = await response.json();
-          if (response.ok) setTeacherClasses(data);
-          else console.error('Không lấy được danh sách lớp:', data);
+          console.log('teacherClasses', data);
+          if (response.ok) {
+            setTeacherClasses(data);
+
+            // ✅ Lúc này mới gọi getHighestClass
+            if (cleanedStudent.classList && cleanedStudent.classList.length > 0) {
+              const highestClass = getHighestClass(cleanedStudent.classList);
+              setSelectedClass(highestClass.match(/\d+/)?.[0] || '10');
+            }
+          } else {
+            console.error('Không lấy được danh sách lớp:', data);
+          }
         } catch (error) {
           console.error('Lỗi khi gọi API lớp:', error);
         }
       };
+      setEditableStudent(cleanedStudent);
       fetchTeacherClasses();
 
-      if (cleanedStudent.classList && cleanedStudent.classList.length > 0) {
-        const highestClass = getHighestClass(cleanedStudent.classList);
-        setSelectedClass(highestClass.match(/\d+/)?.[0] || '10');
-      }
-      setEditableStudent(cleanedStudent);
+      // if (cleanedStudent.classList && cleanedStudent.classList.length > 0) {
+      //   const highestClass = getHighestClass(cleanedStudent.classList);
+      //   setSelectedClass(highestClass.match(/\d+/)?.[0] || '10');
+      // }
+
     }
   }, [studentData]);
 
   useEffect(() => {
     if (isEditMode && teacherClasses.length > 0 && editableStudent?.classList?.length > 0) {
       const studentClassName = editableStudent.classList[0].class?.trim();
-      const matchedClass = teacherClasses.find(cls => cls.name.trim() === studentClassName);
+      const matchedClass = teacherClasses.find(cls => cls.name.trim().toLowerCase().startsWith(studentClassName.toLowerCase()));
 
       if (matchedClass) {
         setSelectedClassId(matchedClass.id);
@@ -159,14 +185,15 @@ const StudentReportCard = ({
     }
     return name.trim();
   };
+console.log('DEBUG name:', editableStudent?.name);
 
-  if (!editableStudent || !editableStudent.name || editableStudent.name.trim() === '' || editableStudent.name === 'Chưa rõ') {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Lỗi: Dữ liệu học sinh không hợp lệ.</Text>
-      </View>
-    );
-  }
+  // if (!editableStudent || !editableStudent.name || editableStudent.name.trim() === '' || editableStudent.name === 'Chưa rõ') {
+  //   return (
+  //     <View style={styles.container}>
+  //       <Text style={styles.errorText}>Lỗi: Dữ liệu học sinh không hợp lệ.</Text>
+  //     </View>
+  //   );
+  // }
 
   function calculateAverageSubjects(subjects: Subject[]) {
     if (!subjects || subjects.length === 0) return { name: 'DTB các môn', hk1: '0', hk2: '0', cn: '0' };
@@ -224,10 +251,6 @@ const StudentReportCard = ({
 
   const images = editableStudent.images || [];
 
-  const updateStudentField = (field: keyof StudentItem, value: string) => {
-    setEditableStudent((prev) => ({ ...prev, [field]: value }));
-  };
-
   const updateSubject = (index: number, field: keyof Subject, value: string) => {
     setEditableStudent(prev => {
       const updatedClassList = prev.classList?.map(cls => {
@@ -271,19 +294,6 @@ const StudentReportCard = ({
     });
   };
 
-
-  const getHighestClass = (classList: ClassData[] | undefined): string => {
-    if (!classList || classList.length === 0) return 'Unknown';
-
-    const classNumbers = classList.map((cls) => {
-      const match = cls.class.match(/\d+/);
-      return match ? parseInt(match[0], 10) : 0;
-    });
-
-    const maxClassNum = Math.max(...classNumbers);
-    const highestClass = classList.find((cls) => cls.class.includes(maxClassNum.toString()));
-    return highestClass ? highestClass.class : classList[0].class;
-  };
 
   const handleConfirmSave = async () => {
     const method = reportCardId ? 'PUT' : 'POST';

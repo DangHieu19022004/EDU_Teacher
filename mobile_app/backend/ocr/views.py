@@ -26,7 +26,7 @@ import os, time
 yolo_model = YOLO("ocr/runs/detect/train10/weights/best.pt")
 yolo_infor = YOLO("ocr/runs/detect/train5/weights/best.pt")
 ocr_model = PaddleOCR(use_gpu=False, lang='vi')
-genai.configure(api_key="AIzaSyCiludt5vTQLBn38xAQI4F1Awleq2P6Mi0")
+genai.configure(api_key="AIzaSyAxErHSZTDISxKqMsNc-iPmFkwzt22qKcU")
 gemini_model = genai.GenerativeModel("models/gemini-2.0-flash")
 
 def cleanup_cropped_dir(base_dir, max_age_minutes=15):
