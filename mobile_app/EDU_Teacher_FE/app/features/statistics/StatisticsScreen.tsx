@@ -114,13 +114,13 @@ const StatisticsScreen: React.FC = () => {
   }, [selectedClassId, selectedGrade]);
 
   const sanitizeSubjectName = (name: string) => {
-  if (!name) return '';
-  const cleanedName = name.includes(':') ? name.split(':')[0].trim() : name.trim();
-  return cleanedName
-    .replace(/\./g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-};
+    if (!name) return '';
+    const cleanedName = name.includes(':') ? name.split(':')[0].trim() : name.trim();
+    return cleanedName
+      .replace(/\./g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
 
   const fetchStudentsData = async (classId: string) => {
     setLoading(true);
@@ -191,11 +191,12 @@ const StatisticsScreen: React.FC = () => {
           classList: report.classList || [],
           subjects: currentClass?.subjects?.map((sub: any) => {
             const subjectName = sanitizeSubjectName(sub.name);
+            const isPhysEd = isPassFailSubject(subjectName);
             return {
               name: subjectName,
-              hk1: sub.hk1?.toString() || '0',
-              hk2: sub.hk2?.toString() || '0',
-              cn: sub.cn?.toString() || '0',
+              hk1: isPhysEd ? (parseFloat(sub.hk1) === 10 ? 'Đạt' : 'Không đạt') : (sub.hk1?.toString() || '0'),
+              hk2: isPhysEd ? (parseFloat(sub.hk2) === 10 ? 'Đạt' : 'Không đạt') : (sub.hk2?.toString() || '0'),
+              cn: isPhysEd ? (parseFloat(sub.cn) === 10 ? 'Đạt' : 'Không đạt') : (sub.cn?.toString() || '0'),
             };
           }) || [],
         };
@@ -230,7 +231,7 @@ const StatisticsScreen: React.FC = () => {
 
   const calculateAverageScores = () => {
     if (!subject || isPassFailSubject(subject)) {
-      return 'N/A'; // Không tính điểm trung bình cho môn đặc biệt
+      return 'N/A';
     }
 
     let total = 0;
@@ -311,7 +312,6 @@ const StatisticsScreen: React.FC = () => {
     };
   };
 
-
   const calculateWeaknessAnalysis = () => {
     const averages: { [key: string]: number } = {};
     const failedStudents: { [key: string]: string[] } = {};
@@ -321,7 +321,7 @@ const StatisticsScreen: React.FC = () => {
         studentsData.forEach((student) => {
           const subjectData = student.subjects?.find((s) => s.name === subj);
           if (subjectData) {
-            const scoreStr = subjectData.cn || subjectData.hk1 || subjectData.hk2;
+            const scoreStr = semester === '1' ? subjectData.hk1 : semester === '2' ? subjectData.hk2 : subjectData.cn;
             if (scoreStr && scoreStr.toLowerCase() !== 'đạt' && scoreStr.toLowerCase() !== 'dat') {
               if (!failedStudents[subj]) {
                 failedStudents[subj] = [];
@@ -428,7 +428,7 @@ const StatisticsScreen: React.FC = () => {
     return passFailSubjects.some(name =>
       subjectName.toLowerCase().includes(name.toLowerCase())
     );
-  }
+  };
 
   const renderScoreStatistics = () => (
     <View style={styles.tabContent}>
@@ -532,7 +532,7 @@ const StatisticsScreen: React.FC = () => {
                     {
                       studentsData.filter(student => {
                         const subjectData = student.subjects?.find(s => s.name === subject);
-                        const score = subjectData?.cn || subjectData?.hk1 || subjectData?.hk2;
+                        const score = semester === '1' ? subjectData?.hk1 : semester === '2' ? subjectData?.hk2 : subjectData?.cn;
                         return score && (score.toLowerCase() === 'đạt' || score.toLowerCase() === 'dat');
                       }).length
                     }/{studentsData.length}
@@ -544,7 +544,7 @@ const StatisticsScreen: React.FC = () => {
                     {
                       studentsData.filter(student => {
                         const subjectData = student.subjects?.find(s => s.name === subject);
-                        const score = subjectData?.cn || subjectData?.hk1 || subjectData?.hk2;
+                        const score = semester === '1' ? subjectData?.hk1 : semester === '2' ? subjectData?.hk2 : subjectData?.cn;
                         return score && (score.toLowerCase() !== 'đạt' && score.toLowerCase() !== 'dat');
                       }).length
                     }/{studentsData.length}
@@ -554,7 +554,7 @@ const StatisticsScreen: React.FC = () => {
 
               {studentsData.some(student => {
                 const subjectData = student.subjects?.find(s => s.name === subject);
-                const score = subjectData?.cn || subjectData?.hk1 || subjectData?.hk2;
+                const score = semester === '1' ? subjectData?.hk1 : semester === '2' ? subjectData?.hk2 : subjectData?.cn;
                 return score && (score.toLowerCase() !== 'đạt' && score.toLowerCase() !== 'dat');
               }) && (
                 <View style={styles.failListContainer}>
@@ -562,7 +562,7 @@ const StatisticsScreen: React.FC = () => {
                   {studentsData
                     .filter(student => {
                       const subjectData = student.subjects?.find(s => s.name === subject);
-                      const score = subjectData?.cn || subjectData?.hk1 || subjectData?.hk2;
+                      const score = semester === '1' ? subjectData?.hk1 : semester === '2' ? subjectData?.hk2 : subjectData?.cn;
                       return score && (score.toLowerCase() !== 'đạt' && score.toLowerCase() !== 'dat');
                     })
                     .map((student, index) => (
@@ -583,7 +583,7 @@ const StatisticsScreen: React.FC = () => {
               <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
                 <LineChart
                   data={calculateStudentScoresData()}
-                  width={Math.max(Dimensions.get('window').width - 40, studentsData.length * 60)}
+                  width={Math.max(Dimensions.get('window').width - 40, studentsData.length * 120)}
                   height={220}
                   yAxisLabel="Điểm "
                   yAxisInterval={1}
@@ -617,7 +617,7 @@ const StatisticsScreen: React.FC = () => {
   const renderReport = () => {
     const averageScores: { [key: string]: number } = {};
     subjects.forEach((subj) => {
-      if (isPassFailSubject(subj)) return; // Bỏ qua môn chỉ có Đạt/Không đạt
+      if (isPassFailSubject(subj)) return;
 
       let total = 0;
       let count = 0;
@@ -638,7 +638,6 @@ const StatisticsScreen: React.FC = () => {
       averageScores[subj] = count > 0 ? Number((total / count).toFixed(1)) : 0;
     });
 
-    // Tìm môn có điểm cao nhất và thấp nhất
     let bestSubject = '';
     let bestScore = 0;
     let worstSubject = '';
@@ -647,7 +646,7 @@ const StatisticsScreen: React.FC = () => {
     let subjectCount = 0;
 
     subjects.forEach((subj) => {
-      if (isPassFailSubject(subj)) return; // Bỏ qua môn chỉ có Đạt/Không đạt
+      if (isPassFailSubject(subj)) return;
 
       if (averageScores[subj] > bestScore) {
         bestScore = averageScores[subj];
@@ -665,7 +664,6 @@ const StatisticsScreen: React.FC = () => {
 
     return (
       <View style={styles.tabContent}>
-        {/* Phần chọn lớp và học kỳ giống với tab Thống kê điểm */}
         <View style={styles.classPickerContainer}>
           <Text style={styles.filterLabel}>Chọn lớp:</Text>
           <View style={styles.pickerContainer}>
@@ -729,7 +727,7 @@ const StatisticsScreen: React.FC = () => {
                 <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
                   <BarChart
                     data={{
-                      labels: subjects.filter(subj => !isPassFailSubject(subj)), // Chỉ hiển thị môn thường
+                      labels: subjects.filter(subj => !isPassFailSubject(subj)),
                       datasets: [
                         {
                           data: subjects
@@ -738,7 +736,7 @@ const StatisticsScreen: React.FC = () => {
                         },
                       ],
                     }}
-                    width={Math.max(Dimensions.get('window').width - 40, subjects.length * 60)}
+                    width={Math.max(Dimensions.get('window').width - 40, subjects.filter(subj => !isPassFailSubject(subj)).length * 90)}
                     height={220}
                     yAxisLabel="Điểm "
                     chartConfig={{
@@ -789,7 +787,6 @@ const StatisticsScreen: React.FC = () => {
 
     return (
       <View style={styles.tabContent}>
-        {/* Phần chọn lớp và học kỳ giống với tab Thống kê điểm */}
         <View style={styles.classPickerContainer}>
           <Text style={styles.filterLabel}>Chọn lớp:</Text>
           <View style={styles.pickerContainer}>

@@ -185,7 +185,7 @@ const getHighestClass = (classList: ClassData[] | undefined): string => {
     }
     return name.trim();
   };
-console.log('DEBUG name:', editableStudent?.name);
+// console.log('DEBUG name:', editableStudent?.name);
 
   // if (!editableStudent || !editableStudent.name || editableStudent.name.trim() === '' || editableStudent.name === 'Chưa rõ') {
   //   return (

@@ -54,6 +54,29 @@ const uploadAndProcessImage = async (imageUri: string, imageType: string): Promi
   }
 
   const data = await response.json();
+
+  if (data.results && Array.isArray(data.results)) {
+    return data.results.map(result  => {
+      if (result.ocr_data && Array.isArray(result.ocr_data)) {
+        result.ocr_data = result.ocr_data.map((row: any) => {
+          // Xử lý từng cột điểm
+          ['hk1', 'hk2', 'cn'].forEach(key => {
+            if (row[key] && typeof row[key] === 'string') {
+              const lowerValue = row[key].toLowerCase().trim();
+              if (lowerValue === 'dat') {
+                row[key] = '10';
+              } else if (lowerValue === 'khong dat') {
+                row[key] = '0';
+              }
+            }
+          });
+          return row;
+        });
+      }
+      return result;
+    });
+  }
+
   return data.results;
 };
 
@@ -154,12 +177,23 @@ const PhotoCaptureScreen: React.FC = () => {
 
         if (img.type === 'report_card' && (img.grade === '10' || img.grade === '11' || img.grade === '12')) {
           const subjectsFromThisImage = results.flatMap(result =>
-            result.ocr_data.map((row: any) => ({
-              name: row.ten_mon || 'Môn học',
-              hk1: row.hky1 || '0',
-              hk2: row.hky2 || '0',
-              cn: row.ca_nam || '0',
-            }))
+            result.ocr_data.map((row: any) => {
+              // Xử lý chuyển đổi điểm
+              const processScore = (score: string) => {
+                if (!score) return '0';
+                const lowerScore = score.toLowerCase().trim();
+                if (lowerScore === 'dat') return '10';
+                if (lowerScore === 'khong dat') return '0';
+                return score;
+              };
+
+              return {
+                name: row.ten_mon || 'Môn học',
+                hk1: processScore(row.hky1 || '0'),
+                hk2: processScore(row.hky2 || '0'),
+                cn: processScore(row.ca_nam || '0'),
+              };
+            })
           );
           classSubjects[img.grade].push(...subjectsFromThisImage);
         }
