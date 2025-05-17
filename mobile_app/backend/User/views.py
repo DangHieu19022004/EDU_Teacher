@@ -24,25 +24,29 @@ def forgot_password_send_otp(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            phone = data.get("phone")
+            email = data.get("email")
 
-            if not phone:
-                return JsonResponse({"error": "Số điện thoại không được để trống"}, status=400)
+            if not email:
+                return JsonResponse({"error": "Email không được để trống"}, status=400)
 
             try:
-                user = User.objects.get(phone=phone)
+                user = User.objects.get(email=email)
             except User.DoesNotExist:
-                return JsonResponse({"error": "Không tìm thấy người dùng với số điện thoại này"}, status=404)
+                return JsonResponse({"error": "Không tìm thấy người dùng với email này"}, status=404)
 
             otp_code = str(random.randint(100000, 999999))
-            cache.set(f"otp_reset:{phone}", otp_code, timeout=300)  # 5 phút
+            cache.set(f"otp_reset:{email}", otp_code, timeout=300)  # 5 phút
 
-            # Gửi OTP: demo bằng log
-            logger.info(f"OTP đặt lại mật khẩu cho {phone} là {otp_code}")
+            # Gửi email OTP
+            send_mail(
+                subject="Mã xác thực đặt lại mật khẩu",
+                message=f"Mã OTP để đặt lại mật khẩu của bạn là: {otp_code}",
+                from_email="danghieu19022004@gmail.com",
+                recipient_list=[email],
+                fail_silently=False,
+            )
 
-            # Thực tế nên tích hợp SMS API như Twilio/Viettel/VnTelecom ở đây
-
-            return JsonResponse({"message": "Đã gửi mã OTP đến số điện thoại"})
+            return JsonResponse({"message": "OTP đã được gửi tới email"})
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
@@ -53,25 +57,25 @@ def forgot_password_reset(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            phone = data.get("phone")
+            email = data.get("email")
             otp = data.get("otp")
             new_password = data.get("new_password")
 
-            if not phone or not otp or not new_password:
+            if not email or not otp or not new_password:
                 return JsonResponse({"error": "Thiếu thông tin"}, status=400)
 
-            cached_otp = cache.get(f"otp_reset:{phone}")
+            cached_otp = cache.get(f"otp_reset:{email}")
             if not cached_otp or cached_otp != otp:
                 return JsonResponse({"error": "Mã OTP không hợp lệ hoặc đã hết hạn"}, status=400)
 
             try:
-                user = User.objects.get(phone=phone)
+                user = User.objects.get(email=email)
             except User.DoesNotExist:
                 return JsonResponse({"error": "Không tìm thấy người dùng"}, status=404)
 
             user.password_hash = new_password
             user.save()
-            cache.delete(f"otp_reset:{phone}")
+            cache.delete(f"otp_reset:{email}")
 
             return JsonResponse({"message": "Đặt lại mật khẩu thành công"})
 
