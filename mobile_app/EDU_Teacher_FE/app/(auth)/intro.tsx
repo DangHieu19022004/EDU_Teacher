@@ -29,7 +29,7 @@ const intro: React.FC = () => {
     if (currentIndex < onboardingData.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      router.replace('/(main)/home');
+      router.replace('/(auth)/login');
     }
   };
 
@@ -49,7 +49,7 @@ const intro: React.FC = () => {
       )}
 
       {/* Nút Bỏ qua */}
-      <TouchableOpacity style={styles.skipButton} onPress={() => router.replace('/(main)/home')}>
+      <TouchableOpacity style={styles.skipButton} onPress={handleNext}>
         <Text style={styles.skipText}>Bỏ qua</Text>
       </TouchableOpacity>
 

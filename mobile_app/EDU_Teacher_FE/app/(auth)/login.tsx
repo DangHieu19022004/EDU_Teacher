@@ -12,7 +12,6 @@ import { useUser } from "../contexts/UserContext";
 import ForgotPasswordModal from "../../components/ForgotPasswordModal";
 import LoadingModal from "../../components/LoadingModal";
 
-
 GoogleSignin.configure({
   webClientId: "829388908015-l7l9t9fprb8g7360u1ior810pmqf1vo6.apps.googleusercontent.com",
   scopes: ["profile", "email"],
@@ -29,21 +28,30 @@ const LoginScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
 
-  const checkFirstTimeLogin = async (userId: string) => {
+  // Kiểm tra lần đầu mở ứng dụng
+  const checkFirstAppOpen = async () => {
     try {
-      const firstTimeKey = `firstTime_${userId}`;
-      const isFirstTime = await AsyncStorage.getItem(firstTimeKey);
-
-      if (isFirstTime === null) {
-        await AsyncStorage.setItem(firstTimeKey, 'false');
+      const isFirstOpen = await AsyncStorage.getItem('firstAppOpen');
+      if (isFirstOpen === null) {
+        // Lần đầu mở ứng dụng, lưu trạng thái và điều hướng đến intro
+        await AsyncStorage.setItem('firstAppOpen', 'false');
+        router.replace('/(auth)/intro');
         return true;
       }
       return false;
     } catch (error) {
-      console.error("Error checking first time login:", error);
+      console.error("Error checking first app open:", error);
       return false;
     }
   };
+
+  useEffect(() => {
+    // Kiểm tra lần đầu mở ứng dụng khi màn hình được tải
+    checkFirstAppOpen();
+
+    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
+    return subscriber;
+  }, []);
 
   const validateID = async () => {
     const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
@@ -71,13 +79,8 @@ const LoginScreen = () => {
             uid: data.user.uid || "",
           });
 
-          const isFirstTime = await checkFirstTimeLogin(data.user.uid);
-
-          if (isFirstTime) {
-            router.replace('/(auth)/intro');
-          } else {
-            router.replace('/(main)/home');
-          }
+          // Điều hướng đến home sau khi đăng nhập
+          router.replace('/(main)/home');
         } else {
           Alert.alert("Lỗi", data.error || "Đăng nhập thất bại");
         }
@@ -88,6 +91,7 @@ const LoginScreen = () => {
       }
     } else {
       Alert.alert("Lỗi", "Vui lòng nhập email hoặc số điện thoại hợp lệ!");
+      router.replace('/(main)/home');
     }
   };
 
@@ -131,16 +135,11 @@ const LoginScreen = () => {
             uid: firebaseUser.uid || "",
           });
 
-          const isFirstTime = await checkFirstTimeLogin(firebaseUser.uid);
-
-          if (isFirstTime) {
-            router.replace('/(auth)/intro');
-          } else {
-            router.replace({
-              pathname: "/(main)/home",
-              params: { user: JSON.stringify(firebaseUser) }
-            });
-          }
+          // Điều hướng đến home sau khi đăng nhập
+          router.replace({
+            pathname: "/(main)/home",
+            params: { user: JSON.stringify(firebaseUser) }
+          });
         } else {
           Alert.alert("Login Failed", data.message || "Unknown error occurred.");
         }
@@ -203,18 +202,11 @@ const LoginScreen = () => {
           uid: userData.uid,
         });
 
-        const isFirstTime = await checkFirstTimeLogin(userData.uid);
-
-        setTimeout(() => {
-          if (isFirstTime) {
-            router.replace('/(auth)/intro');
-          } else {
-            router.replace({
-              pathname: "/(main)/home",
-              params: { user: JSON.stringify(userData) },
-            });
-          }
-        }, 500);
+        // Điều hướng đến home sau khi đăng nhập
+        router.replace({
+          pathname: "/(main)/home",
+          params: { user: JSON.stringify(userData) },
+        });
       } else {
         throw new Error(data.error || "Login failed.");
       }
@@ -229,11 +221,6 @@ const LoginScreen = () => {
     setUser(user);
     if (initializing) setInitializing(false);
   }
-
-  useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
-    return subscriber;
-  }, []);
 
   return (
     <KeyboardAvoidingView
