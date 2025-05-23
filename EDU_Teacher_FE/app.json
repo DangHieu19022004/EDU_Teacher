@@ -1,0 +1,70 @@
+{
+  "expo": {
+    "name": "EDU TEACHER",
+    "slug": "EDU_Teacher_FE",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/iconlogoedu.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/iconlogoedu.png",
+        "backgroundColor": "#ffffff"
+      },
+
+      "package": "com.danghieu19224.EDU_Teacher_FE"
+
+
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "1393782815364458",
+          "clientToken": "38759410220d9776c0c77e12f8e6a813",
+          "displayName": "EDU_Teacher",
+          "scheme": "fb1393782815364458",
+          "advertiserIDCollectionEnabled": false,
+          "autoLogAppEventsEnabled": false,
+          "isAutoInitEnabled": true,
+          "iosUserTrackingPermission": "unavailable"
+        }
+      ],
+      "@react-native-firebase/auth",
+      "@react-native-google-signin/google-signin",
+      "@react-native-firebase/app",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/iconlogoedu.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "9a19337b-6d79-4a1b-a0bb-1e20509ba217"
+      }
+    }
+  }
+}
