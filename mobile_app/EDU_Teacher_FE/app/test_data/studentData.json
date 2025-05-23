@@ -1,12 +1,12 @@
 {
-  "id": "1",
-  "name": "Hoàng Văn A",
-  "gender": "Nam",
-  "dob": "01/01/2005",
-  "phone": "0986802623",
-  "school": "THPT A",
-  "academicPerformance": "Giỏi",
-  "conduct": "Tốt",
+  "id": "",
+  "name": "",
+  "gender": "",
+  "dob": "",
+  "phone": "",
+  "school": "",
+  "academicPerformance": "",
+  "conduct": "",
   "classList": [
     {
       "class": "10D5",
