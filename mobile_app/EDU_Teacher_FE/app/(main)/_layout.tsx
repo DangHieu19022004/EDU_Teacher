@@ -9,9 +9,13 @@ export default function MainLayout() {
     return (
         <Tabs
             screenOptions={{
-            tabBarActiveTintColor: isDark ? '#ffffff' : '#007AFF',
-            tabBarInactiveTintColor: isDark ? '#888888' : '#999999',
+            tabBarActiveTintColor: '#007AFF',
+            tabBarInactiveTintColor: '#999999',
             tabBarStyle: {
+                height: 60,
+                paddingTop: 8,
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
                 backgroundColor: isDark ? '#121212' : '#ffffff',
             },
             headerTintColor: isDark ? '#ffffff' : '#000000',

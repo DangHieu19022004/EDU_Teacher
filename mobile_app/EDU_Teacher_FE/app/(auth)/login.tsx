@@ -90,7 +90,7 @@ const LoginScreen = () => {
       }
     } else {
       Alert.alert("Lỗi", "Vui lòng nhập email hoặc số điện thoại hợp lệ!");
-      // router.replace('/(main)/home');
+      router.replace('/(main)/home');
     }
   };
 
