@@ -590,11 +590,10 @@ ${teacherName} – Giáo viên chủ nhiệm lớp ${classNumber}`
   };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
-            <FontAwesome name="arrow-left" size={24} color="black" />
+            <FontAwesome name="arrow-left" size={24} color="white" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
             {editingEmail ? "Chỉnh sửa email" : "Lập lịch gửi email"}
@@ -851,7 +850,6 @@ ${teacherName} – Giáo viên chủ nhiệm lớp ${classNumber}`
           )}
         </ScrollView>
       </View>
-    </GestureHandlerRootView>
   );
 };
 
@@ -859,20 +857,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8F8F8",
-    paddingTop: 50,
   },
   header: {
+    paddingTop: 50,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 15,
-    backgroundColor: "white",
+    backgroundColor: "#0066CC",
     borderBottomWidth: 1,
     borderBottomColor: "#EEE",
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
+    color: 'white'
   },
   formContainer: {
     padding: 20,
@@ -972,7 +971,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   cancelButton: {
-    backgroundColor: "#E0E0E0",
+    backgroundColor: "red",
   },
   sendNowButton: {
     backgroundColor: "#38A169",

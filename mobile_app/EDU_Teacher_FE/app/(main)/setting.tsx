@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Switch, Image, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Switch, Image, StyleSheet, Alert, ScrollView } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -50,33 +50,37 @@ const SettingsScreen: React.FC = () => {
         headerText="Thay đổi mật khẩu"
       />
 
-      <View style={styles.logoContainer}>
-        <Image source={require('../../assets/images/logo.png')} style={styles.logo} resizeMode="contain" />
-      </View>
-
-      <View style={styles.optionContainer}>
-        <View style={styles.optionRow}>
-          <FontAwesome name="bell" size={20} color="#2F54EB" style={styles.icon} />
-          <Text style={styles.optionText}>Thông báo</Text>
-          <Switch value={isNotificationsEnabled} onValueChange={toggleNotifications} style={styles.switch} />
+      <ScrollView>
+        <View style={styles.logoContainer}>
+          <Image source={require('../../assets/images/logo.png')} style={styles.logo} resizeMode="contain" />
         </View>
-        <Text style={styles.sectionTitle}>Chung</Text>
-        {[{ icon: 'globe', text: 'Ngôn ngữ' }, { icon: 'info-circle', text: 'Thông tin ứng dụng' }].map((item, i) => (
-          <TouchableOpacity key={i} style={styles.optionRowGeneral}>
-            <FontAwesome name={item.icon as any} size={20} color="#2F54EB" style={styles.icon} />
-            <Text style={styles.optionText}>{item.text}</Text>
+
+        <Text style={styles.title}>Edu Teacher</Text>
+
+        <View style={styles.optionContainer}>
+          <View style={styles.optionRow}>
+            <FontAwesome name="bell" size={20} color="#2F54EB" style={styles.icon} />
+            <Text style={styles.optionText}>Thông báo</Text>
+            <Switch value={isNotificationsEnabled} onValueChange={toggleNotifications} style={styles.switch} />
+          </View>
+          <Text style={styles.sectionTitle}>Chung</Text>
+          {[{ icon: 'globe', text: 'Ngôn ngữ' }, { icon: 'info-circle', text: 'Thông tin ứng dụng' }].map((item, i) => (
+            <TouchableOpacity key={i} style={styles.optionRowGeneral}>
+              <FontAwesome name={item.icon as any} size={20} color="#2F54EB" style={styles.icon} />
+              <Text style={styles.optionText}>{item.text}</Text>
+            </TouchableOpacity>
+          ))}
+          <Text style={styles.sectionTitle}>Khác</Text>
+          <TouchableOpacity style={styles.optionRowGeneral} onPress={() => setChangePasswordVisible(true)}>
+            <FontAwesome name="lock" size={20} color="#2F54EB" style={styles.icon} />
+            <Text style={styles.optionText}>Thay đổi mật khẩu</Text>
           </TouchableOpacity>
-        ))}
-        <Text style={styles.sectionTitle}>Khác</Text>
-        <TouchableOpacity style={styles.optionRowGeneral} onPress={() => setChangePasswordVisible(true)}>
-          <FontAwesome name="lock" size={20} color="#2F54EB" style={styles.icon} />
-          <Text style={styles.optionText}>Thay đổi mật khẩu</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
-          <FontAwesome name="sign-out" size={20} color="white"/>
-          <Text style={styles.logoutText}>Đăng xuất</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
+            <FontAwesome name="sign-out" size={20} color="white"/>
+            <Text style={styles.logoutText}>Đăng xuất</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -103,8 +107,11 @@ const styles = StyleSheet.create({
   optionText: { fontSize: 16, flex: 1 },
   switch: { alignSelf: 'flex-end' },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
-  logoutButton: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#D32F2F', padding: 15, borderRadius: 15 },
+  logoutButton: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#D32F2F', padding: 15, borderRadius: 15, marginBottom: 20 },
   logoutText: { fontSize: 16, color: 'white' },
+  title:{
+    fontSize: 32, color: '#2237AC', textAlign: 'center', fontWeight: 'bold', marginTop: -20, marginBottom: 20,
+  }
 });
 
 export default SettingsScreen;

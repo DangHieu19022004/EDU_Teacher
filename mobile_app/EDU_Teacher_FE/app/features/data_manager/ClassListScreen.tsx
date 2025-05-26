@@ -7,7 +7,6 @@ import {
   StyleSheet,
   TextInput,
   Modal,
-  SafeAreaView,
   StatusBar,
   Alert,
 } from 'react-native';
@@ -353,17 +352,15 @@ const ClassListScreen: React.FC = () => {
 
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
-            <FontAwesome name="arrow-left" size={24} color="black" />
+            <FontAwesome name="arrow-left" size={24} color="white" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Kho dữ liệu học bạ</Text>
           <TouchableOpacity onPress={() => setShowAddModal(true)}>
-            <FontAwesome name="plus" size={24} color="black" />
+            <FontAwesome name="plus" size={24} color="white" />
           </TouchableOpacity>
         </View>
 
@@ -517,7 +514,6 @@ const ClassListScreen: React.FC = () => {
           </View>
         </Modal>
       </View>
-    </SafeAreaView>
   );
 };
 
@@ -529,18 +525,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F8F8',
-    paddingTop: 30,
   },
   header: {
+    paddingTop: 50,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 15,
-    backgroundColor: 'white',
+    backgroundColor: '#0066CC',
     borderBottomWidth: 1,
     borderBottomColor: '#EEE',
   },
-  headerTitle: { fontSize: 20, fontWeight: 'bold' },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: 'white'},
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -549,6 +545,7 @@ const styles = StyleSheet.create({
     margin: 15,
     paddingHorizontal: 15,
     elevation: 2,
+
   },
   searchIcon: { marginRight: 10 },
   searchInput: { flex: 1, height: 40, color: '#333' },

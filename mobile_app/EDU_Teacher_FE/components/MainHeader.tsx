@@ -13,7 +13,7 @@ const MainHeader: React.FC<MainHeaderProps> = ({ title }) => {
   return (
     <View style={styles.header}>
       <Image
-        source={require('../assets/images/logo.png')}
+        source={require('../assets/images/Logo-TLU.png')}
         style={styles.logo}
         resizeMode="contain"
       />
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#0066CC',
     padding: 15,
-    paddingTop: 70,
+    paddingTop: 45,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -52,12 +52,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   logo: {
-    backgroundColor: 'white',
-    width: 40,
+    width: 45,
     height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#32ADE6',
   },
   avatar: {
     backgroundColor: 'white',

@@ -201,7 +201,7 @@ const AddContactScreen: React.FC = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <FontAwesome name="arrow-left" size={24} color="black" />
+          <FontAwesome name="arrow-left" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Thêm liên hệ phụ huynh</Text>
         <View style={{ width: 24 }} />
@@ -310,20 +310,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F8F8',
-    paddingTop: 50,
   },
   header: {
+    paddingTop: 50,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 15,
-    backgroundColor: 'white',
+    backgroundColor: '#0066CC',
     borderBottomWidth: 1,
     borderBottomColor: '#EEE',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: 'white'
   },
   formContainer: {
     padding: 20,

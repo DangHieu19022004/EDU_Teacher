@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView, ImageBackground } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useUser } from "../contexts/UserContext";
 import MainHeader from '@/components/MainHeader';
+import { LinearGradient } from "expo-linear-gradient";
 
 const HomeScreen: React.FC = () => {
   const router = useRouter();
@@ -22,7 +23,11 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <ImageBackground
+      source={require('../../assets/images/logo.png')}
+      style={styles.container}
+      imageStyle={styles.backgroundImage}
+    >
       {/* Header */}
       <MainHeader title="Trang chủ" />
 
@@ -34,9 +39,11 @@ const HomeScreen: React.FC = () => {
         <View style={styles.featureSection}>
           <Text style={styles.sectionTitle}>Quản lý học bạ</Text>
           <View style={styles.featureRow}>
-            <TouchableOpacity style={styles.scanButton} onPress={handleScanPress}>
-              <FontAwesome name="camera" size={90} color="white" />
-              <Text style={styles.scanButtonText}>Chụp ảnh học bạ</Text>
+            <TouchableOpacity style={styles.scanButton} onPress={handleScanPress} >
+              <LinearGradient colors={["#2138AA", "#32ADE6"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.mainGradient}>
+                <FontAwesome name="camera" size={90} color="white" />
+                <Text style={styles.scanButtonText}>Chụp ảnh học bạ</Text>
+              </LinearGradient>
             </TouchableOpacity>
 
             <View style={styles.sideButtons}>
@@ -44,16 +51,20 @@ const HomeScreen: React.FC = () => {
                 style={styles.dataButton}
                 onPress={() => router.push('../features/data_manager/ClassListScreen')}
               >
-                <FontAwesome name="database" size={30} color="white" />
-                <Text style={styles.sideButtonText}>Kho dữ liệu</Text>
+                <LinearGradient colors={["#32ADE6", "#1ABC9C"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.subGradient}>
+                  <FontAwesome name="database" size={30} color="white" />
+                  <Text style={styles.sideButtonText}>Kho dữ liệu</Text>
+                </LinearGradient>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.statisticsButton}
                 onPress={handleStatisticsPress}
               >
-                <FontAwesome name="bar-chart" size={30} color="white" />
-                <Text style={styles.sideButtonText}>Thống kê</Text>
+                <LinearGradient colors={["#32ADE6", "#1ABC9C"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.subGradient}>
+                  <FontAwesome name="bar-chart" size={30} color="white" />
+                  <Text style={styles.sideButtonText}>Thống kê</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </View>
@@ -64,27 +75,33 @@ const HomeScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Sổ liên lạc điện tử</Text>
           <View style={styles.contactButtons}>
             <TouchableOpacity
-              style={styles.contactButton}
-              onPress={() => router.push('../features/contact/AddContact')}
-            >
-              <FontAwesome name="user-plus" size={30} color="white" />
-              <Text style={styles.contactButtonText}>Thêm liên hệ</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
               style={styles.scheduleButton}
               onPress={() => router.push('../features/contact/ScheduleEmail')}
             >
-              <FontAwesome name="calendar" size={30} color="white" />
-              <Text style={styles.contactButtonText}>Lập lịch gửi email</Text>
+              <LinearGradient colors={["#2138AA", "#32ADE6"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.mainGradient}>
+                <FontAwesome name="calendar" size={30} color="white" />
+                <Text style={styles.contactButtonText}>Lập lịch gửi email</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.contactButton}
+              onPress={() => router.push('../features/contact/AddContact')}
+            >
+              <LinearGradient colors={["#32ADE6", "#1ABC9C"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.subGradient}>
+                <FontAwesome name="user-plus" size={30} color="white" />
+                <Text style={styles.contactButtonText}>Thêm liên hệ</Text>
+              </LinearGradient>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.emailHistoryButton}
               onPress={() => router.push('../features/contact/EmailHistory')}
             >
-              <FontAwesome name="envelope" size={30} color="white" />
-              <Text style={styles.contactButtonText}>Lịch sử gửi email</Text>
+              <LinearGradient colors={["#32ADE6", "#1ABC9C"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.subGradient}>
+                <FontAwesome name="envelope" size={30} color="white" />
+                <Text style={styles.contactButtonText}>Lịch sử gửi email</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -97,12 +114,19 @@ const HomeScreen: React.FC = () => {
       <TouchableOpacity style={styles.chatbotButton} onPress={handleChatbotPress}>
         <Image source={require('../../assets/images/chatbot-logo.png')} />
       </TouchableOpacity>
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F8F8' },
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F8F8'
+  },
+  backgroundImage: {
+    opacity: 0.5,
+    resizeMode: 'contain',
+  },
   header: {
     backgroundColor: '#0066CC',
     padding: 20,
@@ -122,6 +146,7 @@ const styles = StyleSheet.create({
     padding: 15,
     marginTop: 20,
     paddingVertical: 20,
+    opacity: 0.8,
   },
   sectionTitle: { fontSize: 25, fontWeight: 'bold', textAlign: 'center' },
   featureRow: {
@@ -131,8 +156,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   scanButton: {
-    backgroundColor: '#1E88E5',
-    padding: 20,
+    overflow: "hidden",
+    backgroundColor: '#2435B0',
+    // padding: 20,
     borderRadius: 20,
     width: '56%',
     alignItems: 'center',
@@ -140,8 +166,7 @@ const styles = StyleSheet.create({
   scanButtonText: { color: 'white', fontSize: 14, marginTop: 5 },
   sideButtons: { width: '40%' },
   dataButton: {
-    backgroundColor: '#D53F8C',
-    padding: 10,
+    backgroundColor: '#3099DC',
     borderRadius: 20,
     marginBottom: 10,
     alignItems: 'center',
@@ -170,6 +195,7 @@ const styles = StyleSheet.create({
     padding: 15,
     marginTop: 20,
     paddingVertical: 20,
+    opacity: 0.8
   },
   contactButtons: {
     flexDirection: 'row',
@@ -177,24 +203,21 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     marginTop: 10,
   },
-  contactButton: {
-    backgroundColor: '#3182CE',
-    padding: 15,
+  scheduleButton: {
+    backgroundColor: '#2435B0',
     borderRadius: 20,
     width: '100%',
     alignItems: 'center',
     marginBottom: 10,
   },
-  scheduleButton: {
-    backgroundColor: '#805AD5',
-    padding: 15,
+  contactButton: {
+    backgroundColor: '#3099DC',
     borderRadius: 20,
     width: '48%',
     alignItems: 'center',
   },
   emailHistoryButton: {
-    backgroundColor: '#DD6B20',
-    padding: 15,
+    backgroundColor: '#3099DC',
     borderRadius: 20,
     width: '48%',
     alignItems: 'center',
@@ -209,14 +232,25 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   statisticsButton: {
-    backgroundColor: '#38A169',
-    padding: 10,
+    backgroundColor: '#3099DC',
     borderRadius: 20,
     marginBottom: 10,
     alignItems: 'center',
   },
-  empty:{
-    height:100,
+  empty: {
+    height: 100,
+  },
+  mainGradient: {
+    width: '100%',
+    paddingVertical: 20,
+    alignItems: "center",
+    borderRadius: 20,
+  },
+  subGradient: {
+    width: '100%',
+    paddingVertical: 10,
+    alignItems: "center",
+    borderRadius: 20,
   },
 });
 

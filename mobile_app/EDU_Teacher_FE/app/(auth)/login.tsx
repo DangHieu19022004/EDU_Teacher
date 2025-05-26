@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Alert, ActivityIndicator, TouchableOpacity, Image, StyleSheet, Modal, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { View, Text, TextInput, Alert, TouchableOpacity, Image, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { LoginManager, AccessToken } from 'react-native-fbsdk-next';
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,7 +20,6 @@ GoogleSignin.configure({
 const LoginScreen = () => {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
   const [ID, setID] = useState("");
   const [password, setPassword] = useState("");
   const [initializing, setInitializing] = useState(true);
@@ -242,6 +241,7 @@ const LoginScreen = () => {
         <View style={styles.statusBar}></View>
 
         <Image source={require("../../assets/images/logo.png")} style={styles.logo} />
+        <Text style={styles.appTitle}>Edu Teacher</Text>
         <Text style={styles.slogan}>
           Số hóa học bạ, kết nối tri thức, nâng bước tương lai
         </Text>
@@ -285,7 +285,7 @@ const LoginScreen = () => {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.loginButton} onPress={validateID}>
-          <LinearGradient colors={["#32ADE6", "#2138AA"]} style={styles.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+          <LinearGradient style={styles.gradient} colors={["#32ADE6", "#2138AA"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
             <Text style={styles.loginText}>Đăng nhập</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -324,8 +324,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white'
   },
   logo: {
-    width: "100%",
-    height: 220,
+    width: "80%",
+    height: 200,
     resizeMode: "contain",
     marginBottom: 10,
   },
@@ -410,6 +410,9 @@ const styles = StyleSheet.create({
     marginBottom: -4,
     color: "#2F80ED",
     textDecorationLine: "underline",
+  },
+  appTitle:{
+    fontSize: 32, color: '#2237AC', textAlign: 'center', fontWeight: 'bold', marginTop: -20, marginBottom: 20,
   },
 });
 
