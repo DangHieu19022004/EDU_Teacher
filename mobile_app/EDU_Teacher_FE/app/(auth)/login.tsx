@@ -27,27 +27,7 @@ const LoginScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
 
-  // Kiểm tra lần đầu mở ứng dụng
-  const checkFirstAppOpen = async () => {
-    try {
-      const isFirstOpen = await AsyncStorage.getItem('firstAppOpen');
-      if (isFirstOpen === null) {
-        // Lần đầu mở ứng dụng, lưu trạng thái và điều hướng đến intro
-        await AsyncStorage.setItem('firstAppOpen', 'false');
-        router.replace('/(auth)/intro');
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error("Error checking first app open:", error);
-      return false;
-    }
-  };
-
   useEffect(() => {
-    // Kiểm tra lần đầu mở ứng dụng khi màn hình được tải
-    checkFirstAppOpen();
-
     const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
     return subscriber;
   }, []);

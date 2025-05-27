@@ -32,8 +32,7 @@ interface ClassData {
 
 interface StudentItem {
   id: string;
-  name: string;
-  transcript?: string;
+  name: string
   gender: string;
   dob: string;
   phone: string;
@@ -430,7 +429,7 @@ const ClassListScreen: React.FC = () => {
                     }}
                     onPress={() => router.push('/features/scanning/photoCapture')}
                   >
-                    <Text style={{ color: 'white', fontWeight: 'bold' }}>+ Thêm học bạ</Text>
+                    <Text style={{ color: 'white', fontWeight: 'bold', }}>+ Thêm học bạ</Text>
                   </TouchableOpacity>
                 </View>
                 <FlatList
@@ -440,26 +439,29 @@ const ClassListScreen: React.FC = () => {
                     <View style={styles.studentItem}>
                       <Text style={styles.studentName}>{item.name}</Text>
                       <Text style={styles.transcriptText}>
-                        {item.transcript || 'Chưa có học bạ'}
+                        Ngày sinh: {item.dob || 'Không có'}
+                      </Text>
+                      <Text style={styles.transcriptText}>
+                        Trường: {item.school || 'Không có'}
                       </Text>
                       <View style={styles.studentActions}>
                         <TouchableOpacity
                           style={styles.actionButton}
                           onPress={() => handleViewStudent(item, selectedClass.name)}
                         >
-                          <FontAwesome name="eye" size={18} color="#1E88E5" />
+                          <FontAwesome name="eye" size={20} color="#1E88E5" />
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={styles.actionButton}
                           onPress={() => handleEditStudent(item, selectedClass.name)}
                         >
-                          <FontAwesome name="edit" size={18} color="#FFA500" />
+                          <FontAwesome name="edit" size={20} color="#FFA500" />
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={styles.actionButton}
                           onPress={() => handleDeleteStudent(selectedClass.id, item.id)}
                         >
-                          <FontAwesome name="trash" size={18} color="#D92D20" />
+                          <FontAwesome name="trash" size={20} color="#D92D20" />
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -576,7 +578,7 @@ const styles = StyleSheet.create({
   className: { fontSize: 16, color: '#333' },
   studentItem: {
     padding: 15,
-    marginBottom: 10,
+    marginTop: 10,
     backgroundColor: 'white',
     borderRadius: 10,
     elevation: 2,
@@ -589,7 +591,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   actionButton: {
-    marginLeft: 15,
+    marginHorizontal: 20,
   },
   emptyText: {
     textAlign: 'center',

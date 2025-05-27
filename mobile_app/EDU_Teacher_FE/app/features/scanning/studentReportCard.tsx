@@ -424,9 +424,6 @@ const getHighestClass = (classList: ClassData[] | undefined): string => {
           <FontAwesome name="arrow-left" size={24} color="#1E88E5" />
         </TouchableOpacity>
         <Text style={styles.header}>Thông tin học bạ</Text>
-        {!isEditMode && (
-          <Text style={styles.subHeader}>Lớp {className}</Text>
-        )}
         <View style={{ width: 24 }} />
       </View>
 
@@ -450,6 +447,10 @@ const getHighestClass = (classList: ClassData[] | undefined): string => {
           <TextInput style={styles.input} value={editableStudent.gender || ''} onChangeText={(text) => updateStudentField('gender', text)} placeholder="Giới tính" editable={isEditMode} />
           <View style={styles.line} />
           <TextInput style={styles.input} value={editableStudent.dob || ''} onChangeText={(text) => updateStudentField('dob', text)} placeholder="Ngày sinh" editable={isEditMode} />
+          <View style={styles.line} />
+          {!isEditMode && (
+            <TextInput style={styles.input} value={className || ''}/>
+          )}
           <View style={styles.line} />
           {isEditMode && (
             <View style={{ marginBottom: 10 }}>
@@ -641,7 +642,7 @@ const styles = StyleSheet.create({
   subHeader: {
     fontSize: 14,
     color: '#666',
-    marginTop: 2,
+    marginTop: 4,
   },
   gradeButton: {
     borderWidth: 1,

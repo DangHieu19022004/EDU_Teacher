@@ -506,15 +506,18 @@ ${teacherName} – Giáo viên chủ nhiệm lớp ${classNumber}`
         if (!student) continue;
 
         const { subject: generatedSubject, message: generatedMessage } = generateEmailContent(student, selectedEmailType);
+        const scheduledDateTime = new Date();
         const payload = {
           subject: generatedSubject,
           recipient: email,
           message: generatedMessage,
+          scheduled_time: scheduledDateTime.toISOString(),
           teacher_id: user?.uid,
           student_id: student.id,
+          status: "sent",
         };
 
-        const response = await fetch(`${BASE_URL}contact/send_email_now/`, {
+        const response = await fetch(`${BASE_URL}contact/schedule_email/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -524,24 +527,43 @@ ${teacherName} – Giáo viên chủ nhiệm lớp ${classNumber}`
         });
         const data = await response.json();
         if (data.error) {
-          Alert.alert("Lỗi", `Không thể gửi email cho ${student.name}: ${data.error}`);
+          Alert.alert("Lỗi", `Không thể gửi và lưu email cho ${student.name}: ${data.error}`);
         } else {
-          const newEmail: ScheduledEmail = {
-            id: Date.now().toString(),
-            subject: generatedSubject,
-            recipients: email,
-            message: generatedMessage,
-            scheduledDate: new Date(),
-            status: "sent",
-            studentId: student.id,
-          };
-          setEmails(prev => [...prev, newEmail]);
+          const sendResponse = await fetch(`${BASE_URL}contact/send_email_now/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${user?.uid}`,
+            },
+            body: JSON.stringify({
+              subject: generatedSubject,
+              recipient: email,
+              message: generatedMessage,
+              teacher_id: user?.uid,
+              student_id: student.id,
+            }),
+          });
+          const sendData = await sendResponse.json();
+          if (sendData.error) {
+            Alert.alert("Lỗi", `Không thể gửi email cho ${student.name}: ${sendData.error}`);
+          } else {
+            const newEmail: ScheduledEmail = {
+              id: data.email_id || Date.now().toString(),
+              subject: generatedSubject,
+              recipients: email,
+              message: generatedMessage,
+              scheduledDate: scheduledDateTime,
+              status: "sent",
+              studentId: student.id,
+            };
+            setEmails(prev => [...prev, newEmail]);
+          }
         }
       }
-      Alert.alert("Thành công", "Đã gửi email ngay cho các học sinh được chọn");
+      Alert.alert("Thành công", "Đã gửi và lưu email cho các học sinh được chọn");
       resetForm();
     } catch (err) {
-      console.error("Lỗi gửi email ngay:", err);
+      console.error("Lỗi gửi và lưu email:", err);
       Alert.alert("Lỗi", "Không kết nối được máy chủ");
     }
   };
@@ -592,7 +614,7 @@ ${teacherName} – Giáo viên chủ nhiệm lớp ${classNumber}`
   return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <FontAwesome name="arrow-left" size={24} color="white" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
@@ -940,6 +962,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F0F0",
   },
   headerCell: {
+    marginHorizontal: 10,
     fontSize: 14,
     fontWeight: "bold",
     color: "#333",
@@ -956,6 +979,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   studentCell: {
+    marginHorizontal: 10,
     fontSize: 14,
     color: "#333",
   },
@@ -1038,6 +1062,9 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 12,
   },
+  backButton:{
+    paddingHorizontal: 10,
+  }
 });
 
 export default ScheduleEmailScreen;

@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import sampleStudentData from '../../test_data/studentData.json';
 import { BASE_URL } from '@/constants/Config';
 import LoadingModal from '../../../components/LoadingModal';
+import { LinearGradient } from "expo-linear-gradient";
 
 interface StudentItem {
   id: string;
@@ -262,13 +263,17 @@ const PhotoCaptureScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.captureButton} onPress={openCamera}>
-        <FontAwesome name="camera" size={30} color="white" />
-        <Text style={styles.captureButtonText}>Chụp ảnh</Text>
+        <LinearGradient colors={["#2138AA", "#32ADE6"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.mainGradient}>
+          <FontAwesome name="camera" size={30} color="white" />
+          <Text style={styles.captureButtonText}>Chụp ảnh</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.galleryButton} onPress={pickImageFromLibrary}>
-        <FontAwesome name="photo" size={28} color="white" />
-        <Text style={styles.galleryButtonText}>Chọn ảnh từ thiết bị</Text>
+        <LinearGradient colors={["#2138AA", "#32ADE6"]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.mainGradient}>
+          <FontAwesome name="photo" size={28} color="white" />
+          <Text style={styles.galleryButtonText}>Chọn ảnh từ thiết bị</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       <FlatList
@@ -288,11 +293,11 @@ const PhotoCaptureScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F8F8', padding: 10 },
-  captureButton: { backgroundColor: '#1E88E5', padding: 15, borderRadius: 10, alignItems: 'center', marginVertical: 10, flexDirection: 'row', justifyContent: 'center', marginTop: 40, },
-  captureButtonText: { color: 'white', marginLeft: 10, fontWeight: 'bold' },
-  galleryButton: { backgroundColor: '#6A1B9A', padding: 15, borderRadius: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
+  captureButton: {marginVertical: 10, marginTop: 40, },
+  captureButtonText: { color: 'white', fontWeight: 'bold', marginLeft: 10},
+  galleryButton: {marginBottom: 10,},
   galleryButtonText: { color: 'white', marginLeft: 10, fontWeight: 'bold' },
-  nextButton: { backgroundColor: '#4CAF50', padding: 15, borderRadius: 10, alignItems: 'center', marginVertical: 20 },
+  nextButton: { backgroundColor: '#4CAF50', padding: 15, borderRadius: 10, alignItems: 'center', marginVertical: 10 },
   nextButtonText: { color: 'white', fontWeight: 'bold' },
   thumbnail: { width: '100%', height: 150, borderRadius: 10 },
   imageContainer: { flex: 1, marginVertical: 10 },
@@ -327,6 +332,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginTop: 10,
+  },
+  mainGradient: {
+    justifyContent: 'center',
+    paddingVertical: 20,
+    alignItems: "center",
+    borderRadius: 20,
+    flexDirection: 'row',
   },
 });
 
